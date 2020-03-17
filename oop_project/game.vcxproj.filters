@@ -152,5 +152,11 @@
     <Image Include="RES\yee.bmp">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="RES\yee1.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="RES\testMap.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

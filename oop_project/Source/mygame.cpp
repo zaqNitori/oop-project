@@ -468,7 +468,7 @@ namespace game_framework {
 		const int HITS_LEFT = 10;
 		const int HITS_LEFT_X = 590;
 		const int HITS_LEFT_Y = 0;
-		const int BACKGROUND_X = 60;
+		const int BACKGROUND_X = 0;
 		const int ANIMATION_SPEED = 15;
 		for (int i = 0; i < NUMBALLS; i++) {				// 設定球的起始座標
 			int x_pos = i % BALL_PER_ROW;
@@ -496,9 +496,11 @@ namespace game_framework {
 		//
 		// 移動背景圖的座標
 		//
-		if (background.Top() > SIZE_Y)
+
+		/*if (background.Top() > SIZE_Y)
 			background.SetTopLeft(60, -background.Height());
-		background.SetTopLeft(background.Left(), background.Top() + 1);
+		background.SetTopLeft(background.Left(), background.Top() + 1);*/
+
 		//
 		// 移動球
 		//
@@ -509,6 +511,7 @@ namespace game_framework {
 		// 移動擦子
 		//
 		eraser.OnMove();
+		yee.SetTopLeft(10, 10);
 		//
 		// 判斷擦子是否碰到球
 		//
@@ -546,7 +549,8 @@ namespace game_framework {
 		for (i = 0; i < NUMBALLS; i++)
 			ball[i].LoadBitmap();								// 載入第i個球的圖形
 		eraser.LoadBitmap();
-		background.LoadBitmap(IDB_BACKGROUND);					// 載入背景的圖形
+		background.LoadBitmap(IDB_testMap);					// 載入背景的圖形
+		yee.LoadBitmap(IDB_yee1);
 		//
 		// 完成部分Loading動作，提高進度
 		//
@@ -649,6 +653,7 @@ namespace game_framework {
 		corner.ShowBitmap();
 		corner.SetTopLeft(SIZE_X - corner.Width(), SIZE_Y - corner.Height());
 		corner.ShowBitmap();
+		yee.ShowBitmap();
 	}
 	//CGameStateRun
 #pragma endregion
