@@ -104,11 +104,11 @@ IDB_HELP                BITMAP                  "..\\res\\help.bmp"
 
 IDB_LOADING             BITMAP                  "..\\res\\loading.bmp"
 
-IDB_YEE                 BITMAP                  "D:\\ntut\\castle_crasher_oop\\oop_project\\RES\\yee.bmp"
+IDB_testMap             BITMAP                  "D:\\Ntut\\oop-project\\oop_project\\RES\\testMap.bmp"
 
-IDB_yee1                BITMAP                  "D:\\Ntut\\castle_crasher_oop\\oop_project\\RES\\yee1.bmp"
+IDB_GameMap             BITMAP                  "D:\\Ntut\\oop-project\\oop_project\\RES\\background.bmp"
 
-IDB_testMap             BITMAP                  "D:\\Ntut\\castle_crasher_oop\\oop_project\\RES\\testMap.bmp"
+IDB_BITMAP5             BITMAP                  "D:\\Ntut\\oop-project\\oop_project\\RES\\hero.bmp"
 
 
 /////////////////////////////////////////////////////////////////////////////

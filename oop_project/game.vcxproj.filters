@@ -158,5 +158,11 @@
     <Image Include="RES\testMap.bmp">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="RES\background.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="RES\hero.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

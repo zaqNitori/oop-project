@@ -54,6 +54,7 @@ namespace game_framework {
 // 看懂就可以改寫成自己的程式了
 /////////////////////////////////////////////////////////////////////////////
 
+#pragma region CEraser
 class CEraser
 {
 public:
@@ -79,19 +80,72 @@ protected:
 	bool isMovingRight;			// 是否正在往右移動
 	bool isMovingUp;			// 是否正在往上移動
 };
+#pragma endregion
+
+class CMove
+{
+public:
+	CMove();
+	int  GetX1();					// 左上角 x 座標
+	int  GetY1();					// 左上角 y 座標
+	int  GetX2();					// 右下角 x 座標
+	int  GetY2();					// 右下角 y 座標
+	void Initialize();				// 設定初始值
+	void LoadBitmap();				// 載入圖形
+	void OnMove();					// 移動
+	void OnShow();					// 將圖形貼到畫面
+	void SetMovingDown(bool flag);	// 設定是否正在往下移動
+	void SetMovingLeft(bool flag);	// 設定是否正在往左移動
+	void SetMovingRight(bool flag); // 設定是否正在往右移動
+	void SetMovingUp(bool flag);	// 設定是否正在往上移動
+	void SetXY(int nx, int ny);		// 設定左上角座標
+
+private:
+	int x, y;
+	CAnimation animation;			//動畫
+	bool isMovingDown;				//下動
+	bool isMovingUp;				//上動
+	bool isMovingLeft;				//左動
+	bool isMovingRight;				//右動
+
+};
+
+/////////////////////////////////////////////////////////////////////////////
+// 這個class提供Hero物件
+// 
+/////////////////////////////////////////////////////////////////////////////
+class CHero
+{
+public:
+	CHero();
+	void LoadBitmap();
+	void OnShow();
+	void OnMove();
+	
+private:
+	CAnimation heroStand;
+	int floor;
+	
+
+};
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 // 這個class提供背景地圖,並不會移動(不是camera)
 // 
 /////////////////////////////////////////////////////////////////////////////
+
 class CGameBackground
 {
 public:
 	CGameBackground();
 	void LoadBitmap();
 	void OnShow();
+	void setTopLeft(int,int);
 
 private:
+	CMovingBitmap GameMap;
 
 };
 
@@ -215,7 +269,7 @@ private:
 	CInteger		hits_left;	// 剩下的撞擊數
 	CBouncingBall   bball;		// 反覆彈跳的球
 	
-	CMovingBitmap	yee;
+	CHero hero;
 };
 
 /////////////////////////////////////////////////////////////////////////////

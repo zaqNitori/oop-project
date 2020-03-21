@@ -62,6 +62,42 @@
 namespace game_framework {
 
 /////////////////////////////////////////////////////////////////////////////
+// CHero: Hero class
+/////////////////////////////////////////////////////////////////////////////
+
+#pragma region CHero
+
+	CHero::CHero()
+	{
+
+	}
+
+	void CHero::LoadBitmapA()
+	{
+		char *filename[4] = { ".\\shapes\\108.bmp",".\\shapes\\109.bmp",".\\shapes\\110.bmp",".\\shapes\\111.bmp" };
+		for (int i = 0; i < 4; i++)	// 載入動畫(由4張圖形構成)
+			heroStand.AddBitmap(filename[i], RGB(0, 0, 0));
+	}
+	
+	void CHero::OnMove()
+	{
+		heroStand.OnMove();
+	}
+
+	void CHero::OnShow()
+	{
+		heroStand.SetTopLeft(200, 450);
+		heroStand.OnShow();
+	}
+
+
+	
+	//CHero
+#pragma endregion
+
+
+
+/////////////////////////////////////////////////////////////////////////////
 // CBall: Ball class
 /////////////////////////////////////////////////////////////////////////////
 
@@ -264,7 +300,7 @@ namespace game_framework {
 
 	void CEraser::OnMove()
 	{
-		const int STEP_SIZE = 2;
+		const int STEP_SIZE = 15;
 		animation.OnMove();
 		if (isMovingLeft)
 			x -= STEP_SIZE;
@@ -307,6 +343,88 @@ namespace game_framework {
 		animation.OnShow();
 	}
 	//CEraser
+#pragma endregion
+
+#pragma region CMove
+
+
+	CMove::CMove()
+	{
+		Initialize();
+	}
+
+	void CMove::Initialize()
+	{
+		const int x_pos = 200;
+		const int y_pos = 450;
+		isMovingDown = isMovingLeft = isMovingRight = isMovingUp = false;
+	}
+
+	int CMove::GetX1()
+	{
+		return x;
+	}
+
+	int CMove::GetX2()
+	{
+		return x + animation.Width();
+	}
+
+	int CMove::GetY1()
+	{
+		return y;
+	}
+
+	int CMove::GetY2()
+	{
+		return y + animation.Height();
+	}
+
+	void CMove::OnMove()
+	{
+		const int step = 15;
+		if (isMovingLeft)
+			x -= step;
+		if (isMovingRight)
+			x += step;
+		if (isMovingUp)
+			y -= step;
+		if (isMovingDown)
+			y += step;
+	}
+
+	void CMove::SetXY(int nx, int ny)
+	{
+		x = nx;
+		y = ny;
+	}
+
+	void CMove::SetMovingDown(bool flag)
+	{
+		isMovingDown = flag;
+	}
+
+	void CMove::SetMovingUp(bool flag)
+	{
+		isMovingUp = flag;
+	}
+
+	void CMove::SetMovingLeft(bool flag)
+	{
+		isMovingLeft = flag;
+	}
+
+	void CMove::SetMovingRight(bool flag)
+	{
+		isMovingRight = flag;
+	}
+
+	void CMove::OnShow()
+	{
+		animation.SetTopLeft(x, y);
+		animation.OnShow();
+	}
+	//CMove
 #pragma endregion
 
 
@@ -478,7 +596,7 @@ namespace game_framework {
 			ball[i].SetIsAlive(true);
 		}
 		eraser.Initialize();
-		background.SetTopLeft(BACKGROUND_X, 0);				// 設定背景的起始座標
+		background.SetTopLeft(0, SIZE_Y-background.Height());		// 設定背景的起始座標
 		help.SetTopLeft(0, SIZE_Y - help.Height());			// 設定說明圖的起始座標
 		hits_left.SetInteger(HITS_LEFT);					// 指定剩下的撞擊數
 		hits_left.SetTopLeft(HITS_LEFT_X, HITS_LEFT_Y);		// 指定剩下撞擊數的座標
@@ -511,7 +629,6 @@ namespace game_framework {
 		// 移動擦子
 		//
 		eraser.OnMove();
-		yee.SetTopLeft(10, 10);
 		//
 		// 判斷擦子是否碰到球
 		//
@@ -533,6 +650,7 @@ namespace game_framework {
 		// 移動彈跳的球
 		//
 		bball.OnMove();
+		hero.OnMove();
 	}
 
 	void CGameStateRun::OnInit()  								// 遊戲的初值及圖形設定
@@ -549,8 +667,7 @@ namespace game_framework {
 		for (i = 0; i < NUMBALLS; i++)
 			ball[i].LoadBitmap();								// 載入第i個球的圖形
 		eraser.LoadBitmap();
-		background.LoadBitmap(IDB_testMap);					// 載入背景的圖形
-		yee.LoadBitmap(IDB_yee1);
+		background.LoadBitmap(IDB_GameMap);					// 載入背景的圖形
 		//
 		// 完成部分Loading動作，提高進度
 		//
@@ -563,6 +680,7 @@ namespace game_framework {
 		corner.LoadBitmap(IDB_CORNER);							// 載入角落圖形
 		corner.ShowBitmap(background);							// 將corner貼到background
 		bball.LoadBitmap();										// 載入圖形
+		hero.LoadBitmap();
 		hits_left.LoadBitmap();
 		CAudio::Instance()->Load(AUDIO_DING, "sounds\\ding.wav");	// 載入編號0的聲音ding.wav
 		CAudio::Instance()->Load(AUDIO_LAKE, "sounds\\lake.mp3");	// 載入編號1的聲音lake.mp3
@@ -602,6 +720,7 @@ namespace game_framework {
 			eraser.SetMovingUp(false);
 		if (nChar == KEY_DOWN)
 			eraser.SetMovingDown(false);
+		
 	}
 
 	void CGameStateRun::OnLButtonDown(UINT nFlags, CPoint point)  // 處理滑鼠的動作
@@ -653,7 +772,7 @@ namespace game_framework {
 		corner.ShowBitmap();
 		corner.SetTopLeft(SIZE_X - corner.Width(), SIZE_Y - corner.Height());
 		corner.ShowBitmap();
-		yee.ShowBitmap();
+		hero.OnShow();
 	}
 	//CGameStateRun
 #pragma endregion
