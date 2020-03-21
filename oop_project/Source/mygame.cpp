@@ -69,29 +69,79 @@ namespace game_framework {
 
 	CHero::CHero()
 	{
-
+		Initialize();
 	}
 
-	void CHero::LoadBitmapA()
+	void CHero::Initialize()
 	{
-		char *filename[4] = { ".\\shapes\\108.bmp",".\\shapes\\109.bmp",".\\shapes\\110.bmp",".\\shapes\\111.bmp" };
-		for (int i = 0; i < 4; i++)	// 載入動畫(由4張圖形構成)
-			heroStand.AddBitmap(filename[i], RGB(0, 0, 0));
+		const int ini_x = 200;
+		const int ini_y = 450;
+		x = ini_x;
+		y = ini_y;
+		floor = 450;
 	}
-	
+
+	void CHero::LoadBitmap()
+	{
+		char *filename[4] = { ".\\image\\108.bmp",".\\image\\109.bmp",".\\image\\110.bmp",".\\image\\111.bmp" };
+		for (int i = 0; i < 4; i++)	// 載入動畫(由4張圖形構成)
+		{
+			heroStand.LoadBitmap(filename[i]);
+			heroMoveLR.LoadBitmap(filename[i]);
+			heroMoveUD.LoadBitmap(filename[i]);
+		}
+	}
+
 	void CHero::OnMove()
 	{
-		heroStand.OnMove();
+		heroStand.OnMove(&x, &y);
+		heroMoveLR.OnMove(&x, &y);
+		heroMoveUD.OnMove(&x, &y);
 	}
 
 	void CHero::OnShow()
 	{
-		heroStand.SetTopLeft(200, 450);
-		heroStand.OnShow();
+		if(!(isMovingDown || isMovingLeft || isMovingRight || isMovingUp))
+		{
+			heroStand.SetXY(x, y);
+			heroStand.OnShow();
+		}
+		if (isMovingLeft || isMovingRight)
+		{
+			heroMoveLR.SetXY(x, y);
+			heroMoveLR.OnShow();
+		}
+		if (isMovingDown || isMovingUp)
+		{
+			heroMoveUD.SetXY(x, y);
+			heroMoveUD.OnShow();
+		}
 	}
 
-
+	void CHero::SetMovingDown(bool flag)
+	{
+		isMovingDown = flag;
+		heroMoveUD.SetMovingDown(flag);
+	}
 	
+	void CHero::SetMovingUp(bool flag)
+	{
+		isMovingUp = flag;
+		heroMoveUD.SetMovingUp(flag);
+	}
+
+	void CHero::SetMovingLeft(bool flag)
+	{
+		isMovingLeft = flag;
+		heroMoveLR.SetMovingLeft(flag);
+	}
+
+	void CHero::SetMovingRight(bool flag)
+	{
+		isMovingRight = flag;
+		heroMoveLR.SetMovingRight(flag);
+	}
+
 	//CHero
 #pragma endregion
 
@@ -357,6 +407,8 @@ namespace game_framework {
 	{
 		const int x_pos = 200;
 		const int y_pos = 450;
+		x = x_pos;
+		y = y_pos;
 		isMovingDown = isMovingLeft = isMovingRight = isMovingUp = false;
 	}
 
@@ -380,9 +432,17 @@ namespace game_framework {
 		return y + animation.Height();
 	}
 
-	void CMove::OnMove()
+	void CMove::LoadBitmap(char *file)
+	{
+		animation.AddBitmap(file, RGB(0, 0, 0));
+	}
+
+	void CMove::OnMove(int* nx, int* ny)
 	{
 		const int step = 15;
+		x = *nx;
+		y = *ny;
+		animation.OnMove();
 		if (isMovingLeft)
 			x -= step;
 		if (isMovingRight)
@@ -390,7 +450,12 @@ namespace game_framework {
 		if (isMovingUp)
 			y -= step;
 		if (isMovingDown)
-			y += step;
+		{
+			if(y+step<=450)
+				y += step;
+		}
+		*nx = x;
+		*ny = y;
 	}
 
 	void CMove::SetXY(int nx, int ny)
@@ -596,6 +661,7 @@ namespace game_framework {
 			ball[i].SetIsAlive(true);
 		}
 		eraser.Initialize();
+		hero.Initialize();
 		background.SetTopLeft(0, SIZE_Y-background.Height());		// 設定背景的起始座標
 		help.SetTopLeft(0, SIZE_Y - help.Height());			// 設定說明圖的起始座標
 		hits_left.SetInteger(HITS_LEFT);					// 指定剩下的撞擊數
@@ -629,6 +695,7 @@ namespace game_framework {
 		// 移動擦子
 		//
 		eraser.OnMove();
+		hero.OnMove();
 		//
 		// 判斷擦子是否碰到球
 		//
@@ -650,7 +717,6 @@ namespace game_framework {
 		// 移動彈跳的球
 		//
 		bball.OnMove();
-		hero.OnMove();
 	}
 
 	void CGameStateRun::OnInit()  								// 遊戲的初值及圖形設定
@@ -697,13 +763,25 @@ namespace game_framework {
 		const char KEY_RIGHT = 0x27; // keyboard右箭頭
 		const char KEY_DOWN = 0x28; // keyboard下箭頭
 		if (nChar == KEY_LEFT)
+		{
 			eraser.SetMovingLeft(true);
+			hero.SetMovingLeft(true);
+		}
 		if (nChar == KEY_RIGHT)
+		{
 			eraser.SetMovingRight(true);
+			hero.SetMovingRight(true);
+		}
 		if (nChar == KEY_UP)
+		{
 			eraser.SetMovingUp(true);
+			hero.SetMovingUp(true);
+		}
 		if (nChar == KEY_DOWN)
+		{
 			eraser.SetMovingDown(true);
+			hero.SetMovingDown(true);
+		}
 	}
 
 	void CGameStateRun::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -713,13 +791,25 @@ namespace game_framework {
 		const char KEY_RIGHT = 0x27; // keyboard右箭頭
 		const char KEY_DOWN = 0x28; // keyboard下箭頭
 		if (nChar == KEY_LEFT)
+		{
 			eraser.SetMovingLeft(false);
+			hero.SetMovingLeft(false);
+		}
 		if (nChar == KEY_RIGHT)
+		{
 			eraser.SetMovingRight(false);
+			hero.SetMovingRight(false);
+		}
 		if (nChar == KEY_UP)
+		{
 			eraser.SetMovingUp(false);
+			hero.SetMovingUp(false);
+		}
 		if (nChar == KEY_DOWN)
+		{
 			eraser.SetMovingDown(false);
+			hero.SetMovingDown(false);
+		}
 		
 	}
 

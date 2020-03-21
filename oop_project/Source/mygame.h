@@ -91,8 +91,8 @@ public:
 	int  GetX2();					// 右下角 x 座標
 	int  GetY2();					// 右下角 y 座標
 	void Initialize();				// 設定初始值
-	void LoadBitmap();				// 載入圖形
-	void OnMove();					// 移動
+	void LoadBitmap(char*);			// 載入圖形
+	void OnMove(int*, int*);		// 移動
 	void OnShow();					// 將圖形貼到畫面
 	void SetMovingDown(bool flag);	// 設定是否正在往下移動
 	void SetMovingLeft(bool flag);	// 設定是否正在往左移動
@@ -119,12 +119,25 @@ class CHero
 public:
 	CHero();
 	void LoadBitmap();
+	void Initialize();
 	void OnShow();
 	void OnMove();
-	
+	void SetMovingDown(bool flag);	// 設定是否正在往下移動
+	void SetMovingLeft(bool flag);	// 設定是否正在往左移動
+	void SetMovingRight(bool flag); // 設定是否正在往右移動
+	void SetMovingUp(bool flag);	// 設定是否正在往上移動
+	void getXY();
+
 private:
-	CAnimation heroStand;
+	CMove heroStand;
+	CMove heroMoveLR; 
+	CMove heroMoveUD;
+	bool isMovingDown;				//下動
+	bool isMovingUp;				//上動
+	bool isMovingLeft;				//左動
+	bool isMovingRight;				//右動
 	int floor;
+	int x, y;
 	
 
 };
