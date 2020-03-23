@@ -79,22 +79,25 @@ namespace game_framework {
 		x = ini_x;
 		y = ini_y;
 		floor = 450;
+		isMovingDown = isMovingLeft = isMovingRight = isMovingUp = false;
 	}
 
 	void CHero::LoadBitmap()
 	{
-		char *filename[4] = { ".\\image\\108.bmp",".\\image\\109.bmp",".\\image\\110.bmp",".\\image\\111.bmp" };
-		for (int i = 0; i < 4; i++)	// 載入動畫(由4張圖形構成)
+		char *filestand[4] = { ".\\image\\108.bmp",".\\image\\109.bmp",".\\image\\110.bmp",".\\image\\111.bmp" };
+		char *filemoveL[] = { ".\\image\\moveL\\1.bmp",".\\image\\moveL\\2.bmp",".\\image\\moveL\\3.bmp" , ".\\image\\moveL\\4.bmp" };
+		heroStand.LoadBitmap(".\\image\\test.bmp");
+		for (int i = 0; i < 4; i++)	// 載入動畫
 		{
-			heroStand.LoadBitmap(filename[i]);
-			heroMoveLR.LoadBitmap(filename[i]);
-			heroMoveUD.LoadBitmap(filename[i]);
+			
+			heroMoveUD.LoadBitmap(filestand[i]);
 		}
+		for (int i = 0; i < 4; i++) heroMoveLR.LoadBitmap(filemoveL[i]);
 	}
 
 	void CHero::OnMove()
 	{
-		heroStand.OnMove(&x, &y);
+		//heroStand.OnMove(&x, &y);		//不需要
 		heroMoveLR.OnMove(&x, &y);
 		heroMoveUD.OnMove(&x, &y);
 	}
@@ -434,12 +437,13 @@ namespace game_framework {
 
 	void CMove::LoadBitmap(char *file)
 	{
-		animation.AddBitmap(file, RGB(0, 0, 0));
+		//animation.AddBitmap(file, RGB(0, 0, 0));
+		animation.AddBitmap(file, RGB(0, 0, 255));
 	}
 
 	void CMove::OnMove(int* nx, int* ny)
 	{
-		const int step = 15;
+		const int step = 5;
 		x = *nx;
 		y = *ny;
 		animation.OnMove();
@@ -447,9 +451,11 @@ namespace game_framework {
 			x -= step;
 		if (isMovingRight)
 			x += step;
-		if (isMovingUp)
+		if (isMovingUp)			//只有跳躍
+		{
 			y -= step;
-		if (isMovingDown)
+		}
+		if (isMovingDown)		//墜落
 		{
 			if(y+step<=450)
 				y += step;
@@ -758,10 +764,12 @@ namespace game_framework {
 
 	void CGameStateRun::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	{
-		const char KEY_LEFT = 0x25; // keyboard左箭頭
-		const char KEY_UP = 0x26; // keyboard上箭頭
-		const char KEY_RIGHT = 0x27; // keyboard右箭頭
-		const char KEY_DOWN = 0x28; // keyboard下箭頭
+		const char KEY_LEFT = 0x25;		// keyboard左箭頭
+		const char KEY_UP = 0x26;		// keyboard上箭頭
+		const char KEY_RIGHT = 0x27;	// keyboard右箭頭
+		const char KEY_DOWN = 0x28;		// keyboard下箭頭
+		const char KEY_A = 0x41;		// keyboard a
+		const char KEY_S = 0x53;		// keyboard s
 		if (nChar == KEY_LEFT)
 		{
 			eraser.SetMovingLeft(true);
@@ -813,6 +821,7 @@ namespace game_framework {
 		
 	}
 
+#pragma region OnButton
 	void CGameStateRun::OnLButtonDown(UINT nFlags, CPoint point)  // 處理滑鼠的動作
 	{
 		eraser.SetMovingLeft(true);
@@ -837,6 +846,7 @@ namespace game_framework {
 	{
 		eraser.SetMovingRight(false);
 	}
+#pragma endregion
 
 	void CGameStateRun::OnShow()
 	{
