@@ -74,76 +74,128 @@ namespace game_framework {
 
 	void CHero::Initialize()
 	{
-		const int ini_x = 200;
-		const int ini_y = 450;
+		const int ini_x = 200;		//5121
+		const int ini_y = 450;		//721
 		x = ini_x;
 		y = ini_y;
 		floor = 450;
-		isMovingDown = isMovingLeft = isMovingRight = isMovingUp = false;
+		isFalling = isRising = isMovingDown = isMovingLeft = isMovingRight = isMovingUp = isShooting = false;
 	}
 
 	void CHero::LoadBitmap()
 	{
-		char *filestand[4] = { ".\\image\\108.bmp",".\\image\\109.bmp",".\\image\\110.bmp",".\\image\\111.bmp" };
-		char *filemoveL[] = { ".\\image\\moveL\\1.bmp",".\\image\\moveL\\2.bmp",".\\image\\moveL\\3.bmp" , ".\\image\\moveL\\4.bmp" };
-		heroStand.LoadBitmap(".\\image\\test.bmp");
-		for (int i = 0; i < 4; i++)	// 載入動畫
+		char *filestand[] = { ".\\image\\108.bmp"};
+		char *filemoveL[] = { ".\\image\\moveL\\left1.bmp",".\\image\\moveL\\left2.bmp",".\\image\\moveL\\left3.bmp" , ".\\image\\moveL\\left4.bmp" };
+		char *filemoveR[] = { ".\\image\\moveR\\right1.bmp",".\\image\\moveR\\right2.bmp",".\\image\\moveR\\right3.bmp" , ".\\image\\moveR\\right4.bmp" };
+		char *fileRise[] = { ".\\image\\jumpL\\left1.bmp",".\\image\\jumpL\\left2.bmp",".\\image\\jumpL\\left3.bmp",".\\image\\jumpL\\left4.bmp",".\\image\\jumpL\\left5.bmp",
+			".\\image\\jumpL\\left6.bmp",".\\image\\jumpL\\left7.bmp",".\\image\\jumpL\\left8.bmp",".\\image\\jumpL\\left9.bmp",".\\image\\jumpL\\left10.bmp" };
+		char *fileFall[] = { ".\\image\\jumpL\\left12-1.bmp" };
+
+		#pragma region 動畫載入
+
+		heroStand.LoadBitmap(filestand[0]);
+		//heroMoveUD.LoadBitmap(filestand[0]);
+		for (int i = 0; i < 4; i++)
 		{
-			
-			heroMoveUD.LoadBitmap(filestand[i]);
+			heroMoveL.LoadBitmap(filemoveL[i]);
+			heroMoveR.LoadBitmap(filemoveR[i]);
 		}
-		for (int i = 0; i < 4; i++) heroMoveLR.LoadBitmap(filemoveL[i]);
+		for (int i = 0; i < 10; i+=2)
+		{
+			heroJump.LoadBitmap_Rise(fileRise[i]);
+			heroMoveUD.LoadBitmap(fileRise[i]);
+		}
+		heroJump.LoadBitmap_Fall(fileFall[0]);
+
+		#pragma endregion
+		
 	}
 
 	void CHero::OnMove()
 	{
-		//heroStand.OnMove(&x, &y);		//不需要
-		heroMoveLR.OnMove(&x, &y);
+		heroStand.OnMove(&x, &y);		//不需要
+		heroMoveL.OnMove(&x, &y);
+		heroMoveR.OnMove(&x, &y);
+		isFalling = heroJump.OnMove(&x, &y);
+		heroJump.OnMove(&x, &y);
 		heroMoveUD.OnMove(&x, &y);
 	}
 
 	void CHero::OnShow()
 	{
-		if(!(isMovingDown || isMovingLeft || isMovingRight || isMovingUp))
+		
+		#pragma region SetXY
+		if (isRising || isFalling) heroJump.SetXY(x, y);
+		if (isMovingLeft) heroMoveL.SetXY(x, y);
+		if (isMovingRight) heroMoveR.SetXY(x, y);
+		if (isMovingDown || isMovingUp) heroMoveUD.SetXY(x, y);
+		#pragma endregion
+
+		#pragma region OnShow
+		if (isRising||isFalling)
 		{
-			heroStand.SetXY(x, y);
-			heroStand.OnShow();
+			if(isRising) heroJump.OnShow_Rise();
+			else if(isFalling) heroJump.OnShow_Fall();
 		}
-		if (isMovingLeft || isMovingRight)
+		else if (isMovingLeft)
 		{
-			heroMoveLR.SetXY(x, y);
-			heroMoveLR.OnShow();
+			heroMoveL.OnShow();
 		}
-		if (isMovingDown || isMovingUp)
+		else if (isMovingRight)
 		{
-			heroMoveUD.SetXY(x, y);
+			heroMoveR.OnShow();
+		}
+		else if (isMovingDown || isMovingUp)
+		{
 			heroMoveUD.OnShow();
 		}
+		if(!(isMovingDown || isMovingLeft || isMovingRight || isMovingUp))
+		{
+			heroStand.OnShow();
+		}
+
+		#pragma endregion
+
 	}
 
-	void CHero::SetMovingDown(bool flag)
-	{
-		isMovingDown = flag;
-		heroMoveUD.SetMovingDown(flag);
-	}
+	#pragma region SetState
+		void CHero::SetRising(bool flag)
+		{
+			isRising = flag;
+			heroJump.SetRising(flag);
+		}
+
+		void CHero::SetMovingDown(bool flag)
+		{
+			isMovingDown = flag;
+			heroMoveUD.SetMovingDown(flag);
+		}
 	
-	void CHero::SetMovingUp(bool flag)
-	{
-		isMovingUp = flag;
-		heroMoveUD.SetMovingUp(flag);
-	}
+		void CHero::SetMovingUp(bool flag)
+		{
+			isMovingUp = flag;
+			heroMoveUD.SetMovingUp(flag);
+		}
 
-	void CHero::SetMovingLeft(bool flag)
-	{
-		isMovingLeft = flag;
-		heroMoveLR.SetMovingLeft(flag);
-	}
+		void CHero::SetMovingLeft(bool flag)
+		{
+			isMovingLeft = flag;
+			heroMoveL.SetMovingLeft(flag);
+		}
 
-	void CHero::SetMovingRight(bool flag)
-	{
-		isMovingRight = flag;
-		heroMoveLR.SetMovingRight(flag);
-	}
+		void CHero::SetMovingRight(bool flag)
+		{
+			isMovingRight = flag;
+			heroMoveR.SetMovingRight(flag);
+		}
+
+		void CHero::SetShooting(bool flag)
+		{
+			isShooting = flag;
+		}
+	#pragma endregion
+
+	
 
 	//CHero
 #pragma endregion
@@ -408,11 +460,11 @@ namespace game_framework {
 
 	void CMove::Initialize()
 	{
-		const int x_pos = 200;
-		const int y_pos = 450;
+		const int x_pos = 200;			//預設x位置
+		const int y_pos = 450;			//預設y位置
 		x = x_pos;
 		y = y_pos;
-		isMovingDown = isMovingLeft = isMovingRight = isMovingUp = false;
+		isRising = isMovingDown = isMovingLeft = isMovingRight = isMovingUp = false;
 	}
 
 	int CMove::GetX1()
@@ -437,7 +489,6 @@ namespace game_framework {
 
 	void CMove::LoadBitmap(char *file)
 	{
-		//animation.AddBitmap(file, RGB(0, 0, 0));
 		animation.AddBitmap(file, RGB(0, 0, 255));
 	}
 
@@ -451,11 +502,11 @@ namespace game_framework {
 			x -= step;
 		if (isMovingRight)
 			x += step;
-		if (isMovingUp)			//只有跳躍
+		if (isMovingUp)			//上看
 		{
 			y -= step;
 		}
-		if (isMovingDown)		//墜落
+		if (isMovingDown)		//下蹲
 		{
 			if(y+step<=450)
 				y += step;
@@ -490,6 +541,11 @@ namespace game_framework {
 		isMovingRight = flag;
 	}
 
+	void CMove::SetRising(bool flag)
+	{
+		isRising = flag;
+	}
+
 	void CMove::OnShow()
 	{
 		animation.SetTopLeft(x, y);
@@ -497,6 +553,92 @@ namespace game_framework {
 	}
 	//CMove
 #pragma endregion
+
+#pragma region CJump
+
+	CJump::CJump()
+	{
+		Initialize();
+	}
+
+	void CJump::Initialize()
+	{
+		const int FLOOR = 450;			//地板高度
+		const int INI_VELOCITY = 75;	//初速
+		floor = FLOOR;
+		velocity = ini_velocity = INI_VELOCITY;
+		isRising = isFalling = false;
+	}
+
+	void CJump::LoadBitmap_Fall(char* file)
+	{
+		CFall.AddBitmap(file, RGB(0, 0, 255));
+	}
+
+	void CJump::LoadBitmap_Rise(char* file)
+	{
+		CRise.AddBitmap(file, RGB(0, 0, 255));
+	}
+
+	void CJump::SetRising(bool flag)
+	{
+		isRising = flag;
+	}
+
+	bool CJump::OnMove(int *nx, int *ny)	//回傳isFalling的狀態
+	{
+		x = *nx;
+		y = *ny;
+		if (isRising)
+		{
+			CRise.OnMove();
+			if (velocity > 0)
+			{
+				*ny -= velocity;
+				velocity--;
+			}
+			else
+			{
+				isRising = false;		//升到最高點要轉為下降
+				isFalling = true;		//轉成下降
+				velocity = 1;			//下降初速度
+			}
+		}
+		else if(isFalling)
+		{
+			CFall.OnMove();
+			if (*ny + velocity <= floor)
+			{
+				*ny += velocity;
+				velocity++;
+			}
+			else
+			{
+				*ny = floor - 1;
+				isFalling = false;
+				velocity = ini_velocity;
+			}
+		}
+		*nx = x;
+		*ny = y;
+		return isFalling;
+	}
+
+	void CJump::OnShow_Rise()
+	{
+		CRise.SetTopLeft(x, y);
+		CRise.OnShow();
+	}
+
+	void CJump::OnShow_Fall()
+	{
+		CFall.SetTopLeft(x, y);
+		CFall.OnShow();
+	}
+
+	//CJump
+#pragma endregion
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -790,14 +932,26 @@ namespace game_framework {
 			eraser.SetMovingDown(true);
 			hero.SetMovingDown(true);
 		}
+		if (nChar == KEY_A)
+		{
+			hero.SetShooting(true);
+		}
+		if (nChar == KEY_S)
+		{
+			hero.SetRising(true);
+		}
+
 	}
 
 	void CGameStateRun::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 	{
-		const char KEY_LEFT = 0x25; // keyboard左箭頭
-		const char KEY_UP = 0x26; // keyboard上箭頭
-		const char KEY_RIGHT = 0x27; // keyboard右箭頭
-		const char KEY_DOWN = 0x28; // keyboard下箭頭
+		const char KEY_LEFT = 0x25;		// keyboard左箭頭
+		const char KEY_UP = 0x26;		// keyboard上箭頭
+		const char KEY_RIGHT = 0x27;	// keyboard右箭頭
+		const char KEY_DOWN = 0x28;		// keyboard下箭頭
+		const char KEY_A = 0x41;		//keyboard A
+		const char KEY_S = 0x53;		//keyboard s
+
 		if (nChar == KEY_LEFT)
 		{
 			eraser.SetMovingLeft(false);
@@ -818,7 +972,10 @@ namespace game_framework {
 			eraser.SetMovingDown(false);
 			hero.SetMovingDown(false);
 		}
-		
+		if (nChar == KEY_A)
+		{
+			hero.SetShooting(false);
+		}
 	}
 
 #pragma region OnButton

@@ -98,6 +98,7 @@ public:
 	void SetMovingLeft(bool flag);	// 設定是否正在往左移動
 	void SetMovingRight(bool flag); // 設定是否正在往右移動
 	void SetMovingUp(bool flag);	// 設定是否正在往上移動
+	void SetRising(bool flag);
 	void SetXY(int nx, int ny);		// 設定左上角座標
 
 private:
@@ -107,6 +108,33 @@ private:
 	bool isMovingUp;				//上動
 	bool isMovingLeft;				//左動
 	bool isMovingRight;				//右動
+	bool isRising;
+	bool isShooting;
+	int floor;						//地板高度
+	int velocity, ini_velocity;		//速度(上升、下降)
+
+};
+
+class CJump : public CMove			//只處理上升下降
+{
+public:
+	CJump();
+	void Initialize();
+	bool OnMove(int*, int*);		//回傳isFall的狀態
+	void LoadBitmap_Rise(char*);
+	void LoadBitmap_Fall(char*);
+	void OnShow_Rise();
+	void OnShow_Fall();
+	void SetRising(bool flag);
+
+private:
+	CAnimation CRise;
+	CAnimation CFall;
+	bool isRising;
+	bool isFalling;
+	int x, y;
+	int floor;
+	int velocity, ini_velocity;
 
 };
 
@@ -122,20 +150,28 @@ public:
 	void Initialize();
 	void OnShow();
 	void OnMove();
-	void SetMovingDown(bool flag);	// 設定是否正在往下移動
+	void SetMovingDown(bool flag);	// 設定是否正在落下
 	void SetMovingLeft(bool flag);	// 設定是否正在往左移動
 	void SetMovingRight(bool flag); // 設定是否正在往右移動
-	void SetMovingUp(bool flag);	// 設定是否正在往上移動
+	void SetMovingUp(bool flag);	// 設定是否正在跳躍
+	void SetShooting(bool flag);	// 設定是否攻擊
+	void SetRising(bool flag);
+	//void SetFalling(bool flag);
 	void getXY();
 
 private:
 	CMove heroStand;
-	CMove heroMoveLR; 
+	CMove heroMoveL; 
+	CMove heroMoveR;
+	CJump heroJump;
 	CMove heroMoveUD;
-	bool isMovingDown;				//下動
-	bool isMovingUp;				//上動
+	bool isRising;					//上升
+	bool isFalling;					//墜落
+	bool isMovingDown;				//下蹲、下看
+	bool isMovingUp;				//上看
 	bool isMovingLeft;				//左動
 	bool isMovingRight;				//右動
+	bool isShooting;				//攻擊
 	int floor;
 	int x, y;
 	
