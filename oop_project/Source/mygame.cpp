@@ -564,7 +564,7 @@ namespace game_framework {
 	void CJump::Initialize()
 	{
 		const int FLOOR = 450;			//地板高度
-		const int INI_VELOCITY = 75;	//初速
+		const int INI_VELOCITY = 20;	//初速
 		floor = FLOOR;
 		velocity = ini_velocity = INI_VELOCITY;
 		isRising = isFalling = false;
@@ -589,12 +589,13 @@ namespace game_framework {
 	{
 		x = *nx;
 		y = *ny;
+		//此處有Bug在還沒掉到floor的時候重新跳躍,會直接在跳起來，並且速度會根據你落下的速度繼續增加。
 		if (isRising)
 		{
 			CRise.OnMove();
 			if (velocity > 0)
 			{
-				*ny -= velocity;
+				y -= velocity;
 				velocity--;
 			}
 			else
@@ -606,15 +607,15 @@ namespace game_framework {
 		}
 		else if(isFalling)
 		{
-			CFall.OnMove();
-			if (*ny + velocity <= floor)
+			//CFall.OnMove();
+			if (y + velocity <= floor)
 			{
-				*ny += velocity;
+				y += velocity;
 				velocity++;
 			}
 			else
 			{
-				*ny = floor - 1;
+				y = floor - 1;
 				isFalling = false;
 				velocity = ini_velocity;
 			}
