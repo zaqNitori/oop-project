@@ -76,6 +76,8 @@ namespace game_framework {
 	{
 		const int ini_x = 200;		//5121
 		const int ini_y = 450;		//721
+		heroX = ini_x;
+		heroY=
 		x = ini_x;
 		y = ini_y;
 		floor = 450;
@@ -89,7 +91,7 @@ namespace game_framework {
 		char *filemoveR[] = { ".\\image\\moveR\\right1.bmp",".\\image\\moveR\\right2.bmp",".\\image\\moveR\\right3.bmp" , ".\\image\\moveR\\right4.bmp" };
 		char *fileRise[] = { ".\\image\\jumpL\\left1.bmp",".\\image\\jumpL\\left2.bmp",".\\image\\jumpL\\left3.bmp",".\\image\\jumpL\\left4.bmp",".\\image\\jumpL\\left5.bmp",
 			".\\image\\jumpL\\left6.bmp",".\\image\\jumpL\\left7.bmp",".\\image\\jumpL\\left8.bmp",".\\image\\jumpL\\left9.bmp",".\\image\\jumpL\\left10.bmp" };
-		char *fileFall[] = { ".\\image\\jumpL\\left12-1.bmp" };
+		char *fileFall[] = { ".\\image\\jumpL\\left12-1.bmp" , ".\\image\\jumpL\\left12-2.bmp" };
 
 		#pragma region 動畫載入
 
@@ -105,7 +107,8 @@ namespace game_framework {
 			heroJump.LoadBitmap_Rise(fileRise[i]);
 			heroMoveUD.LoadBitmap(fileRise[i]);
 		}
-		heroJump.LoadBitmap_Fall(fileFall[0]);
+		for(int i=0;i<2;i++)
+			heroJump.LoadBitmap_Fall(fileFall[i]);
 
 		#pragma endregion
 		
@@ -114,10 +117,11 @@ namespace game_framework {
 	void CHero::OnMove()
 	{
 		heroStand.OnMove(&x, &y);		//不需要
+
 		heroMoveL.OnMove(&x, &y);
 		heroMoveR.OnMove(&x, &y);
 		isFalling = heroJump.OnMove(&x, &y);
-		heroJump.OnMove(&x, &y);
+		if (isFalling) isRising = false;
 		heroMoveUD.OnMove(&x, &y);
 	}
 
@@ -132,10 +136,11 @@ namespace game_framework {
 		#pragma endregion
 
 		#pragma region OnShow
+		
 		if (isRising||isFalling)
 		{
 			if(isRising) heroJump.OnShow_Rise();
-			else if(isFalling) heroJump.OnShow_Fall();
+			if(isFalling) heroJump.OnShow_Fall();
 		}
 		else if (isMovingLeft)
 		{
@@ -149,7 +154,7 @@ namespace game_framework {
 		{
 			heroMoveUD.OnShow();
 		}
-		if(!(isMovingDown || isMovingLeft || isMovingRight || isMovingUp))
+		else if(!(isMovingDown || isMovingLeft || isMovingRight || isMovingUp))
 		{
 			heroStand.OnShow();
 		}
@@ -158,11 +163,15 @@ namespace game_framework {
 
 	}
 
-	#pragma region SetState
+		#pragma region SetState
+
 		void CHero::SetRising(bool flag)
 		{
-			isRising = flag;
-			heroJump.SetRising(flag);
+			if (!(isFalling))
+			{
+				isRising = flag;
+				heroJump.SetRising(flag);
+			}
 		}
 
 		void CHero::SetMovingDown(bool flag)
@@ -291,6 +300,68 @@ namespace game_framework {
 	}
 
 	//CBall
+#pragma endregion
+
+/////////////////////////////////////////////////////////////////////////////
+// CGameMap: GameMap class
+/////////////////////////////////////////////////////////////////////////////
+
+#pragma region CGameMap
+
+	CGameMap::CGameMap()
+	{
+		Initialize();
+	}
+
+	void CGameMap::Initialize()
+	{
+		x = 0;
+		y = SIZE_Y - 721;
+		isMovingLeft = isMovingRight = false;
+	}
+
+	void CGameMap::LoadBitmap()
+	{
+		map.AddBitmap(IDB_GameMap);
+	}
+
+	void CGameMap::OnMove()
+	{
+		int step = 10;
+		if (isMovingLeft)
+		{
+			if (x + step <= 0) x += step;
+			else x = 0;
+		}
+		if (isMovingRight)
+		{
+			if (x + SIZE_X + step >= 0) x -= step;
+			else x = map.Width() - SIZE_X;
+		}
+	}
+
+	void CGameMap::OnShow()
+	{
+		map.SetTopLeft(x, y);
+		map.OnShow();
+	}
+
+#pragma region SetState
+
+	void CGameMap::SetMovingLeft(bool flag)
+	{
+		isMovingLeft = flag;
+	}
+
+	void CGameMap::SetMovingRight(bool flag)
+	{
+		isMovingRight = flag;
+	}
+
+#pragma endregion
+
+
+	//CGameMap
 #pragma endregion
 
 
@@ -494,7 +565,7 @@ namespace game_framework {
 
 	void CMove::OnMove(int* nx, int* ny)
 	{
-		const int step = 5;
+		const int step = 10;
 		x = *nx;
 		y = *ny;
 		animation.OnMove();
@@ -564,7 +635,7 @@ namespace game_framework {
 	void CJump::Initialize()
 	{
 		const int FLOOR = 450;			//地板高度
-		const int INI_VELOCITY = 20;	//初速
+		const int INI_VELOCITY = 28;	//初速
 		floor = FLOOR;
 		velocity = ini_velocity = INI_VELOCITY;
 		isRising = isFalling = false;
@@ -589,14 +660,13 @@ namespace game_framework {
 	{
 		x = *nx;
 		y = *ny;
-		//此處有Bug在還沒掉到floor的時候重新跳躍,會直接在跳起來，並且速度會根據你落下的速度繼續增加。
 		if (isRising)
 		{
 			CRise.OnMove();
 			if (velocity > 0)
 			{
 				y -= velocity;
-				velocity--;
+				velocity-=2;
 			}
 			else
 			{
@@ -607,11 +677,11 @@ namespace game_framework {
 		}
 		else if(isFalling)
 		{
-			//CFall.OnMove();
+			CFall.OnMove();
 			if (y + velocity <= floor)
 			{
 				y += velocity;
-				velocity++;
+				velocity+=2;
 			}
 			else
 			{
@@ -811,7 +881,9 @@ namespace game_framework {
 		}
 		eraser.Initialize();
 		hero.Initialize();
-		background.SetTopLeft(0, SIZE_Y-background.Height());		// 設定背景的起始座標
+		gameMap.LoadBitmap();
+		gameMap.Initialize();
+		//background.SetTopLeft(0, SIZE_Y-background.Height());		// 設定背景的起始座標
 		help.SetTopLeft(0, SIZE_Y - help.Height());			// 設定說明圖的起始座標
 		hits_left.SetInteger(HITS_LEFT);					// 指定剩下的撞擊數
 		hits_left.SetTopLeft(HITS_LEFT_X, HITS_LEFT_Y);		// 指定剩下撞擊數的座標
@@ -830,10 +902,6 @@ namespace game_framework {
 		// 移動背景圖的座標
 		//
 
-		/*if (background.Top() > SIZE_Y)
-			background.SetTopLeft(60, -background.Height());
-		background.SetTopLeft(background.Left(), background.Top() + 1);*/
-
 		//
 		// 移動球
 		//
@@ -843,7 +911,9 @@ namespace game_framework {
 		//
 		// 移動擦子
 		//
+		gameMap.OnMove();
 		eraser.OnMove();
+
 		hero.OnMove();
 		//
 		// 判斷擦子是否碰到球
@@ -882,7 +952,7 @@ namespace game_framework {
 		for (i = 0; i < NUMBALLS; i++)
 			ball[i].LoadBitmap();								// 載入第i個球的圖形
 		eraser.LoadBitmap();
-		background.LoadBitmap(IDB_GameMap);					// 載入背景的圖形
+		//background.LoadBitmap(IDB_GameMap);					// 載入背景的圖形
 		//
 		// 完成部分Loading動作，提高進度
 		//
@@ -893,7 +963,7 @@ namespace game_framework {
 		//
 		help.LoadBitmap(IDB_HELP, RGB(255, 255, 255));				// 載入說明的圖形
 		corner.LoadBitmap(IDB_CORNER);							// 載入角落圖形
-		corner.ShowBitmap(background);							// 將corner貼到background
+		//corner.ShowBitmap(background);							// 將corner貼到background
 		bball.LoadBitmap();										// 載入圖形
 		hero.LoadBitmap();
 		hits_left.LoadBitmap();
@@ -917,11 +987,13 @@ namespace game_framework {
 		{
 			eraser.SetMovingLeft(true);
 			hero.SetMovingLeft(true);
+			gameMap.SetMovingLeft(true);
 		}
 		if (nChar == KEY_RIGHT)
 		{
 			eraser.SetMovingRight(true);
 			hero.SetMovingRight(true);
+			gameMap.SetMovingRight(true);
 		}
 		if (nChar == KEY_UP)
 		{
@@ -957,11 +1029,13 @@ namespace game_framework {
 		{
 			eraser.SetMovingLeft(false);
 			hero.SetMovingLeft(false);
+			gameMap.SetMovingLeft(false);
 		}
 		if (nChar == KEY_RIGHT)
 		{
 			eraser.SetMovingRight(false);
 			hero.SetMovingRight(false);
+			gameMap.SetMovingRight(false);
 		}
 		if (nChar == KEY_UP)
 		{
@@ -1016,7 +1090,8 @@ namespace game_framework {
 		//
 		//  貼上背景圖、撞擊數、球、擦子、彈跳的球
 		//
-		background.ShowBitmap();			// 貼上背景圖
+		//background.ShowBitmap();			// 貼上背景圖
+		gameMap.OnShow();
 		help.ShowBitmap();					// 貼上說明圖
 		hits_left.ShowBitmap();
 		for (int i = 0; i < NUMBALLS; i++)

@@ -172,7 +172,9 @@ private:
 	bool isMovingLeft;				//左動
 	bool isMovingRight;				//右動
 	bool isShooting;				//攻擊
+	int direction;					//角色面向
 	int floor;
+	int heroX, heroY;				//角色在地圖的座標
 	int x, y;
 	
 
@@ -185,16 +187,22 @@ private:
 // 
 /////////////////////////////////////////////////////////////////////////////
 
-class CGameBackground
+class CGameMap
 {
 public:
-	CGameBackground();
+	CGameMap();
+	void Initialize();
+	void OnMove();
 	void LoadBitmap();
 	void OnShow();
-	void setTopLeft(int,int);
+	void SetMovingLeft(bool flag);
+	void SetMovingRight(bool flag);
 
 private:
-	CMovingBitmap GameMap;
+	CAnimation map;
+	bool isMovingLeft;
+	bool isMovingRight;
+	int x, y;
 
 };
 
@@ -310,7 +318,7 @@ protected:
 	void OnShow();									// 顯示這個狀態的遊戲畫面
 private:
 	const int		NUMBALLS;	// 球的總數
-	CMovingBitmap	background;	// 背景圖
+	//CMovingBitmap	background;	// 背景圖
 	CMovingBitmap	help;		// 說明圖
 	CBall			*ball;		// 球的陣列
 	CMovingBitmap	corner;		// 角落圖
@@ -319,6 +327,7 @@ private:
 	CBouncingBall   bball;		// 反覆彈跳的球
 	
 	CHero hero;
+	CGameMap gameMap;
 };
 
 /////////////////////////////////////////////////////////////////////////////

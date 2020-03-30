@@ -218,7 +218,7 @@ protected:
 
 class CAnimation {
 public:
-	CAnimation(int=5);				// Constructor (預設動畫播放頻率每1/3秒換一張圖)
+	CAnimation(int=3);				// Constructor (預設動畫播放頻率每1/3秒換一張圖)
 	void  AddBitmap(int,COLORREF=CLR_INVALID);
 									// 增加一張圖形至動畫(圖的編號及透明色)
 	void  AddBitmap(char *,COLORREF=CLR_INVALID);
