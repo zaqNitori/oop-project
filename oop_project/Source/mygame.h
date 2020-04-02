@@ -99,6 +99,7 @@ public:
 	void SetMovingRight(bool flag); // 設定是否正在往右移動
 	void SetMovingUp(bool flag);	// 設定是否正在往上移動
 	void SetRising(bool flag);
+	void SetDirection(int);
 	void SetXY(int nx, int ny);		// 設定左上角座標
 
 private:
@@ -108,10 +109,11 @@ private:
 	bool isMovingUp;				//上動
 	bool isMovingLeft;				//左動
 	bool isMovingRight;				//右動
-	bool isRising;
-	bool isShooting;
+	bool isRising;					//正在上升 
+	bool isShooting;				//正在下降
 	int floor;						//地板高度
 	int velocity, ini_velocity;		//速度(上升、下降)
+	int direction, dir_horizontal;	//按鍵方向、前一個水平方向
 
 };
 
@@ -121,20 +123,26 @@ public:
 	CJump();
 	void Initialize();
 	bool OnMove(int*, int*);		//回傳isFall的狀態
-	void LoadBitmap_Rise(char*);
-	void LoadBitmap_Fall(char*);
+	void LoadBitmap_RiseL(char*);
+	void LoadBitmap_RiseR(char*);
+	void LoadBitmap_FallL(char*);
+	void LoadBitmap_FallR(char*);
 	void OnShow_Rise();
 	void OnShow_Fall();
 	void SetRising(bool flag);
+	void SetDirection(int);
 
 private:
-	CAnimation CRise;
-	CAnimation CFall;
-	bool isRising;
-	bool isFalling;
-	int x, y;
-	int floor;
-	int velocity, ini_velocity;
+	CAnimation CRiseL;
+	CAnimation CRiseR;
+	CAnimation CFallL;
+	CAnimation CFallR;
+	bool isRising;					//正在上升
+	bool isFalling;					//正在下降
+	int x, y;						//座標
+	int floor;						//最下方地板
+	int velocity, ini_velocity;		//速度、初速度
+	int direction, dir_horizontal;	//按鍵方向、上一個水平方向
 
 };
 
@@ -156,6 +164,7 @@ public:
 	void SetMovingUp(bool flag);	// 設定是否正在跳躍
 	void SetShooting(bool flag);	// 設定是否攻擊
 	void SetRising(bool flag);
+	void SetDirection(int);			// 設定方向
 	//void SetFalling(bool flag);
 	void getXY();
 
@@ -173,9 +182,9 @@ private:
 	bool isMovingRight;				//右動
 	bool isShooting;				//攻擊
 	int direction;					//角色面向
-	int floor;
+	int floor;						//地板
 	int heroX, heroY;				//角色在地圖的座標
-	int x, y;
+	int x, y;						//角色在螢幕的座標
 	
 
 };
@@ -199,10 +208,13 @@ public:
 	void SetMovingRight(bool flag);
 
 private:
+	void SetFloorRoof();
 	CAnimation map;
 	bool isMovingLeft;
 	bool isMovingRight;
-	int x, y;
+	int floor, roof;
+	int x, y;					//角色螢幕座標
+	int mapX, mapY;				//地圖座標
 
 };
 

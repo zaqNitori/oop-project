@@ -77,7 +77,7 @@ namespace game_framework {
 		const int ini_x = 200;		//5121
 		const int ini_y = 450;		//721
 		heroX = ini_x;
-		heroY=
+		heroY = ini_y;
 		x = ini_x;
 		y = ini_y;
 		floor = 450;
@@ -89,9 +89,12 @@ namespace game_framework {
 		char *filestand[] = { ".\\image\\108.bmp"};
 		char *filemoveL[] = { ".\\image\\moveL\\left1.bmp",".\\image\\moveL\\left2.bmp",".\\image\\moveL\\left3.bmp" , ".\\image\\moveL\\left4.bmp" };
 		char *filemoveR[] = { ".\\image\\moveR\\right1.bmp",".\\image\\moveR\\right2.bmp",".\\image\\moveR\\right3.bmp" , ".\\image\\moveR\\right4.bmp" };
-		char *fileRise[] = { ".\\image\\jumpL\\left1.bmp",".\\image\\jumpL\\left2.bmp",".\\image\\jumpL\\left3.bmp",".\\image\\jumpL\\left4.bmp",".\\image\\jumpL\\left5.bmp",
-			".\\image\\jumpL\\left6.bmp",".\\image\\jumpL\\left7.bmp",".\\image\\jumpL\\left8.bmp",".\\image\\jumpL\\left9.bmp",".\\image\\jumpL\\left10.bmp" };
-		char *fileFall[] = { ".\\image\\jumpL\\left12-1.bmp" , ".\\image\\jumpL\\left12-2.bmp" };
+		char *fileRiseL[] = { ".\\image\\jumpL\\left1.bmp",".\\image\\jumpL\\left3.bmp",".\\image\\jumpL\\left5.bmp",
+			".\\image\\jumpL\\left7.bmp",".\\image\\jumpL\\left9.bmp" };
+		char *fileFallL[] = { ".\\image\\jumpL\\left12-1.bmp" , ".\\image\\jumpL\\left12-2.bmp" };
+		char *fileRiseR[] = { ".\\image\\jumpR\\right1.bmp",".\\image\\jumpR\\right3.bmp",".\\image\\jumpR\\right5.bmp",
+			".\\image\\jumpR\\right7.bmp",".\\image\\jumpR\\right9.bmp" };
+		char *fileFallR[] = { ".\\image\\jumpR\\right12-1.bmp" , ".\\image\\jumpR\\right12-2.bmp" };
 
 		#pragma region 動畫載入
 
@@ -102,13 +105,17 @@ namespace game_framework {
 			heroMoveL.LoadBitmap(filemoveL[i]);
 			heroMoveR.LoadBitmap(filemoveR[i]);
 		}
-		for (int i = 0; i < 10; i+=2)
+		for (int i = 0; i < 5; i++)
 		{
-			heroJump.LoadBitmap_Rise(fileRise[i]);
-			heroMoveUD.LoadBitmap(fileRise[i]);
+			heroJump.LoadBitmap_RiseL(fileRiseL[i]);
+			heroJump.LoadBitmap_RiseR(fileRiseR[i]);
+			heroMoveUD.LoadBitmap(fileRiseL[i]);
 		}
-		for(int i=0;i<2;i++)
-			heroJump.LoadBitmap_Fall(fileFall[i]);
+		for (int i = 0; i < 2; i++)
+		{
+			heroJump.LoadBitmap_FallL(fileFallL[i]);
+			heroJump.LoadBitmap_FallR(fileFallR[i]);
+		}
 
 		#pragma endregion
 		
@@ -165,6 +172,14 @@ namespace game_framework {
 
 		#pragma region SetState
 
+		void CHero::SetDirection(int dir)
+		{
+			direction = dir;
+			heroStand.SetDirection(dir);
+			heroJump.SetDirection(dir);
+			heroMoveUD.SetDirection(dir);
+		}
+		
 		void CHero::SetRising(bool flag)
 		{
 			if (!(isFalling))
@@ -323,19 +338,20 @@ namespace game_framework {
 	void CGameMap::LoadBitmap()
 	{
 		map.AddBitmap(IDB_GameMap);
+		SetFloorRoof();
 	}
 
 	void CGameMap::OnMove()
 	{
-		int step = 10;
+		int step = 15;
 		if (isMovingLeft)
 		{
 			if (x + step <= 0) x += step;
 			else x = 0;
 		}
-		if (isMovingRight)
+		else if (isMovingRight)
 		{
-			if (x + SIZE_X + step >= 0) x -= step;
+			if (x + map.Width() + step >= 0) x -= step;
 			else x = map.Width() - SIZE_X;
 		}
 	}
@@ -347,6 +363,11 @@ namespace game_framework {
 	}
 
 #pragma region SetState
+	void CGameMap::SetFloorRoof()
+	{
+		floor = SIZE_Y - map.Height();
+		roof = 0;
+	}
 
 	void CGameMap::SetMovingLeft(bool flag)
 	{
@@ -535,6 +556,7 @@ namespace game_framework {
 		const int y_pos = 450;			//預設y位置
 		x = x_pos;
 		y = y_pos;
+		direction = dir_horizontal = 1;	//預設方向向左
 		isRising = isMovingDown = isMovingLeft = isMovingRight = isMovingUp = false;
 	}
 
@@ -565,7 +587,7 @@ namespace game_framework {
 
 	void CMove::OnMove(int* nx, int* ny)
 	{
-		const int step = 10;
+		const int step = 0;
 		x = *nx;
 		y = *ny;
 		animation.OnMove();
@@ -584,6 +606,13 @@ namespace game_framework {
 		}
 		*nx = x;
 		*ny = y;
+	}
+#pragma region SetState
+
+	void CMove::SetDirection(int dir)
+	{
+		direction = dir;
+		if (dir < 3) dir_horizontal = dir;
 	}
 
 	void CMove::SetXY(int nx, int ny)
@@ -616,6 +645,7 @@ namespace game_framework {
 	{
 		isRising = flag;
 	}
+#pragma endregion
 
 	void CMove::OnShow()
 	{
@@ -637,24 +667,49 @@ namespace game_framework {
 		const int FLOOR = 450;			//地板高度
 		const int INI_VELOCITY = 28;	//初速
 		floor = FLOOR;
+		direction = dir_horizontal = 1;	//預設方向向左
 		velocity = ini_velocity = INI_VELOCITY;
 		isRising = isFalling = false;
 	}
 
-	void CJump::LoadBitmap_Fall(char* file)
-	{
-		CFall.AddBitmap(file, RGB(0, 0, 255));
-	}
+	#pragma region Loadpicture
+		void CJump::LoadBitmap_FallL(char* file)
+		{
+			CFallL.AddBitmap(file, RGB(0, 0, 255));
+		}
 
-	void CJump::LoadBitmap_Rise(char* file)
-	{
-		CRise.AddBitmap(file, RGB(0, 0, 255));
-	}
+		void CJump::LoadBitmap_RiseL(char* file)
+		{
+			CRiseL.AddBitmap(file, RGB(0, 0, 255));
+		}
 
-	void CJump::SetRising(bool flag)
-	{
-		isRising = flag;
-	}
+		void CJump::LoadBitmap_FallR(char* file)
+		{
+			CFallR.AddBitmap(file, RGB(0, 0, 255));
+		}
+
+		void CJump::LoadBitmap_RiseR(char* file)
+		{
+			CRiseR.AddBitmap(file, RGB(0, 0, 255));
+		}
+	#pragma endregion
+
+
+	#pragma region SetState
+		void CJump::SetRising(bool flag)
+		{
+			isRising = flag;
+		}
+
+		void CJump::SetDirection(int dir)
+		{
+			direction = dir;
+			if (dir < 3) dir_horizontal = dir;
+		}
+
+	#pragma endregion
+
+	
 
 	bool CJump::OnMove(int *nx, int *ny)	//回傳isFalling的狀態
 	{
@@ -662,7 +717,8 @@ namespace game_framework {
 		y = *ny;
 		if (isRising)
 		{
-			CRise.OnMove();
+			if(direction==1) CRiseL.OnMove();
+			else if (direction == 2) CRiseR.OnMove();
 			if (velocity > 0)
 			{
 				y -= velocity;
@@ -677,7 +733,8 @@ namespace game_framework {
 		}
 		else if(isFalling)
 		{
-			CFall.OnMove();
+			if(direction==1) CFallL.OnMove();
+			else if (direction == 2) CFallR.OnMove();
 			if (y + velocity <= floor)
 			{
 				y += velocity;
@@ -697,14 +754,30 @@ namespace game_framework {
 
 	void CJump::OnShow_Rise()
 	{
-		CRise.SetTopLeft(x, y);
-		CRise.OnShow();
+		if (direction == 1)
+		{
+			CRiseL.SetTopLeft(x, y);
+			CRiseL.OnShow();
+		}
+		else if (direction == 2)
+		{
+			CRiseR.SetTopLeft(x, y);
+			CRiseR.OnShow();
+		}
 	}
 
 	void CJump::OnShow_Fall()
 	{
-		CFall.SetTopLeft(x, y);
-		CFall.OnShow();
+		if (direction == 1)
+		{
+			CFallL.SetTopLeft(x, y);
+			CFallL.OnShow();
+		}
+		else if (direction == 2)
+		{
+			CFallR.SetTopLeft(x, y);
+			CFallR.OnShow();
+		}
 	}
 
 	//CJump
@@ -983,27 +1056,33 @@ namespace game_framework {
 		const char KEY_DOWN = 0x28;		// keyboard下箭頭
 		const char KEY_A = 0x41;		// keyboard a
 		const char KEY_S = 0x53;		// keyboard s
+
+		//左1 右2 上3 下4
 		if (nChar == KEY_LEFT)
 		{
 			eraser.SetMovingLeft(true);
 			hero.SetMovingLeft(true);
 			gameMap.SetMovingLeft(true);
+			hero.SetDirection(1);
 		}
 		if (nChar == KEY_RIGHT)
 		{
 			eraser.SetMovingRight(true);
 			hero.SetMovingRight(true);
 			gameMap.SetMovingRight(true);
+			hero.SetDirection(2);
 		}
 		if (nChar == KEY_UP)
 		{
 			eraser.SetMovingUp(true);
 			hero.SetMovingUp(true);
+			hero.SetDirection(3);
 		}
 		if (nChar == KEY_DOWN)
 		{
 			eraser.SetMovingDown(true);
 			hero.SetMovingDown(true);
+			hero.SetDirection(4);
 		}
 		if (nChar == KEY_A)
 		{
