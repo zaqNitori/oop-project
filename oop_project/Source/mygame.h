@@ -112,6 +112,7 @@ private:
 	bool isRising;					//正在上升 
 	bool isShooting;				//正在下降
 	int floor;						//地板高度
+	int step, ini_step;				//移動速度
 	int velocity, ini_velocity;		//速度(上升、下降)
 	int direction, dir_horizontal;	//按鍵方向、前一個水平方向
 
@@ -146,6 +147,35 @@ private:
 
 };
 
+class CCrouch : public CMove		//只處理下蹲相關動作
+{
+public:
+	CCrouch();
+	void Initialize();
+	void OnMove(int*, int*);		//移動控制
+	void LoadBitmap_MoveL(char*);
+	void LoadBitmap_MoveR(char*);
+	void LoadBitmap_StandL(char*);
+	void LoadBitmap_StandR(char*);
+	void OnShow_Move();
+	void OnShow_Stand();
+	void SetDirection(int);
+
+private:
+	CAnimation CMoveL;
+	CAnimation CMoveR;
+	CAnimation CStandL;
+	CAnimation CStandR;
+	bool isMovingLeft;
+	bool isMovingRight;
+	int x, y;						//座標
+	int floor;						//最下方地板
+	int step;
+	int velocity, ini_velocity;		//速度、初速度
+	int direction, dir_horizontal;	//按鍵方向、上一個水平方向
+
+};
+
 /////////////////////////////////////////////////////////////////////////////
 // 這個class提供Hero物件
 // 
@@ -165,14 +195,17 @@ public:
 	void SetShooting(bool flag);	// 設定是否攻擊
 	void SetRising(bool flag);
 	void SetDirection(int);			// 設定方向
+	void ResumeDirection();			// 將方向重新調回左和右
 	//void SetFalling(bool flag);
 	void getXY();
 
 private:
-	CMove heroStand;
+	CMove heroStandL;
+	CMove heroStandR;
 	CMove heroMoveL; 
 	CMove heroMoveR;
 	CJump heroJump;
+	CCrouch heroCrouch;				//下蹲
 	CMove heroMoveUD;
 	bool isRising;					//上升
 	bool isFalling;					//墜落
@@ -182,6 +215,7 @@ private:
 	bool isMovingRight;				//右動
 	bool isShooting;				//攻擊
 	int direction;					//角色面向
+	int dir_horizontal;				//前一次的水平面向
 	int floor;						//地板
 	int heroX, heroY;				//角色在地圖的座標
 	int x, y;						//角色在螢幕的座標

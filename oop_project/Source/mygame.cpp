@@ -81,29 +81,41 @@ namespace game_framework {
 		x = ini_x;
 		y = ini_y;
 		floor = 450;
+		direction = 1;				//預設向左
 		isFalling = isRising = isMovingDown = isMovingLeft = isMovingRight = isMovingUp = isShooting = false;
 	}
 
 	void CHero::LoadBitmap()
 	{
-		char *filestand[] = { ".\\image\\108.bmp"};
-		char *filemoveL[] = { ".\\image\\moveL\\left1.bmp",".\\image\\moveL\\left2.bmp",".\\image\\moveL\\left3.bmp" , ".\\image\\moveL\\left4.bmp" };
-		char *filemoveR[] = { ".\\image\\moveR\\right1.bmp",".\\image\\moveR\\right2.bmp",".\\image\\moveR\\right3.bmp" , ".\\image\\moveR\\right4.bmp" };
-		char *fileRiseL[] = { ".\\image\\jumpL\\left1.bmp",".\\image\\jumpL\\left3.bmp",".\\image\\jumpL\\left5.bmp",
-			".\\image\\jumpL\\left7.bmp",".\\image\\jumpL\\left9.bmp" };
-		char *fileFallL[] = { ".\\image\\jumpL\\left12-1.bmp" , ".\\image\\jumpL\\left12-2.bmp" };
-		char *fileRiseR[] = { ".\\image\\jumpR\\right1.bmp",".\\image\\jumpR\\right3.bmp",".\\image\\jumpR\\right5.bmp",
-			".\\image\\jumpR\\right7.bmp",".\\image\\jumpR\\right9.bmp" };
-		char *fileFallR[] = { ".\\image\\jumpR\\right12-1.bmp" , ".\\image\\jumpR\\right12-2.bmp" };
+	
+	#pragma region fileInput
+		char *filestandL[] = { ".\\image\\stand\\L1.bmp",".\\image\\stand\\L2.bmp",".\\image\\stand\\L3.bmp" , ".\\image\\stand\\L4.bmp" };
+		char *filestandR[] = { ".\\image\\stand\\R1.bmp",".\\image\\stand\\R2.bmp",".\\image\\stand\\R3.bmp" , ".\\image\\stand\\R4.bmp" };
+		char *filemoveL[] = { ".\\image\\move\\L1.bmp",".\\image\\move\\L2.bmp",".\\image\\move\\L3.bmp" , ".\\image\\move\\L4.bmp" };
+		char *filemoveR[] = { ".\\image\\move\\R1.bmp",".\\image\\move\\R2.bmp",".\\image\\move\\R3.bmp" , ".\\image\\move\\R4.bmp" };
+		char *fileRiseL[] = { ".\\image\\jump\\L1.bmp" , ".\\image\\jump\\L2.bmp" , ".\\image\\jump\\L3.bmp" , ".\\image\\jump\\L4.bmp" , ".\\image\\jump\\L5.bmp" };
+		char *fileFallL[] = { ".\\image\\jump\\L7-1.bmp" , ".\\image\\jump\\L7-2.bmp" };
+		char *fileRiseR[] = { ".\\image\\jump\\R1.bmp" , ".\\image\\jump\\R2.bmp" , ".\\image\\jump\\R3.bmp" , ".\\image\\jump\\R4.bmp" , ".\\image\\jump\\R5.bmp" };
+		char *fileFallR[] = { ".\\image\\jump\\R7-1.bmp" , ".\\image\\jump\\R7-2.bmp" };
+		char *fileCrouchL[] = { ".\\image\\crouch\\L1.bmp" };
+		char *fileCrouchR[] = { ".\\image\\crouch\\R1.bmp" };
+		char *fileCrouchMoveL[] = { ".\\image\\crouch\\move\\L1.bmp" , ".\\image\\crouch\\move\\L2.bmp" , ".\\image\\crouch\\move\\L3.bmp" , ".\\image\\crouch\\move\\L4.bmp" };
+		char *fileCrouchMoveR[] = { ".\\image\\crouch\\move\\R1.bmp" , ".\\image\\crouch\\move\\R2.bmp" , ".\\image\\crouch\\move\\R3.bmp" , ".\\image\\crouch\\move\\R4.bmp" };
 
-		#pragma region 動畫載入
+	#pragma endregion
 
-		heroStand.LoadBitmap(filestand[0]);
-		//heroMoveUD.LoadBitmap(filestand[0]);
+	#pragma region 動畫載入
+
+		heroCrouch.LoadBitmap_StandL(fileCrouchL[0]);
+		heroCrouch.LoadBitmap_StandR(fileCrouchR[0]);
 		for (int i = 0; i < 4; i++)
 		{
+			heroStandL.LoadBitmap(filestandL[i]);
+			heroStandR.LoadBitmap(filestandR[i]);
 			heroMoveL.LoadBitmap(filemoveL[i]);
 			heroMoveR.LoadBitmap(filemoveR[i]);
+			heroCrouch.LoadBitmap_MoveL(fileCrouchMoveL[i]);
+			heroCrouch.LoadBitmap_MoveR(fileCrouchMoveR[i]);
 		}
 		for (int i = 0; i < 5; i++)
 		{
@@ -117,19 +129,19 @@ namespace game_framework {
 			heroJump.LoadBitmap_FallR(fileFallR[i]);
 		}
 
-		#pragma endregion
+	#pragma endregion
 		
 	}
 
 	void CHero::OnMove()
 	{
-		heroStand.OnMove(&x, &y);		//不需要
 
 		heroMoveL.OnMove(&x, &y);
 		heroMoveR.OnMove(&x, &y);
 		isFalling = heroJump.OnMove(&x, &y);
 		if (isFalling) isRising = false;
-		heroMoveUD.OnMove(&x, &y);
+		heroCrouch.OnMove(&x, &y);
+		//heroMoveUD.OnMove(&x, &y);
 	}
 
 	void CHero::OnShow()
@@ -139,7 +151,9 @@ namespace game_framework {
 		if (isRising || isFalling) heroJump.SetXY(x, y);
 		if (isMovingLeft) heroMoveL.SetXY(x, y);
 		if (isMovingRight) heroMoveR.SetXY(x, y);
-		if (isMovingDown || isMovingUp) heroMoveUD.SetXY(x, y);
+		if (isMovingDown) heroCrouch.SetXY(x, y);
+		heroStandL.SetXY(x, y);
+		heroStandR.SetXY(x, y);
 		#pragma endregion
 
 		#pragma region OnShow
@@ -149,6 +163,11 @@ namespace game_framework {
 			if(isRising) heroJump.OnShow_Rise();
 			if(isFalling) heroJump.OnShow_Fall();
 		}
+		else if (isMovingDown)
+		{
+			if (isMovingLeft||isMovingRight) heroCrouch.OnShow_Move();
+			else heroCrouch.OnShow_Stand();
+		}
 		else if (isMovingLeft)
 		{
 			heroMoveL.OnShow();
@@ -157,13 +176,10 @@ namespace game_framework {
 		{
 			heroMoveR.OnShow();
 		}
-		else if (isMovingDown || isMovingUp)
-		{
-			heroMoveUD.OnShow();
-		}
 		else if(!(isMovingDown || isMovingLeft || isMovingRight || isMovingUp))
 		{
-			heroStand.OnShow();
+			if (direction == 1) heroStandL.OnShow();
+			else if (direction == 2) heroStandR.OnShow();
 		}
 
 		#pragma endregion
@@ -172,11 +188,24 @@ namespace game_framework {
 
 		#pragma region SetState
 
+		void CHero::ResumeDirection()
+		{
+			direction = dir_horizontal;
+			heroStandL.SetDirection(direction);
+			heroStandR.SetDirection(direction);
+			heroJump.SetDirection(direction);
+			heroMoveUD.SetDirection(direction);
+		}
+
 		void CHero::SetDirection(int dir)
 		{
 			direction = dir;
-			heroStand.SetDirection(dir);
+			if (dir < 3)		//向左或向右
+				dir_horizontal = dir;
+			heroStandL.SetDirection(dir);
+			heroStandR.SetDirection(dir);
 			heroJump.SetDirection(dir);
+			heroCrouch.SetDirection(dir);
 			heroMoveUD.SetDirection(dir);
 		}
 		
@@ -343,7 +372,7 @@ namespace game_framework {
 
 	void CGameMap::OnMove()
 	{
-		int step = 15;
+		int step = 0;
 		if (isMovingLeft)
 		{
 			if (x + step <= 0) x += step;
@@ -556,6 +585,7 @@ namespace game_framework {
 		const int y_pos = 450;			//預設y位置
 		x = x_pos;
 		y = y_pos;
+		step = ini_step = 15;			//預設移動速度
 		direction = dir_horizontal = 1;	//預設方向向左
 		isRising = isMovingDown = isMovingLeft = isMovingRight = isMovingUp = false;
 	}
@@ -587,7 +617,7 @@ namespace game_framework {
 
 	void CMove::OnMove(int* nx, int* ny)
 	{
-		const int step = 0;
+		step = ini_step;
 		x = *nx;
 		y = *ny;
 		animation.OnMove();
@@ -607,6 +637,7 @@ namespace game_framework {
 		*nx = x;
 		*ny = y;
 	}
+
 #pragma region SetState
 
 	void CMove::SetDirection(int dir)
@@ -645,6 +676,7 @@ namespace game_framework {
 	{
 		isRising = flag;
 	}
+	//SetState
 #pragma endregion
 
 	void CMove::OnShow()
@@ -782,6 +814,109 @@ namespace game_framework {
 
 	//CJump
 #pragma endregion
+
+#pragma region CCrouch
+
+	CCrouch::CCrouch()
+	{
+		Initialize();
+	}
+
+	void CCrouch::Initialize()
+	{
+		const int x_pos = 200;	//初始位置
+		const int y_pos = 450;
+		x = x_pos;
+		y = y_pos;
+		step = 10;
+		direction = dir_horizontal = 1;
+	}
+
+	void CCrouch::OnMove(int *nx, int *ny)
+	{
+		x = *nx;
+		y = *ny;
+		if (isMovingLeft)
+		{
+			x -= step;
+			CMoveL.OnMove();
+		}
+		if (isMovingRight)
+		{
+			x += step;
+			CMoveR.OnMove();
+		}
+		*nx = x;
+		*ny = y;
+	}
+
+#pragma region LoadPicture
+
+	void CCrouch::LoadBitmap_MoveL(char* file)
+	{
+		CMoveL.AddBitmap(file, RGB(0, 0, 255));
+	}
+
+	void CCrouch::LoadBitmap_MoveR(char* file)
+	{
+		CMoveR.AddBitmap(file, RGB(0, 0, 255));
+	}
+
+	void CCrouch::LoadBitmap_StandL(char* file)
+	{
+		CStandL.AddBitmap(file, RGB(0, 0, 255));
+	}
+
+	void CCrouch::LoadBitmap_StandR(char* file)
+	{
+		CStandR.AddBitmap(file, RGB(0, 0, 255));
+	}
+
+#pragma endregion
+
+#pragma region OnShow
+
+	void CCrouch::OnShow_Move()
+	{
+		if (direction == 1)
+		{
+			CMoveL.SetTopLeft(x, y);
+			CMoveL.OnShow();
+		}
+		else if (direction == 2)
+		{
+			CMoveR.SetTopLeft(x, y);
+			CMoveR.OnShow();
+		}
+	}
+
+	void CCrouch::OnShow_Stand()
+	{
+		if (dir_horizontal == 1)
+		{
+			CStandL.SetTopLeft(x, y);
+			CStandL.OnShow();
+		}
+		else if (dir_horizontal == 2)
+		{
+			CStandR.SetTopLeft(x, y);
+			CStandR.OnShow();
+
+		}
+	}
+
+#pragma endregion
+
+	void CCrouch::SetDirection(int dir)
+	{
+		direction = dir;
+		if (dir < 3)
+			dir_horizontal = dir;
+	}
+
+	//CCrouch
+#pragma endregion
+
 
 
 
@@ -1120,11 +1255,13 @@ namespace game_framework {
 		{
 			eraser.SetMovingUp(false);
 			hero.SetMovingUp(false);
+			hero.ResumeDirection();
 		}
 		if (nChar == KEY_DOWN)
 		{
 			eraser.SetMovingDown(false);
 			hero.SetMovingDown(false);
+			hero.ResumeDirection();
 		}
 		if (nChar == KEY_A)
 		{
