@@ -372,7 +372,7 @@ namespace game_framework {
 
 	void CGameMap::OnMove()
 	{
-		int step = 0;
+		int step = 10;
 		if (isMovingLeft)
 		{
 			if (x + step <= 0) x += step;
@@ -618,6 +618,7 @@ namespace game_framework {
 	void CMove::OnMove(int* nx, int* ny)
 	{
 		step = ini_step;
+		step = 0;
 		x = *nx;
 		y = *ny;
 		animation.OnMove();
@@ -834,6 +835,7 @@ namespace game_framework {
 
 	void CCrouch::OnMove(int *nx, int *ny)
 	{
+		step = 0;
 		x = *nx;
 		y = *ny;
 		if (isMovingLeft)
@@ -1075,7 +1077,7 @@ namespace game_framework {
 		const int BALL_GAP = 90;
 		const int BALL_XY_OFFSET = 45;
 		const int BALL_PER_ROW = 7;
-		const int HITS_LEFT = 10;
+		const int HITS_LEFT = 50;
 		const int HITS_LEFT_X = 590;
 		const int HITS_LEFT_Y = 0;
 		const int BACKGROUND_X = 0;
@@ -1308,12 +1310,12 @@ namespace game_framework {
 		//
 		//background.ShowBitmap();			// 貼上背景圖
 		gameMap.OnShow();
-		help.ShowBitmap();					// 貼上說明圖
+		/*help.ShowBitmap();					// 貼上說明圖
 		hits_left.ShowBitmap();
 		for (int i = 0; i < NUMBALLS; i++)
 			ball[i].OnShow();				// 貼上第i號球
 		bball.OnShow();						// 貼上彈跳的球
-		eraser.OnShow();					// 貼上擦子
+		eraser.OnShow();					// 貼上擦子*/
 		//
 		//  貼上左上及右下角落的圖
 		//
