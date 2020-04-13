@@ -1,0 +1,6 @@
+moveL
+moveR
+jumpL
+jumpR
+bmp 108~111
+bmp test

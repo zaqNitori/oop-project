@@ -177,6 +177,34 @@ private:
 };
 
 /////////////////////////////////////////////////////////////////////////////
+// 這個class提供背景地圖,並不會移動(不是camera)
+// 
+/////////////////////////////////////////////////////////////////////////////
+
+class CGameMap
+{
+public:
+	CGameMap();
+	void Initialize();
+	void OnMove();						//不該有，不應該處理移動，應該留給Chero處理
+	void LoadBitmap();
+	void OnShow();
+	void setXY(int, int);
+	void SetMovingLeft(bool flag);		//不該有，不需要
+	void SetMovingRight(bool flag);		//不該有，不需要
+
+private:
+	void SetFloorRoof();
+	CAnimation map;
+	bool isMovingLeft;
+	bool isMovingRight;
+	int floor, roof;
+	//int x, y;					//角色螢幕座標
+	int mapX, mapY;				//地圖座標
+
+};
+
+/////////////////////////////////////////////////////////////////////////////
 // 這個class提供Hero物件
 // 
 /////////////////////////////////////////////////////////////////////////////
@@ -188,6 +216,7 @@ public:
 	void Initialize();
 	void OnShow();
 	void OnMove();
+	void SetGameMap(CGameMap*);
 	void SetMovingDown(bool flag);	// 設定是否正在落下
 	void SetMovingLeft(bool flag);	// 設定是否正在往左移動
 	void SetMovingRight(bool flag); // 設定是否正在往右移動
@@ -207,6 +236,7 @@ private:
 	CJump heroJump;
 	CCrouch heroCrouch;				//下蹲
 	CMove heroMoveUD;
+	CGameMap *gameMap;				
 	bool isRising;					//上升
 	bool isFalling;					//墜落
 	bool isMovingDown;				//下蹲、下看
@@ -217,38 +247,9 @@ private:
 	int direction;					//角色面向
 	int dir_horizontal;				//前一次的水平面向
 	int floor;						//地板
-	int heroX, heroY;				//角色在地圖的座標
+	int mapX, mapY;					//地圖的座標
 	int x, y;						//角色在螢幕的座標
 	
-
-};
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-// 這個class提供背景地圖,並不會移動(不是camera)
-// 
-/////////////////////////////////////////////////////////////////////////////
-
-class CGameMap
-{
-public:
-	CGameMap();
-	void Initialize();
-	void OnMove();
-	void LoadBitmap();
-	void OnShow();
-	void SetMovingLeft(bool flag);
-	void SetMovingRight(bool flag);
-
-private:
-	void SetFloorRoof();
-	CAnimation map;
-	bool isMovingLeft;
-	bool isMovingRight;
-	int floor, roof;
-	int x, y;					//角色螢幕座標
-	int mapX, mapY;				//地圖座標
 
 };
 

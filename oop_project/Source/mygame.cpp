@@ -76,8 +76,8 @@ namespace game_framework {
 	{
 		const int ini_x = 200;		//5121
 		const int ini_y = 450;		//721
-		heroX = ini_x;
-		heroY = ini_y;
+		mapX = 0;
+		mapY = SIZE_Y - 721;
 		x = ini_x;
 		y = ini_y;
 		floor = 450;
@@ -135,13 +135,25 @@ namespace game_framework {
 
 	void CHero::OnMove()
 	{
-
+		if (isMovingLeft) SetDirection(1);
+		if (isMovingRight) SetDirection(2);
 		heroMoveL.OnMove(&x, &y);
 		heroMoveR.OnMove(&x, &y);
 		isFalling = heroJump.OnMove(&x, &y);
 		if (isFalling) isRising = false;
 		heroCrouch.OnMove(&x, &y);
 		//heroMoveUD.OnMove(&x, &y);
+		if (x < 200)
+		{
+			mapX -= x - 200;
+			x = 200;
+		}
+		else if (x > 600)
+		{
+			mapX -= x - 600;
+			x = 600;
+		}
+		gameMap->setXY(mapX, mapY);
 	}
 
 	void CHero::OnShow()
@@ -186,7 +198,11 @@ namespace game_framework {
 
 	}
 
-		#pragma region SetState
+	#pragma region SetState
+		void CHero::SetGameMap(CGameMap* _gameMap)
+		{
+			gameMap = _gameMap;
+		}
 
 		void CHero::ResumeDirection()
 		{
@@ -195,6 +211,7 @@ namespace game_framework {
 			heroStandR.SetDirection(direction);
 			heroJump.SetDirection(direction);
 			heroMoveUD.SetDirection(direction);
+			heroCrouch.SetDirection(direction);
 		}
 
 		void CHero::SetDirection(int dir)
@@ -359,8 +376,8 @@ namespace game_framework {
 
 	void CGameMap::Initialize()
 	{
-		x = 0;
-		y = SIZE_Y - 721;
+		mapX = 0;
+		mapY = SIZE_Y - 721;
 		isMovingLeft = isMovingRight = false;
 	}
 
@@ -372,26 +389,32 @@ namespace game_framework {
 
 	void CGameMap::OnMove()
 	{
-		int step = 10;
+		int step = 15;
 		if (isMovingLeft)
 		{
-			if (x + step <= 0) x += step;
-			else x = 0;
+			if (mapX + step <= 0) mapX += step;
+			else mapX = 0;
 		}
 		else if (isMovingRight)
 		{
-			if (x + map.Width() + step >= 0) x -= step;
-			else x = map.Width() - SIZE_X;
+			if (mapX + map.Width() + step >= 0) mapX -= step;
+			else mapX = map.Width() - SIZE_X;
 		}
 	}
 
 	void CGameMap::OnShow()
 	{
-		map.SetTopLeft(x, y);
+		map.SetTopLeft(mapX, mapY);
 		map.OnShow();
 	}
 
 #pragma region SetState
+	void CGameMap::setXY(int mx, int my)
+	{
+		mapX = mx;
+		mapY = my;
+	}
+
 	void CGameMap::SetFloorRoof()
 	{
 		floor = SIZE_Y - map.Height();
@@ -618,14 +641,17 @@ namespace game_framework {
 	void CMove::OnMove(int* nx, int* ny)
 	{
 		step = ini_step;
-		step = 0;
 		x = *nx;
 		y = *ny;
 		animation.OnMove();
 		if (isMovingLeft)
+		{
 			x -= step;
+		}
 		if (isMovingRight)
+		{
 			x += step;
+		}
 		if (isMovingUp)			//上看
 		{
 			y -= step;
@@ -838,14 +864,12 @@ namespace game_framework {
 		step = 0;
 		x = *nx;
 		y = *ny;
-		if (isMovingLeft)
+		if (dir_horizontal == 1)
 		{
-			x -= step;
 			CMoveL.OnMove();
 		}
-		if (isMovingRight)
+		else if (dir_horizontal == 2)
 		{
-			x += step;
 			CMoveR.OnMove();
 		}
 		*nx = x;
@@ -880,12 +904,12 @@ namespace game_framework {
 
 	void CCrouch::OnShow_Move()
 	{
-		if (direction == 1)
+		if (dir_horizontal == 1)
 		{
 			CMoveL.SetTopLeft(x, y);
 			CMoveL.OnShow();
 		}
-		else if (direction == 2)
+		else if (dir_horizontal == 2)
 		{
 			CMoveR.SetTopLeft(x, y);
 			CMoveR.OnShow();
@@ -1100,6 +1124,7 @@ namespace game_framework {
 		CAudio::Instance()->Play(AUDIO_LAKE, true);			// 撥放 WAVE
 		CAudio::Instance()->Play(AUDIO_DING, false);		// 撥放 WAVE
 		CAudio::Instance()->Play(AUDIO_NTUT, true);			// 撥放 MIDI
+		hero.SetGameMap(&gameMap);
 	}
 
 	void CGameStateRun::OnMove()							// 移動遊戲元素
@@ -1246,12 +1271,14 @@ namespace game_framework {
 			eraser.SetMovingLeft(false);
 			hero.SetMovingLeft(false);
 			gameMap.SetMovingLeft(false);
+			hero.ResumeDirection();
 		}
 		if (nChar == KEY_RIGHT)
 		{
 			eraser.SetMovingRight(false);
 			hero.SetMovingRight(false);
 			gameMap.SetMovingRight(false);
+			hero.ResumeDirection();
 		}
 		if (nChar == KEY_UP)
 		{
