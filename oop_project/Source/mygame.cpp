@@ -89,6 +89,7 @@ namespace game_framework {
 	{
 	
 	#pragma region fileInput
+		char *fileDefault[] = { ".\\image\\stand\\L1.bmp" };
 		char *filestandL[] = { ".\\image\\stand\\L1.bmp",".\\image\\stand\\L2.bmp",".\\image\\stand\\L3.bmp" , ".\\image\\stand\\L4.bmp" };
 		char *filestandR[] = { ".\\image\\stand\\R1.bmp",".\\image\\stand\\R2.bmp",".\\image\\stand\\R3.bmp" , ".\\image\\stand\\R4.bmp" };
 		char *filemoveL[] = { ".\\image\\move\\L1.bmp",".\\image\\move\\L2.bmp",".\\image\\move\\L3.bmp" , ".\\image\\move\\L4.bmp" };
@@ -105,7 +106,7 @@ namespace game_framework {
 	#pragma endregion
 
 	#pragma region 動畫載入
-
+		CDefaultHero.LoadBitmap(fileDefault[0], RGB(0, 0, 255));
 		heroCrouch.LoadBitmap_StandL(fileCrouchL[0]);
 		heroCrouch.LoadBitmap_StandR(fileCrouchR[0]);
 		for (int i = 0; i < 4; i++)
@@ -130,7 +131,36 @@ namespace game_framework {
 		}
 
 	#pragma endregion
-		
+
+		defaultW = CDefaultHero.Width();
+		defaultH = CDefaultHero.Height();
+	}
+
+	void CHero::gameMap_OnMove()
+	{
+		if (isMovingLeft)			//向左走
+		{
+			if (x < 200)			//當超過左側自由移動範圍時
+			{
+				mapX -= x - 200;	//取得超過左側邊界的位移量，並且反向加至地圖座標
+				if (mapX >= 0)
+					mapX = 0;		//如果在地圖最左側則可以無視移動邊界
+				else x = 200;		//反之則會被卡住
+			}
+			if (x <= 0) x = 0;
+		}
+		else if (isMovingRight)						//向右走
+		{
+			if (x > 600 - defaultW)					//當超過右側自由移動範圍時
+			{
+				mapX -= x - (600 - defaultW);		//取得超過的位移量，反向加至地圖座標
+				if (mapX <= (-4400 + defaultW))		//如果地圖在最右側，則可以無視移動邊界
+					mapX = (-4400 + defaultW);
+				else x = 600 - defaultW;			//反之則會被卡住
+			}
+			if (x >= 800 - defaultW) x = 800 - defaultW;
+		}
+		gameMap->setXY(mapX, mapY);					//設定地圖座標
 	}
 
 	void CHero::OnMove()
@@ -143,17 +173,7 @@ namespace game_framework {
 		if (isFalling) isRising = false;
 		heroCrouch.OnMove(&x, &y);
 		//heroMoveUD.OnMove(&x, &y);
-		if (x < 200)
-		{
-			mapX -= x - 200;
-			x = 200;
-		}
-		else if (x > 600)
-		{
-			mapX -= x - 600;
-			x = 600;
-		}
-		gameMap->setXY(mapX, mapY);
+		gameMap_OnMove();
 	}
 
 	void CHero::OnShow()

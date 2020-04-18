@@ -229,6 +229,7 @@ public:
 	void getXY();
 
 private:
+#pragma region Class物件
 	CMove heroStandL;
 	CMove heroStandR;
 	CMove heroMoveL; 
@@ -237,6 +238,10 @@ private:
 	CCrouch heroCrouch;				//下蹲
 	CMove heroMoveUD;
 	CGameMap *gameMap;				
+	CMovingBitmap CDefaultHero;		//不顯示、不移動，只處理碰撞
+#pragma endregion
+	
+#pragma region 變數宣告
 	bool isRising;					//上升
 	bool isFalling;					//墜落
 	bool isMovingDown;				//下蹲、下看
@@ -249,7 +254,10 @@ private:
 	int floor;						//地板
 	int mapX, mapY;					//地圖的座標
 	int x, y;						//角色在螢幕的座標
+	int defaultW, defaultH;			//站力圖片寬高
+#pragma endregion
 	
+	void gameMap_OnMove();			//處理地圖移動
 
 };
 
