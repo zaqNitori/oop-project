@@ -152,22 +152,29 @@ class CCrouch : public CMove		//只處理下蹲相關動作
 public:
 	CCrouch();
 	void Initialize();
-	void OnMove(int*, int*);		//移動控制
+	void OnMove(int, int);		//移動控制
 	void LoadBitmap_MoveL(char*);
 	void LoadBitmap_MoveR(char*);
 	void LoadBitmap_StandL(char*);
 	void LoadBitmap_StandR(char*);
+	void LoadBitmap_ShootL(char*);
+	void LoadBitmap_ShootR(char*);
 	void OnShow_Move();
 	void OnShow_Stand();
+	void OnShow_Shoot();
+	void SetShooting(bool flag);
 	void SetDirection(int);
 
 private:
-	CAnimation CMoveL;
-	CAnimation CMoveR;
-	CAnimation CStandL;
-	CAnimation CStandR;
+	CAnimation CMoveL;				//左走
+	CAnimation CMoveR;				//右走
+	CAnimation CStandL;				//向左蹲
+	CAnimation CStandR;				//向右蹲
+	CAnimation CShootL;				//左蹲下射擊
+	CAnimation CShootR;				//右蹲下射擊
 	bool isMovingLeft;
 	bool isMovingRight;
+	bool isShooting;
 	int x, y;						//座標
 	int floor;						//最下方地板
 	int step;
@@ -238,7 +245,8 @@ private:
 	CCrouch heroCrouch;				//下蹲
 	CMove heroMoveUD;
 	CGameMap *gameMap;				
-	CMovingBitmap CDefaultHero;		//不顯示、不移動，只處理碰撞
+	CMovingBitmap CDefaultStand;	//不顯示、不移動，只處理碰撞
+	CMovingBitmap CDefaultCrouch;	//同上
 #pragma endregion
 	
 #pragma region 變數宣告
