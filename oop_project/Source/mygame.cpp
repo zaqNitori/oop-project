@@ -110,8 +110,8 @@ namespace game_framework {
 		char *fileCrouchMoveL[] = { ".\\image\\crouch\\move\\L1.bmp" , ".\\image\\crouch\\move\\L2.bmp" , ".\\image\\crouch\\move\\L3.bmp" , ".\\image\\crouch\\move\\L4.bmp" };
 		char *fileCrouchMoveR[] = { ".\\image\\crouch\\move\\R1.bmp" , ".\\image\\crouch\\move\\R2.bmp" , ".\\image\\crouch\\move\\R3.bmp" , ".\\image\\crouch\\move\\R4.bmp" };
 
-		char *fileCrouchShootL[] = { ".\\image\\crouch\\shoot\\L1.bmp" , ".\\image\\crouch\\shoot\\L2.bmp" , ".\\image\\crouch\\shoot\\L3.bmp" , ".\\image\\crouch\\shoot\\L4.bmp" };
-		char *fileCrouchShootR[] = { ".\\image\\crouch\\shoot\\R1.bmp" , ".\\image\\crouch\\shoot\\R2.bmp" , ".\\image\\crouch\\shoot\\R3.bmp" , ".\\image\\crouch\\shoot\\R4.bmp" };
+		//char *fileCrouchShootL[] = { ".\\image\\crouch\\shoot\\L1.bmp" , ".\\image\\crouch\\shoot\\L2.bmp" , ".\\image\\crouch\\shoot\\L3.bmp" , ".\\image\\crouch\\shoot\\L4.bmp" };
+		//char *fileCrouchShootR[] = { ".\\image\\crouch\\shoot\\R1.bmp" , ".\\image\\crouch\\shoot\\R2.bmp" , ".\\image\\crouch\\shoot\\R3.bmp" , ".\\image\\crouch\\shoot\\R4.bmp" };
 
 
 	#pragma endregion
@@ -129,14 +129,13 @@ namespace game_framework {
 			heroMoveR.LoadBitmap(filemoveR[i]);
 			heroCrouch.LoadBitmap_MoveL(fileCrouchMoveL[i]);
 			heroCrouch.LoadBitmap_MoveR(fileCrouchMoveR[i]);
-			heroCrouch.LoadBitmap_ShootL(fileCrouchShootL[i]);
-			heroCrouch.LoadBitmap_ShootR(fileCrouchShootR[i]);
+			heroCrouch.LoadBitmap_ShootL(fileCrouchMoveL[i]);
+			heroCrouch.LoadBitmap_ShootR(fileCrouchMoveR[i]);
 		}
 		for (int i = 0; i < 5; i++)
 		{
 			heroJump.LoadBitmap_RiseL(fileRiseL[i]);
 			heroJump.LoadBitmap_RiseR(fileRiseR[i]);
-			heroMoveUD.LoadBitmap(fileRiseL[i]);
 		}
 		for (int i = 0; i < 2; i++)
 		{
@@ -257,7 +256,6 @@ namespace game_framework {
 			heroStandL.SetDirection(direction);
 			heroStandR.SetDirection(direction);
 			heroJump.SetDirection(direction);
-			heroMoveUD.SetDirection(direction);
 			heroCrouch.SetDirection(direction);
 		}
 
@@ -270,7 +268,6 @@ namespace game_framework {
 			heroStandR.SetDirection(dir);
 			heroJump.SetDirection(dir);
 			heroCrouch.SetDirection(dir);
-			heroMoveUD.SetDirection(dir);
 		}
 		
 		void CHero::SetRising(bool flag)
@@ -285,13 +282,11 @@ namespace game_framework {
 		void CHero::SetMovingDown(bool flag)
 		{
 			isMovingDown = flag;
-			heroMoveUD.SetMovingDown(flag);
 		}
 	
 		void CHero::SetMovingUp(bool flag)
 		{
 			isMovingUp = flag;
-			heroMoveUD.SetMovingUp(flag);
 		}
 
 		void CHero::SetMovingLeft(bool flag)
@@ -309,6 +304,8 @@ namespace game_framework {
 		void CHero::SetShooting(bool flag)
 		{
 			isShooting = flag;
+			heroCrouch.SetShooting(flag);
+			heroJump.SetShooting(flag);
 		}
 	#pragma endregion
 
@@ -426,36 +423,50 @@ namespace game_framework {
 		mapX = 0;
 		mapY = SIZE_Y - 721;
 		isMovingLeft = isMovingRight = false;
+		for (int i = 0; i < 18; i++)
+			for (int j = 0; j < 130; j++)
+			{
+				map[i][j] = 0;					//0為空白
+				if (i > 15) map[i][j] = 1;		//1為障礙物
+			}				
+		#pragma region setBlock
+			SetBlock(4, 9, 11, 12);
+			SetBlock(10, 13, 9, 10);
+			SetBlock(15, 20, 12, 13);
+			SetBlock(21, 23, 8, 9);
+			SetBlock(28, 33, 13, 14);
+			SetBlock(37, 41, 12, 13);
+			SetBlock(41, 45, 8, 9);
+			SetBlock(42, 47, 11, 12);
+			SetBlock(47, 50, 8, 9);
+			SetBlock(51, 59, 5, 6);
+			SetBlock(51, 59, 13, 14);
+			SetBlock(81, 86, 11, 12);
+			SetBlock(94, 99, 11, 12);
+		#pragma endregion
+
 	}
 
 	void CGameMap::LoadBitmap()
 	{
-		map.AddBitmap(IDB_GameMap);
+		mapBmp.AddBitmap(IDB_GameMap);
 		SetFloorRoof();
-	}
-
-	void CGameMap::OnMove()
-	{
-		int step = 15;
-		if (isMovingLeft)
-		{
-			if (mapX + step <= 0) mapX += step;
-			else mapX = 0;
-		}
-		else if (isMovingRight)
-		{
-			if (mapX + map.Width() + step >= 0) mapX -= step;
-			else mapX = map.Width() - SIZE_X;
-		}
 	}
 
 	void CGameMap::OnShow()
 	{
-		map.SetTopLeft(mapX, mapY);
-		map.OnShow();
+		mapBmp.SetTopLeft(mapX, mapY);
+		mapBmp.OnShow();
 	}
 
 #pragma region SetState
+	void CGameMap::SetBlock(int x1, int x2, int y1, int y2)
+	{
+		for (int i = x1; i < x2; i++)
+			for (int j = y1; j < y2; j++)
+				map[i][j] = 1;				//1為可跳上的障礙物
+	}
+
 	void CGameMap::setXY(int mx, int my)
 	{
 		mapX = mx;
@@ -464,7 +475,7 @@ namespace game_framework {
 
 	void CGameMap::SetFloorRoof()
 	{
-		floor = SIZE_Y - map.Height();
+		floor = SIZE_Y - mapBmp.Height();
 		roof = 0;
 	}
 
@@ -657,7 +668,7 @@ namespace game_framework {
 		y = y_pos;
 		step = ini_step = 15;			//預設移動速度
 		direction = dir_horizontal = 1;	//預設方向向左
-		isRising = isMovingDown = isMovingLeft = isMovingRight = isMovingUp = false;
+		isShooting=isRising = isMovingDown = isMovingLeft = isMovingRight = isMovingUp = false;
 	}
 
 	int CMove::GetX1()
@@ -698,15 +709,6 @@ namespace game_framework {
 		if (isMovingRight)
 		{
 			x += step;
-		}
-		if (isMovingUp)			//上看
-		{
-			y -= step;
-		}
-		if (isMovingDown)		//下蹲
-		{
-			if(y+step<=450)
-				y += step;
 		}
 		*nx = x;
 		*ny = y;
@@ -750,6 +752,12 @@ namespace game_framework {
 	{
 		isRising = flag;
 	}
+
+	void CMove::SetShooting(bool flag)
+	{
+		isShooting = flag;
+	}
+
 	//SetState
 #pragma endregion
 
@@ -1228,7 +1236,6 @@ namespace game_framework {
 		//
 		// 移動擦子
 		//
-		gameMap.OnMove();
 		eraser.OnMove();
 
 		hero.OnMove();

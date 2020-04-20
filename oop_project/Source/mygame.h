@@ -99,18 +99,21 @@ public:
 	void SetMovingRight(bool flag); // 設定是否正在往右移動
 	void SetMovingUp(bool flag);	// 設定是否正在往上移動
 	void SetRising(bool flag);
+	void SetShooting(bool flag);
 	void SetDirection(int);
 	void SetXY(int nx, int ny);		// 設定左上角座標
 
-private:
-	int x, y;
-	CAnimation animation;			//動畫
+protected:
 	bool isMovingDown;				//下動
 	bool isMovingUp;				//上動
 	bool isMovingLeft;				//左動
 	bool isMovingRight;				//右動
 	bool isRising;					//正在上升 
-	bool isShooting;				//正在下降
+	bool isShooting;				//射擊
+
+private:
+	int x, y;
+	CAnimation animation;			//動畫
 	int floor;						//地板高度
 	int step, ini_step;				//移動速度
 	int velocity, ini_velocity;		//速度(上升、下降)
@@ -162,7 +165,6 @@ public:
 	void OnShow_Move();
 	void OnShow_Stand();
 	void OnShow_Shoot();
-	void SetShooting(bool flag);
 	void SetDirection(int);
 
 private:
@@ -174,7 +176,6 @@ private:
 	CAnimation CShootR;				//右蹲下射擊
 	bool isMovingLeft;
 	bool isMovingRight;
-	bool isShooting;
 	int x, y;						//座標
 	int floor;						//最下方地板
 	int step;
@@ -193,7 +194,6 @@ class CGameMap
 public:
 	CGameMap();
 	void Initialize();
-	void OnMove();						//不該有，不應該處理移動，應該留給Chero處理
 	void LoadBitmap();
 	void OnShow();
 	void setXY(int, int);
@@ -202,12 +202,14 @@ public:
 
 private:
 	void SetFloorRoof();
-	CAnimation map;
+	void SetBlock(int,int,int,int);			//編輯地圖可跳上的障礙物
+	CAnimation mapBmp;
 	bool isMovingLeft;
 	bool isMovingRight;
 	int floor, roof;
 	//int x, y;					//角色螢幕座標
 	int mapX, mapY;				//地圖座標
+	int map[18][130];			//地圖編輯
 
 };
 
@@ -243,7 +245,6 @@ private:
 	CMove heroMoveR;
 	CJump heroJump;
 	CCrouch heroCrouch;				//下蹲
-	CMove heroMoveUD;
 	CGameMap *gameMap;				
 	CMovingBitmap CDefaultStand;	//不顯示、不移動，只處理碰撞
 	CMovingBitmap CDefaultCrouch;	//同上
