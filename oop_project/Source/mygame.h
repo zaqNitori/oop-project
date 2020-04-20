@@ -49,6 +49,36 @@ enum AUDIO_ID {				// 定義各種音效的編號
 };
 
 namespace game_framework {
+
+/////////////////////////////////////////////////////////////////////////////
+// 這個class提供背景地圖,並不會移動(不是camera)
+// 
+/////////////////////////////////////////////////////////////////////////////
+
+class CGameMap
+{
+public:
+	CGameMap();
+	void Initialize();
+	void LoadBitmap();
+	void OnShow();
+	void setXY(int, int);
+	bool getMapBlock(int, int);
+	//void SetMovingLeft(bool flag);		//不該有，不需要
+	//void SetMovingRight(bool flag);		//不該有，不需要
+
+private:
+	void SetFloorRoof();
+	void SetBlock(int, int, int, int);			//編輯地圖可跳上的障礙物
+	CAnimation mapBmp;
+	bool isMovingLeft;
+	bool isMovingRight;
+	int floor, roof;
+	int mapX, mapY;				//地圖座標
+	int map[18][130];			//地圖編輯
+
+};
+
 /////////////////////////////////////////////////////////////////////////////
 // 這個class提供可以用鍵盤或滑鼠控制的擦子
 // 看懂就可以改寫成自己的程式了
@@ -99,6 +129,7 @@ public:
 	void SetMovingRight(bool flag); // 設定是否正在往右移動
 	void SetMovingUp(bool flag);	// 設定是否正在往上移動
 	void SetRising(bool flag);
+	void SetFalling(bool flag);
 	void SetShooting(bool flag);
 	void SetDirection(int);
 	void SetXY(int nx, int ny);		// 設定左上角座標
@@ -109,6 +140,7 @@ protected:
 	bool isMovingLeft;				//左動
 	bool isMovingRight;				//右動
 	bool isRising;					//正在上升 
+	bool isFalling;
 	bool isShooting;				//射擊
 
 private:
@@ -135,12 +167,15 @@ public:
 	void OnShow_Fall();
 	void SetRising(bool flag);
 	void SetDirection(int);
+	void SetGameMap(CGameMap*);
 
 private:
+	bool isEmpty(int,int);
 	CAnimation CRiseL;
 	CAnimation CRiseR;
 	CAnimation CFallL;
 	CAnimation CFallR;
+	CGameMap* gameMap;
 	bool isRising;					//正在上升
 	bool isFalling;					//正在下降
 	int x, y;						//座標
@@ -181,35 +216,6 @@ private:
 	int step;
 	int velocity, ini_velocity;		//速度、初速度
 	int direction, dir_horizontal;	//按鍵方向、上一個水平方向
-
-};
-
-/////////////////////////////////////////////////////////////////////////////
-// 這個class提供背景地圖,並不會移動(不是camera)
-// 
-/////////////////////////////////////////////////////////////////////////////
-
-class CGameMap
-{
-public:
-	CGameMap();
-	void Initialize();
-	void LoadBitmap();
-	void OnShow();
-	void setXY(int, int);
-	void SetMovingLeft(bool flag);		//不該有，不需要
-	void SetMovingRight(bool flag);		//不該有，不需要
-
-private:
-	void SetFloorRoof();
-	void SetBlock(int,int,int,int);			//編輯地圖可跳上的障礙物
-	CAnimation mapBmp;
-	bool isMovingLeft;
-	bool isMovingRight;
-	int floor, roof;
-	//int x, y;					//角色螢幕座標
-	int mapX, mapY;				//地圖座標
-	int map[18][130];			//地圖編輯
 
 };
 

@@ -187,8 +187,6 @@ namespace game_framework {
 
 	void CHero::OnMove()
 	{
-		if (isMovingLeft) SetDirection(1);
-		if (isMovingRight) SetDirection(2);
 		heroMoveL.OnMove(&x, &y);
 		heroMoveR.OnMove(&x, &y);
 		isFalling = heroJump.OnMove(&x, &y);
@@ -248,6 +246,7 @@ namespace game_framework {
 		void CHero::SetGameMap(CGameMap* _gameMap)
 		{
 			gameMap = _gameMap;
+			heroJump.SetGameMap(_gameMap);
 		}
 
 		void CHero::ResumeDirection()
@@ -464,7 +463,8 @@ namespace game_framework {
 	{
 		for (int i = x1; i < x2; i++)
 			for (int j = y1; j < y2; j++)
-				map[i][j] = 1;				//1為可跳上的障礙物
+				map[j][i] = 1;				//1為可跳上的障礙物
+		
 	}
 
 	void CGameMap::setXY(int mx, int my)
@@ -479,7 +479,7 @@ namespace game_framework {
 		roof = 0;
 	}
 
-	void CGameMap::SetMovingLeft(bool flag)
+	/*void CGameMap::SetMovingLeft(bool flag)
 	{
 		isMovingLeft = flag;
 	}
@@ -487,10 +487,14 @@ namespace game_framework {
 	void CGameMap::SetMovingRight(bool flag)
 	{
 		isMovingRight = flag;
-	}
+	}*/
 
 #pragma endregion
 
+	bool CGameMap::getMapBlock(int nx, int ny)
+	{
+		return map[ny][nx];
+	}
 
 	//CGameMap
 #pragma endregion
@@ -810,6 +814,12 @@ namespace game_framework {
 
 
 	#pragma region SetState
+
+		void CJump::SetGameMap(CGameMap* _map)
+		{
+			gameMap = _map;
+		}
+
 		void CJump::SetRising(bool flag)
 		{
 			isRising = flag;
@@ -849,14 +859,14 @@ namespace game_framework {
 		{
 			if(direction==1) CFallL.OnMove();
 			else if (direction == 2) CFallR.OnMove();
-			if (y + velocity <= floor)
+			if (!isEmpty(x, y + velocity + CFallL.Height()))
 			{
 				y += velocity;
 				velocity+=2;
 			}
 			else
 			{
-				y = floor - 1;
+				y = (y + velocity) / 40 * 40;
 				isFalling = false;
 				velocity = ini_velocity;
 			}
@@ -864,6 +874,14 @@ namespace game_framework {
 		*nx = x;
 		*ny = y;
 		return isFalling;
+	}
+
+	bool CJump::isEmpty(int nx, int ny)
+	{
+		if (ny > 640) return false;
+		int gx = nx / 40;
+		int gy = ny / 40;
+		return gameMap->getMapBlock(gy,gx);
 	}
 
 	void CJump::OnShow_Rise()
@@ -1313,14 +1331,14 @@ namespace game_framework {
 		{
 			eraser.SetMovingLeft(true);
 			hero.SetMovingLeft(true);
-			gameMap.SetMovingLeft(true);
+			//gameMap.SetMovingLeft(true);
 			hero.SetDirection(1);
 		}
 		if (nChar == KEY_RIGHT)
 		{
 			eraser.SetMovingRight(true);
 			hero.SetMovingRight(true);
-			gameMap.SetMovingRight(true);
+			//gameMap.SetMovingRight(true);
 			hero.SetDirection(2);
 		}
 		if (nChar == KEY_UP)
@@ -1359,14 +1377,14 @@ namespace game_framework {
 		{
 			eraser.SetMovingLeft(false);
 			hero.SetMovingLeft(false);
-			gameMap.SetMovingLeft(false);
+			//gameMap.SetMovingLeft(false);
 			hero.ResumeDirection();
 		}
 		if (nChar == KEY_RIGHT)
 		{
 			eraser.SetMovingRight(false);
 			hero.SetMovingRight(false);
-			gameMap.SetMovingRight(false);
+			//gameMap.SetMovingRight(false);
 			hero.ResumeDirection();
 		}
 		if (nChar == KEY_UP)
