@@ -318,7 +318,10 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
+    <Image Include="image\263.bmp" />
+    <Image Include="image\block_map.bmp" />
     <Image Include="RES\background.bmp" />
+    <Image Include="res\bitmap6.bmp" />
     <Image Include="RES\hero.bmp" />
     <Image Include="RES\testMap.bmp" />
     <Image Include="RES\yee.bmp" />

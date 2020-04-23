@@ -64,6 +64,8 @@ public:
 	void OnShow();
 	void setXY(int, int);
 	bool getMapBlock(int, int);
+	int getX();
+	int getY();
 	//void SetMovingLeft(bool flag);		//不該有，不需要
 	//void SetMovingRight(bool flag);		//不該有，不需要
 
@@ -130,6 +132,7 @@ public:
 	void SetMovingUp(bool flag);	// 設定是否正在往上移動
 	void SetRising(bool flag);
 	void SetFalling(bool flag);
+	void SetDefaultHeight(int);
 	void SetShooting(bool flag);
 	void SetDirection(int);
 	void SetXY(int nx, int ny);		// 設定左上角座標
@@ -142,6 +145,7 @@ protected:
 	bool isRising;					//正在上升 
 	bool isFalling;
 	bool isShooting;				//射擊
+	int defaultHeight;
 
 private:
 	int x, y;

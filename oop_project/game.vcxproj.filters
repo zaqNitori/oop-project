@@ -164,5 +164,14 @@
     <Image Include="RES\hero.bmp">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="res\bitmap6.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="image\block_map.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="image\263.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

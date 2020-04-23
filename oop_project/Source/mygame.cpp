@@ -448,7 +448,8 @@ namespace game_framework {
 
 	void CGameMap::LoadBitmap()
 	{
-		mapBmp.AddBitmap(IDB_GameMap);
+		//mapBmp.AddBitmap(IDB_GameMap);
+		mapBmp.AddBitmap(IDB_gameMapBlock);
 		SetFloorRoof();
 	}
 
@@ -491,10 +492,24 @@ namespace game_framework {
 
 #pragma endregion
 
-	bool CGameMap::getMapBlock(int nx, int ny)
+#pragma region GetValue
+	bool CGameMap::getMapBlock(int ny, int nx)
 	{
 		return map[ny][nx];
 	}
+
+	int CGameMap::getX()
+	{
+		return mapX;
+	}
+
+	int CGameMap::getY()
+	{
+		return mapY;
+	}
+
+#pragma endregion
+	
 
 	//CGameMap
 #pragma endregion
@@ -720,6 +735,11 @@ namespace game_framework {
 
 #pragma region SetState
 
+	void CMove::SetDefaultHeight(int _height)
+	{
+		defaultHeight = _height;
+	}
+
 	void CMove::SetDirection(int dir)
 	{
 		direction = dir;
@@ -859,14 +879,17 @@ namespace game_framework {
 		{
 			if(direction==1) CFallL.OnMove();
 			else if (direction == 2) CFallR.OnMove();
-			if (!isEmpty(x, y + velocity + CFallL.Height()))
+			if (isEmpty(gameMap->getX() + x, y + velocity + CFallL.Height()))		//
 			{
 				y += velocity;
 				velocity+=2;
+				velocity = min(velocity, 23);
 			}
 			else
 			{
-				y = (y + velocity) / 40 * 40;
+				if (y +CFallL.Height() > 640) y = 640-CFallL.Height();
+				else y = (y / 40) * 40 - 1;
+				if (y > 640) y = 640;
 				isFalling = false;
 				velocity = ini_velocity;
 			}
@@ -881,7 +904,7 @@ namespace game_framework {
 		if (ny > 640) return false;
 		int gx = nx / 40;
 		int gy = ny / 40;
-		return gameMap->getMapBlock(gy,gx);
+		return !(gameMap->getMapBlock(gy,gx));
 	}
 
 	void CJump::OnShow_Rise()
