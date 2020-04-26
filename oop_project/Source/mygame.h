@@ -185,6 +185,7 @@ private:
 	int x, y;						//座標
 	int floor;						//最下方地板
 	int velocity, ini_velocity;		//速度、初速度
+	int mapX, mapY;					//地圖座標
 	int direction, dir_horizontal;	//按鍵方向、上一個水平方向
 
 };

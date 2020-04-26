@@ -158,8 +158,9 @@ namespace game_framework {
 		{
 			defaultW = CDefaultStand.Width();
 			defaultH = CDefaultStand.Height();
+			heroJump.SetDefaultHeight(defaultH);
 		}
-
+		
 		if (isMovingLeft)			//向左走
 		{
 			if (x < 200)			//當超過左側自由移動範圍時
@@ -877,9 +878,11 @@ namespace game_framework {
 		}
 		else if(isFalling)
 		{
+			mapX = gameMap->getX();
+			mapY = gameMap->getY();
 			if(direction==1) CFallL.OnMove();
 			else if (direction == 2) CFallR.OnMove();
-			if (isEmpty(gameMap->getX() + x, y + velocity + CFallL.Height()))		//
+			if (isEmpty(mapX + x, y - mapY + defaultHeight))		//因為y軸一開始就在最下面,所以要反向加才能得到正確到座標
 			{
 				y += velocity;
 				velocity+=2;
@@ -887,9 +890,9 @@ namespace game_framework {
 			}
 			else
 			{
-				if (y +CFallL.Height() > 640) y = 640-CFallL.Height();
+				if (y + defaultHeight > 640 + mapY)
+					y = 640 - defaultHeight + mapY;
 				else y = (y / 40) * 40 - 1;
-				if (y > 640) y = 640;
 				isFalling = false;
 				velocity = ini_velocity;
 			}
