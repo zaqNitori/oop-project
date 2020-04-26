@@ -148,8 +148,12 @@ public:
 	int  GetY2();					// 右下角 y 座標
 	void Initialize();				// 設定初始值
 	void LoadBitmap(char*);			// 載入圖形
+	void LoadBitmap_ShootL(char*, char*);
+	void LoadBitmap_ShootR(char*);
 	void OnMove(int*, int*);		// 移動
 	void OnShow();					// 將圖形貼到畫面
+	void OnShow_ShootL();
+	void OnShow_ShootR();
 	void SetMovingDown(bool flag);	// 設定是否正在往下移動
 	void SetMovingLeft(bool flag);	// 設定是否正在往左移動
 	void SetMovingRight(bool flag); // 設定是否正在往右移動
@@ -174,6 +178,7 @@ protected:
 private:
 	int x, y;
 	CAnimation animation;			//動畫
+	CShoot CMoveShoot;
 	int floor;						//地板高度
 	int step, ini_step;				//移動速度
 	int velocity, ini_velocity;		//速度(上升、下降)
@@ -191,8 +196,11 @@ public:
 	void LoadBitmap_RiseR(char*);
 	void LoadBitmap_FallL(char*);
 	void LoadBitmap_FallR(char*);
+	void LoadBitmap_ShootL(char*, char*);
+	void LoadBitmap_ShootR(char*);
 	void OnShow_Rise();
 	void OnShow_Fall();
+	void OnShow_Shoot();
 	void SetRising(bool flag);
 	void SetDirection(int);
 	void SetGameMap(CGameMap*);
@@ -204,6 +212,7 @@ private:
 	CAnimation CFallL;
 	CAnimation CFallR;
 	CGameMap* gameMap;
+	CShoot CJumpShoot;
 	bool isRising;					//正在上升
 	bool isFalling;					//正在下降
 	int x, y;						//座標
@@ -236,7 +245,7 @@ private:
 	CAnimation CMoveR;				//右走
 	CAnimation CStandL;				//向左蹲
 	CAnimation CStandR;				//向右蹲
-	CShoot crouchShoot;				//處理射擊
+	CShoot CcrouchShoot;			//處理射擊
 	bool isMovingLeft;
 	bool isMovingRight;
 	int x, y;						//座標

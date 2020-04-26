@@ -97,15 +97,30 @@ namespace game_framework {
 		char *filestandL[] = { ".\\image\\stand\\L1.bmp",".\\image\\stand\\L2.bmp",".\\image\\stand\\L3.bmp" , ".\\image\\stand\\L4.bmp" };
 		char *filestandR[] = { ".\\image\\stand\\R1.bmp",".\\image\\stand\\R2.bmp",".\\image\\stand\\R3.bmp" , ".\\image\\stand\\R4.bmp" };
 		
+	#pragma region fileMove
+		
 		char *filemoveL[] = { ".\\image\\move\\L1.bmp",".\\image\\move\\L2.bmp",".\\image\\move\\L3.bmp" , ".\\image\\move\\L4.bmp" };
 		char *filemoveR[] = { ".\\image\\move\\R1.bmp",".\\image\\move\\R2.bmp",".\\image\\move\\R3.bmp" , ".\\image\\move\\R4.bmp" };
+		char *fileMoveShootL[] = { ".\\image\\move\\shoot\\L1-1.bmp" , ".\\image\\move\\shoot\\L2-1.bmp" , ".\\image\\move\\shoot\\L3-1.bmp" , ".\\image\\move\\shoot\\L4-1.bmp" };
+		char *fileMoveShootL2[] = { ".\\image\\move\\shoot\\L1-2.bmp" , ".\\image\\move\\shoot\\L2-2.bmp" , ".\\image\\move\\shoot\\L3-2.bmp" , ".\\image\\move\\shoot\\L4-2.bmp" };
+		char *fileMoveShootR[] = { ".\\image\\move\\shoot\\R1.bmp" , ".\\image\\move\\shoot\\R2.bmp" , ".\\image\\move\\shoot\\R3.bmp" , ".\\image\\move\\shoot\\R4.bmp" };
+
+	#pragma endregion
+		
+	#pragma region fileJump
 		
 		char *fileRiseL[] = { ".\\image\\jump\\L1.bmp" , ".\\image\\jump\\L2.bmp" , ".\\image\\jump\\L3.bmp" , ".\\image\\jump\\L4.bmp" , ".\\image\\jump\\L5.bmp" };
 		char *fileFallL[] = { ".\\image\\jump\\L7-1.bmp" , ".\\image\\jump\\L7-2.bmp" };
 		char *fileRiseR[] = { ".\\image\\jump\\R1.bmp" , ".\\image\\jump\\R2.bmp" , ".\\image\\jump\\R3.bmp" , ".\\image\\jump\\R4.bmp" , ".\\image\\jump\\R5.bmp" };
 		char *fileFallR[] = { ".\\image\\jump\\R7-1.bmp" , ".\\image\\jump\\R7-2.bmp" };
-		
+		char *fileJumpShootL[] = { ".\\image\\jump\\shoot\\L1-1.bmp" , ".\\image\\jump\\shoot\\L2-1.bmp" , ".\\image\\jump\\shoot\\L3-1.bmp" , ".\\image\\jump\\shoot\\L4-1.bmp" };
+		char *fileJumpShootL2[] = { ".\\image\\jump\\shoot\\L1-2.bmp" , ".\\image\\jump\\shoot\\L2-2.bmp" , ".\\image\\jump\\shoot\\L3-2.bmp" , ".\\image\\jump\\shoot\\L4-2.bmp" };
+		char *fileJumpShootR[] = { ".\\image\\jump\\shoot\\R1.bmp" , ".\\image\\jump\\shoot\\R2.bmp" , ".\\image\\jump\\shoot\\R3.bmp" , ".\\image\\jump\\shoot\\R4.bmp" };
+
+	#pragma endregion
+
 	#pragma region fileCrouch
+
 		char *fileCrouchL[] = { ".\\image\\crouch\\L1.bmp" };
 		char *fileCrouchR[] = { ".\\image\\crouch\\R1.bmp" };
 		char *fileCrouchMoveL[] = { ".\\image\\crouch\\move\\L1.bmp" , ".\\image\\crouch\\move\\L2.bmp" , ".\\image\\crouch\\move\\L3.bmp" , ".\\image\\crouch\\move\\L4.bmp" };
@@ -115,8 +130,6 @@ namespace game_framework {
 		char *fileCrouchShootR[] = { ".\\image\\crouch\\shoot\\R1.bmp" , ".\\image\\crouch\\shoot\\R2.bmp" , ".\\image\\crouch\\shoot\\R3.bmp" , ".\\image\\crouch\\shoot\\R4.bmp" };
 
 	#pragma endregion
-
-		
 
 	#pragma endregion
 
@@ -135,6 +148,10 @@ namespace game_framework {
 			heroCrouch.LoadBitmap_MoveR(fileCrouchMoveR[i]);
 			heroCrouch.LoadBitmap_ShootL(fileCrouchShootL[i], fileCrouchShootL2[i]);
 			heroCrouch.LoadBitmap_ShootR(fileCrouchShootR[i]);
+			heroJump.LoadBitmap_ShootL(fileJumpShootL[i], fileJumpShootL2[i]);
+			heroJump.LoadBitmap_ShootR(fileJumpShootR[i]);
+			heroMoveL.LoadBitmap_ShootL(fileMoveShootL[i], fileMoveShootL2[i]);
+			heroMoveR.LoadBitmap_ShootR(fileMoveShootR[i]);
 		}
 		for (int i = 0; i < 5; i++)
 		{
@@ -216,8 +233,12 @@ namespace game_framework {
 		
 		if (isRising||isFalling)
 		{
-			if(isRising) heroJump.OnShow_Rise();
-			if(isFalling) heroJump.OnShow_Fall();
+			if (isShooting) heroJump.OnShow_Shoot();
+			else
+			{
+				if (isRising) heroJump.OnShow_Rise();
+				if (isFalling) heroJump.OnShow_Fall();
+			}
 		}
 		else if (isMovingDown)
 		{
@@ -230,14 +251,21 @@ namespace game_framework {
 		}
 		else if (isMovingLeft)
 		{
-			heroMoveL.OnShow();
+			if (isShooting) heroMoveL.OnShow_ShootL();
+			else heroMoveL.OnShow();
 		}
 		else if (isMovingRight)
 		{
-			heroMoveR.OnShow();
+			if (isShooting) heroMoveR.OnShow_ShootR();
+			else heroMoveR.OnShow();
 		}
 		else if(!(isMovingDown || isMovingLeft || isMovingRight || isMovingUp))
 		{
+			/*if (isShooting)
+			{
+				if(direction == 1) 
+				else if(direction == 2)
+			}*/
 			if (direction == 1) heroStandL.OnShow();
 			else if (direction == 2) heroStandR.OnShow();
 		}
@@ -719,19 +747,37 @@ namespace game_framework {
 		animation.AddBitmap(file, Blue);
 	}
 
+	void CMove::LoadBitmap_ShootL(char* file, char* file2)
+	{
+		CMoveShoot.LoadShootLeft(file, file2);
+	}
+
+	void CMove::LoadBitmap_ShootR(char* file)
+	{
+		CMoveShoot.LoadShootRight(file);
+	}
+
 	void CMove::OnMove(int* nx, int* ny)
 	{
 		step = ini_step;
 		x = *nx;
 		y = *ny;
-		animation.OnMove();
-		if (isMovingLeft)
+		if (isShooting)
 		{
-			x -= step;
+			if (direction == 1) CMoveShoot.OnMoveL();
+			else if (direction == 2)CMoveShoot.OnMoveR();
 		}
-		if (isMovingRight)
+		else
 		{
-			x += step;
+			animation.OnMove();
+			if (isMovingLeft)
+			{
+				x -= step;
+			}
+			if (isMovingRight)
+			{
+				x += step;
+			}
 		}
 		*nx = x;
 		*ny = y;
@@ -794,6 +840,19 @@ namespace game_framework {
 		animation.SetTopLeft(x, y);
 		animation.OnShow();
 	}
+
+	void CMove::OnShow_ShootL()
+	{
+		CMoveShoot.SetXY(x, y);
+		CMoveShoot.OnShowL();
+	}
+
+	void CMove::OnShow_ShootR()
+	{
+		CMoveShoot.SetXY(x, y);
+		CMoveShoot.OnShowR();
+	}
+
 	//CMove
 #pragma endregion
 
@@ -815,6 +874,17 @@ namespace game_framework {
 	}
 
 	#pragma region Loadpicture
+		
+		void CJump::LoadBitmap_ShootL(char* file1, char* file2)
+		{
+			CJumpShoot.LoadShootLeft(file1, file2);
+		}
+
+		void CJump::LoadBitmap_ShootR(char* file)
+		{
+			CJumpShoot.LoadShootRight(file);
+		}
+
 		void CJump::LoadBitmap_FallL(char* file)
 		{
 			CFallL.AddBitmap(file, Blue);
@@ -834,8 +904,8 @@ namespace game_framework {
 		{
 			CRiseR.AddBitmap(file, Blue);
 		}
-	#pragma endregion
 
+	#pragma endregion
 
 	#pragma region SetState
 
@@ -857,7 +927,6 @@ namespace game_framework {
 
 	#pragma endregion
 
-	
 
 	bool CJump::OnMove(int *nx, int *ny)	//回傳isFalling的狀態
 	{
@@ -865,8 +934,16 @@ namespace game_framework {
 		y = *ny;
 		if (isRising)
 		{
-			if(direction==1) CRiseL.OnMove();
-			else if (direction == 2) CRiseR.OnMove();
+			if (isShooting)
+			{
+				if (direction == 1) CJumpShoot.OnMoveL();
+				else if (direction == 2) CJumpShoot.OnMoveR();
+			}
+			else
+			{
+				if (direction == 1) CRiseL.OnMove();
+				else if (direction == 2) CRiseR.OnMove();
+			}
 			if (velocity > 0)
 			{
 				y -= velocity;
@@ -883,8 +960,16 @@ namespace game_framework {
 		{
 			mapX = gameMap->getX();
 			mapY = gameMap->getY();
-			if(direction==1) CFallL.OnMove();
-			else if (direction == 2) CFallR.OnMove();
+			if (isShooting)
+			{
+				if (direction == 1) CJumpShoot.OnMoveL();
+				else if (direction == 2) CJumpShoot.OnMoveR();
+			}
+			else
+			{
+				if (direction == 1) CFallL.OnMove();
+				else if (direction == 2) CFallR.OnMove();
+			}
 			if (isEmpty(mapX + x, y - mapY + defaultHeight))		//因為y軸一開始就在最下面,所以要反向加才能得到正確到座標
 			{
 				y += velocity;
@@ -941,6 +1026,13 @@ namespace game_framework {
 		}
 	}
 
+	void CJump::OnShow_Shoot()
+	{
+		CJumpShoot.SetXY(x, y);
+		if (direction == 1) CJumpShoot.OnShowL();
+		else if (direction == 2) CJumpShoot.OnShowR();
+	}
+
 	//CJump
 #pragma endregion
 
@@ -967,11 +1059,11 @@ namespace game_framework {
 		{
 			if (dir_horizontal == 1)
 			{
-				crouchShoot.OnMoveL();
+				CcrouchShoot.OnMoveL();
 			}
 			else if (dir_horizontal == 2)
 			{
-				crouchShoot.OnMoveR();
+				CcrouchShoot.OnMoveR();
 			}
 		}
 		else
@@ -993,12 +1085,12 @@ namespace game_framework {
 
 	void CCrouch::LoadBitmap_ShootL(char* file,char* file2)
 	{
-		crouchShoot.LoadShootLeft(file, file2);
+		CcrouchShoot.LoadShootLeft(file, file2);
 	}
 
 	void CCrouch::LoadBitmap_ShootR(char* file)
 	{
-		crouchShoot.LoadShootRight(file);
+		CcrouchShoot.LoadShootRight(file);
 	}
 
 	void CCrouch::LoadBitmap_MoveL(char* file)
@@ -1056,14 +1148,14 @@ namespace game_framework {
 
 	void CCrouch::OnShow_Shoot()
 	{
-		crouchShoot.SetXY(x, y);
+		CcrouchShoot.SetXY(x, y);
 		if (dir_horizontal == 1)
 		{
-			crouchShoot.OnShowL();
+			CcrouchShoot.OnShowL();
 		}
 		else if (dir_horizontal == 2)
 		{
-			crouchShoot.OnShowR();
+			CcrouchShoot.OnShowR();
 		}
 	}
 
