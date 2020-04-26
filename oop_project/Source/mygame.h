@@ -81,6 +81,30 @@ private:
 
 };
 
+class CShoot
+{
+public:
+	CShoot();
+	~CShoot();
+	void Initialize();
+	void LoadShootLeft(char*,char*);
+	void LoadShootRight(char*);
+	void OnMoveL();
+	void OnMoveR();
+	void OnShowL();
+	void OnShowR();
+	void SetXY(int, int);
+
+private:
+	CAnimation CShootLHero;
+	CAnimation CShootLGun;
+	CAnimation CShootR;
+	int width;
+	int x, y;		//繪製座標
+
+
+};
+
 /////////////////////////////////////////////////////////////////////////////
 // 這個class提供可以用鍵盤或滑鼠控制的擦子
 // 看懂就可以改寫成自己的程式了
@@ -195,12 +219,12 @@ class CCrouch : public CMove		//只處理下蹲相關動作
 public:
 	CCrouch();
 	void Initialize();
-	void OnMove(int, int);		//移動控制
+	void OnMove(int,int);		//移動控制
 	void LoadBitmap_MoveL(char*);
 	void LoadBitmap_MoveR(char*);
 	void LoadBitmap_StandL(char*);
 	void LoadBitmap_StandR(char*);
-	void LoadBitmap_ShootL(char*);
+	void LoadBitmap_ShootL(char*,char*);
 	void LoadBitmap_ShootR(char*);
 	void OnShow_Move();
 	void OnShow_Stand();
@@ -212,8 +236,7 @@ private:
 	CAnimation CMoveR;				//右走
 	CAnimation CStandL;				//向左蹲
 	CAnimation CStandR;				//向右蹲
-	CAnimation CShootL;				//左蹲下射擊
-	CAnimation CShootR;				//右蹲下射擊
+	CShoot crouchShoot;				//處理射擊
 	bool isMovingLeft;
 	bool isMovingRight;
 	int x, y;						//座標
@@ -223,6 +246,7 @@ private:
 	int direction, dir_horizontal;	//按鍵方向、上一個水平方向
 
 };
+
 
 /////////////////////////////////////////////////////////////////////////////
 // 這個class提供Hero物件

@@ -105,14 +105,18 @@ namespace game_framework {
 		char *fileRiseR[] = { ".\\image\\jump\\R1.bmp" , ".\\image\\jump\\R2.bmp" , ".\\image\\jump\\R3.bmp" , ".\\image\\jump\\R4.bmp" , ".\\image\\jump\\R5.bmp" };
 		char *fileFallR[] = { ".\\image\\jump\\R7-1.bmp" , ".\\image\\jump\\R7-2.bmp" };
 		
+	#pragma region fileCrouch
 		char *fileCrouchL[] = { ".\\image\\crouch\\L1.bmp" };
 		char *fileCrouchR[] = { ".\\image\\crouch\\R1.bmp" };
 		char *fileCrouchMoveL[] = { ".\\image\\crouch\\move\\L1.bmp" , ".\\image\\crouch\\move\\L2.bmp" , ".\\image\\crouch\\move\\L3.bmp" , ".\\image\\crouch\\move\\L4.bmp" };
 		char *fileCrouchMoveR[] = { ".\\image\\crouch\\move\\R1.bmp" , ".\\image\\crouch\\move\\R2.bmp" , ".\\image\\crouch\\move\\R3.bmp" , ".\\image\\crouch\\move\\R4.bmp" };
+		char *fileCrouchShootL[] = { ".\\image\\crouch\\shoot\\L1-1.bmp" , ".\\image\\crouch\\shoot\\L2-1.bmp" , ".\\image\\crouch\\shoot\\L3-1.bmp" , ".\\image\\crouch\\shoot\\L4-1.bmp" };
+		char *fileCrouchShootL2[] = { ".\\image\\crouch\\shoot\\L1-2.bmp" , ".\\image\\crouch\\shoot\\L2-2.bmp" , ".\\image\\crouch\\shoot\\L3-2.bmp" , ".\\image\\crouch\\shoot\\L4-2.bmp" };
+		char *fileCrouchShootR[] = { ".\\image\\crouch\\shoot\\R1.bmp" , ".\\image\\crouch\\shoot\\R2.bmp" , ".\\image\\crouch\\shoot\\R3.bmp" , ".\\image\\crouch\\shoot\\R4.bmp" };
 
-		//char *fileCrouchShootL[] = { ".\\image\\crouch\\shoot\\L1.bmp" , ".\\image\\crouch\\shoot\\L2.bmp" , ".\\image\\crouch\\shoot\\L3.bmp" , ".\\image\\crouch\\shoot\\L4.bmp" };
-		//char *fileCrouchShootR[] = { ".\\image\\crouch\\shoot\\R1.bmp" , ".\\image\\crouch\\shoot\\R2.bmp" , ".\\image\\crouch\\shoot\\R3.bmp" , ".\\image\\crouch\\shoot\\R4.bmp" };
+	#pragma endregion
 
+		
 
 	#pragma endregion
 
@@ -129,8 +133,8 @@ namespace game_framework {
 			heroMoveR.LoadBitmap(filemoveR[i]);
 			heroCrouch.LoadBitmap_MoveL(fileCrouchMoveL[i]);
 			heroCrouch.LoadBitmap_MoveR(fileCrouchMoveR[i]);
-			heroCrouch.LoadBitmap_ShootL(fileCrouchMoveL[i]);
-			heroCrouch.LoadBitmap_ShootR(fileCrouchMoveR[i]);
+			heroCrouch.LoadBitmap_ShootL(fileCrouchShootL[i], fileCrouchShootL2[i]);
+			heroCrouch.LoadBitmap_ShootR(fileCrouchShootR[i]);
 		}
 		for (int i = 0; i < 5; i++)
 		{
@@ -193,7 +197,6 @@ namespace game_framework {
 		isFalling = heroJump.OnMove(&x, &y);
 		if (isFalling) isRising = false;
 		heroCrouch.OnMove(x, y);
-		//heroMoveUD.OnMove(&x, &y);
 		gameMap_OnMove();
 	}
 
@@ -964,11 +967,11 @@ namespace game_framework {
 		{
 			if (dir_horizontal == 1)
 			{
-				CShootL.OnMove();
+				crouchShoot.OnMoveL();
 			}
 			else if (dir_horizontal == 2)
 			{
-				CShootR.OnMove();
+				crouchShoot.OnMoveR();
 			}
 		}
 		else
@@ -988,14 +991,14 @@ namespace game_framework {
 
 #pragma region LoadPicture
 
-	void CCrouch::LoadBitmap_ShootL(char* file)
+	void CCrouch::LoadBitmap_ShootL(char* file,char* file2)
 	{
-		CShootL.AddBitmap(file, Blue);
+		crouchShoot.LoadShootLeft(file, file2);
 	}
 
 	void CCrouch::LoadBitmap_ShootR(char* file)
 	{
-		CShootR.AddBitmap(file, Blue);
+		crouchShoot.LoadShootRight(file);
 	}
 
 	void CCrouch::LoadBitmap_MoveL(char* file)
@@ -1053,15 +1056,14 @@ namespace game_framework {
 
 	void CCrouch::OnShow_Shoot()
 	{
+		crouchShoot.SetXY(x, y);
 		if (dir_horizontal == 1)
 		{
-			CShootL.SetTopLeft(x, y);
-			CShootL.OnShow();
+			crouchShoot.OnShowL();
 		}
 		else if (dir_horizontal == 2)
 		{
-			CShootR.SetTopLeft(x, y);
-			CShootR.OnShow();
+			crouchShoot.OnShowR();
 		}
 	}
 
@@ -1075,6 +1077,66 @@ namespace game_framework {
 	}
 
 	//CCrouch
+#pragma endregion
+
+#pragma region CShoot
+
+	CShoot::CShoot()
+	{
+		Initialize();
+	}
+
+	CShoot::~CShoot() {}
+
+	void CShoot::Initialize()
+	{
+		x = y = width = 0;
+	}
+
+	void CShoot::LoadShootLeft(char *file, char *file2)
+	{
+		CShootLHero.AddBitmap(file,Blue);
+		CShootLGun.AddBitmap(file2,Blue);
+	}
+
+	void CShoot::LoadShootRight(char *file)
+	{
+		CShootR.AddBitmap(file,Blue);
+	}
+
+	void CShoot::OnMoveL()
+	{
+		CShootLHero.OnMove();
+		CShootLGun.OnMove();
+	}
+
+	void CShoot::OnMoveR()
+	{
+		CShootR.OnMove();
+	}
+
+	void CShoot::OnShowL()
+	{
+		width = CShootLGun.Width();
+		CShootLHero.SetTopLeft(x, y);
+		CShootLHero.OnShow();
+		CShootLGun.SetTopLeft(x - width, y);
+		CShootLGun.OnShow();
+	}
+
+	void CShoot::OnShowR()
+	{
+		CShootR.SetTopLeft(x, y);
+		CShootR.OnShow();
+	}
+
+	void CShoot::SetXY(int nx, int ny)
+	{
+		x = nx;
+		y = ny;
+	}
+
+	//CShoot
 #pragma endregion
 
 
