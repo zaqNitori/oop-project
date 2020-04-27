@@ -108,7 +108,7 @@ IDB_GameMap             BITMAP                  "..\\image\\263.bmp"
 
 IDB_BITMAP6             BITMAP                  "..\\res\\bitmap6.bmp"
 
-IDB_gameMapBlock        BITMAP                  "D:\\Ntut\\oop-project\\oop_project\\image\\block_map.bmp"
+IDB_gameMapBlock        BITMAP                  "..\\image\\block_map.bmp"
 
 
 /////////////////////////////////////////////////////////////////////////////

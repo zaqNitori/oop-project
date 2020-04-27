@@ -140,18 +140,18 @@ namespace game_framework {
 		heroCrouch.LoadBitmap_StandR(fileCrouchR[0]);
 		for (int i = 0; i < 4; i++)
 		{
-			heroStandL.LoadBitmap(filestandL[i]);
-			heroStandR.LoadBitmap(filestandR[i]);
-			heroMoveL.LoadBitmap(filemoveL[i]);
-			heroMoveR.LoadBitmap(filemoveR[i]);
+			//heroStandL.LoadBitmap(filestandL[i]);
+			//heroStandR.LoadBitmap(filestandR[i]);
+			heroMove.LoadBitmap_MoveL(filemoveL[i]);
+			heroMove.LoadBitmap_MoveR(filemoveR[i]);
 			heroCrouch.LoadBitmap_MoveL(fileCrouchMoveL[i]);
 			heroCrouch.LoadBitmap_MoveR(fileCrouchMoveR[i]);
 			heroCrouch.LoadBitmap_ShootL(fileCrouchShootL[i], fileCrouchShootL2[i]);
 			heroCrouch.LoadBitmap_ShootR(fileCrouchShootR[i]);
 			heroJump.LoadBitmap_ShootL(fileJumpShootL[i], fileJumpShootL2[i]);
 			heroJump.LoadBitmap_ShootR(fileJumpShootR[i]);
-			heroMoveL.LoadBitmap_ShootL(fileMoveShootL[i], fileMoveShootL2[i]);
-			heroMoveR.LoadBitmap_ShootR(fileMoveShootR[i]);
+			heroMove.LoadBitmap_ShootL(fileMoveShootL[i], fileMoveShootL2[i]);
+			heroMove.LoadBitmap_ShootR(fileMoveShootR[i]);
 		}
 		for (int i = 0; i < 5; i++)
 		{
@@ -209,8 +209,7 @@ namespace game_framework {
 
 	void CHero::OnMove()
 	{
-		heroMoveL.OnMove(&x, &y);
-		heroMoveR.OnMove(&x, &y);
+		heroMove.OnMove(&x, &y);
 		isFalling = heroJump.OnMove(&x, &y);
 		if (isFalling) isRising = false;
 		heroCrouch.OnMove(x, y);
@@ -222,8 +221,7 @@ namespace game_framework {
 		
 		#pragma region SetXY
 		if (isRising || isFalling) heroJump.SetXY(x, y);
-		if (isMovingLeft) heroMoveL.SetXY(x, y);
-		if (isMovingRight) heroMoveR.SetXY(x, y);
+		if (isMovingLeft || isMovingRight) heroMove.SetXY(x, y);
 		if (isMovingDown) heroCrouch.SetXY(x, y);
 		heroStandL.SetXY(x, y);
 		heroStandR.SetXY(x, y);
@@ -249,15 +247,10 @@ namespace game_framework {
 				else heroCrouch.OnShow_Stand();
 			}
 		}
-		else if (isMovingLeft)
+		else if (isMovingLeft||isMovingRight)
 		{
-			if (isShooting) heroMoveL.OnShow_ShootL();
-			else heroMoveL.OnShow();
-		}
-		else if (isMovingRight)
-		{
-			if (isShooting) heroMoveR.OnShow_ShootR();
-			else heroMoveR.OnShow();
+			if (isShooting) heroMove.OnShow_Shoot();
+			else heroMove.OnShow();
 		}
 		else if(!(isMovingDown || isMovingLeft || isMovingRight || isMovingUp))
 		{
@@ -288,6 +281,7 @@ namespace game_framework {
 			heroStandR.SetDirection(direction);
 			heroJump.SetDirection(direction);
 			heroCrouch.SetDirection(direction);
+			heroMove.SetDirection(direction);
 		}
 
 		void CHero::SetDirection(int dir)
@@ -299,6 +293,7 @@ namespace game_framework {
 			heroStandR.SetDirection(dir);
 			heroJump.SetDirection(dir);
 			heroCrouch.SetDirection(dir);
+			heroMove.SetDirection(dir);
 		}
 		
 		void CHero::SetRising(bool flag)
@@ -323,13 +318,13 @@ namespace game_framework {
 		void CHero::SetMovingLeft(bool flag)
 		{
 			isMovingLeft = flag;
-			heroMoveL.SetMovingLeft(flag);
+			heroMove.SetMovingLeft(flag);
 		}
 
 		void CHero::SetMovingRight(bool flag)
 		{
 			isMovingRight = flag;
-			heroMoveR.SetMovingRight(flag);
+			heroMove.SetMovingRight(flag);
 		}
 
 		void CHero::SetShooting(bool flag)
@@ -337,6 +332,9 @@ namespace game_framework {
 			isShooting = flag;
 			heroCrouch.SetShooting(flag);
 			heroJump.SetShooting(flag);
+			heroMove.SetShooting(flag);
+			/*heroStandL.SetShooting(flag);
+			heroStandR.SetShooting(flag);*/
 		}
 	#pragma endregion
 
@@ -480,8 +478,8 @@ namespace game_framework {
 
 	void CGameMap::LoadBitmap()
 	{
-		//mapBmp.AddBitmap(IDB_GameMap);
-		mapBmp.AddBitmap(IDB_gameMapBlock);
+		mapBmp.AddBitmap(IDB_GameMap);
+		//mapBmp.AddBitmap(IDB_gameMapBlock);
 		SetFloorRoof();
 	}
 
@@ -719,32 +717,17 @@ namespace game_framework {
 		y = y_pos;
 		step = ini_step = 15;			//預設移動速度
 		direction = dir_horizontal = 1;	//預設方向向左
-		isShooting=isRising = isMovingDown = isMovingLeft = isMovingRight = isMovingUp = false;
+		isShooting = isRising = isMovingDown = isMovingLeft = isMovingRight = isMovingUp = false;
 	}
 
-	int CMove::GetX1()
+	void CMove::LoadBitmap_MoveL(char *file)
 	{
-		return x;
+		CmoveL.AddBitmap(file, Blue);
 	}
 
-	int CMove::GetX2()
+	void CMove::LoadBitmap_MoveR(char* file)
 	{
-		return x + animation.Width();
-	}
-
-	int CMove::GetY1()
-	{
-		return y;
-	}
-
-	int CMove::GetY2()
-	{
-		return y + animation.Height();
-	}
-
-	void CMove::LoadBitmap(char *file)
-	{
-		animation.AddBitmap(file, Blue);
+		CmoveR.AddBitmap(file, Blue);
 	}
 
 	void CMove::LoadBitmap_ShootL(char* file, char* file2)
@@ -762,21 +745,30 @@ namespace game_framework {
 		step = ini_step;
 		x = *nx;
 		y = *ny;
-		if (isShooting)
+		if (isShooting)		//讓主角射擊的時候會停下來無法移動
 		{
-			if (direction == 1) CMoveShoot.OnMoveL();
-			else if (direction == 2)CMoveShoot.OnMoveR();
-		}
-		else
-		{
-			animation.OnMove();
 			if (isMovingLeft)
 			{
 				x -= step;
+				CMoveShoot.OnMoveL();
+			}
+			else if (isMovingRight)
+			{
+				x += step;
+				CMoveShoot.OnMoveR();
+			}
+		}
+		else
+		{
+			if (isMovingLeft)
+			{
+				x -= step;
+				CmoveL.OnMove();
 			}
 			if (isMovingRight)
 			{
 				x += step;
+				CmoveR.OnMove();
 			}
 		}
 		*nx = x;
@@ -837,20 +829,23 @@ namespace game_framework {
 
 	void CMove::OnShow()
 	{
-		animation.SetTopLeft(x, y);
-		animation.OnShow();
+		if (isMovingLeft)
+		{
+			CmoveL.SetTopLeft(x, y);
+			CmoveL.OnShow();
+		}
+		else if (isMovingRight)
+		{
+			CmoveR.SetTopLeft(x, y);
+			CmoveR.OnShow();
+		}
 	}
 
-	void CMove::OnShow_ShootL()
+	void CMove::OnShow_Shoot()
 	{
 		CMoveShoot.SetXY(x, y);
-		CMoveShoot.OnShowL();
-	}
-
-	void CMove::OnShow_ShootR()
-	{
-		CMoveShoot.SetXY(x, y);
-		CMoveShoot.OnShowR();
+		if (direction == 1) CMoveShoot.OnShowL();
+		else if (direction == 2) CMoveShoot.OnShowR();
 	}
 
 	//CMove
@@ -1142,7 +1137,6 @@ namespace game_framework {
 		{
 			CStandR.SetTopLeft(x, y);
 			CStandR.OnShow();
-
 		}
 	}
 

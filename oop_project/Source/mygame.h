@@ -142,18 +142,14 @@ class CMove
 {
 public:
 	CMove();
-	int  GetX1();					// 左上角 x 座標
-	int  GetY1();					// 左上角 y 座標
-	int  GetX2();					// 右下角 x 座標
-	int  GetY2();					// 右下角 y 座標
 	void Initialize();				// 設定初始值
-	void LoadBitmap(char*);			// 載入圖形
+	void LoadBitmap_MoveL(char*);	// 載入圖形
+	void LoadBitmap_MoveR(char*);
 	void LoadBitmap_ShootL(char*, char*);
 	void LoadBitmap_ShootR(char*);
 	void OnMove(int*, int*);		// 移動
 	void OnShow();					// 將圖形貼到畫面
-	void OnShow_ShootL();
-	void OnShow_ShootR();
+	void OnShow_Shoot();
 	void SetMovingDown(bool flag);	// 設定是否正在往下移動
 	void SetMovingLeft(bool flag);	// 設定是否正在往左移動
 	void SetMovingRight(bool flag); // 設定是否正在往右移動
@@ -177,7 +173,8 @@ protected:
 
 private:
 	int x, y;
-	CAnimation animation;			//動畫
+	CAnimation CmoveL;				//動畫
+	CAnimation CmoveR;
 	CShoot CMoveShoot;
 	int floor;						//地板高度
 	int step, ini_step;				//移動速度
@@ -285,8 +282,7 @@ private:
 #pragma region Class物件
 	CMove heroStandL;
 	CMove heroStandR;
-	CMove heroMoveL; 
-	CMove heroMoveR;
+	CMove heroMove;
 	CJump heroJump;
 	CCrouch heroCrouch;				//下蹲
 	CGameMap *gameMap;				
