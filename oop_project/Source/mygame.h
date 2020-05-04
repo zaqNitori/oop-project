@@ -79,7 +79,7 @@ private:
 	//int map[18][130];			//¦a¹Ï½s¿è
 	int size;
 	int weight, height;
-	int map[36][256];
+	int map[40][260];
 
 };
 

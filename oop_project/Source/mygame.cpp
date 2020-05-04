@@ -96,7 +96,11 @@ namespace game_framework {
 
 		char *filestandL[] = { ".\\image\\stand\\L1.bmp",".\\image\\stand\\L2.bmp",".\\image\\stand\\L3.bmp" , ".\\image\\stand\\L4.bmp" };
 		char *filestandR[] = { ".\\image\\stand\\R1.bmp",".\\image\\stand\\R2.bmp",".\\image\\stand\\R3.bmp" , ".\\image\\stand\\R4.bmp" };
-		
+		char *filestandShootL[] = { ".\\image\\stand\\shoot\\L1-1.bmp" , ".\\image\\stand\\shoot\\L2-1.bmp" , ".\\image\\stand\\shoot\\L3-1.bmp" , ".\\image\\stand\\shoot\\L4-1.bmp" };
+		char *filestandShootL2[] = { ".\\image\\stand\\shoot\\L1-2.bmp" , ".\\image\\stand\\shoot\\L2-2.bmp" , ".\\image\\stand\\shoot\\L3-2.bmp" , ".\\image\\stand\\shoot\\L4-2.bmp" };
+		char *filestandShootR[] = { ".\\image\\stand\\shoot\\R1.bmp" , ".\\image\\stand\\shoot\\R2.bmp" , ".\\image\\stand\\shoot\\R3.bmp" , ".\\image\\stand\\shoot\\R4.bmp" };
+
+
 	#pragma region fileMove
 		
 		char *filemoveL[] = { ".\\image\\move\\L1.bmp",".\\image\\move\\L2.bmp",".\\image\\move\\L3.bmp" , ".\\image\\move\\L4.bmp" };
@@ -152,6 +156,8 @@ namespace game_framework {
 			heroJump.LoadBitmap_ShootR(fileJumpShootR[i]);
 			heroMove.LoadBitmap_ShootL(fileMoveShootL[i], fileMoveShootL2[i]);
 			heroMove.LoadBitmap_ShootR(fileMoveShootR[i]);
+			heroStand.LoadBitmap_ShootL(filestandShootL[i], filestandShootL2[i]);
+			heroStand.LoadBitmap_ShootR(filestandShootR[i]);
 		}
 		for (int i = 0; i < 5; i++)
 		{
@@ -182,7 +188,7 @@ namespace game_framework {
 			heroJump.SetDefaultHeight(defaultH);
 		}
 		
-		if (isMovingLeft)			//向左走
+		if (direction == 1)			//向左走
 		{
 			if (x < 200)			//當超過左側自由移動範圍時
 			{
@@ -193,7 +199,7 @@ namespace game_framework {
 			}
 			if (x <= 0) x = 0;
 		}
-		else if (isMovingRight)						//向右走
+		else if (direction == 2)	//向右走
 		{
 			if (x > 600 - defaultW)					//當超過右側自由移動範圍時
 			{
@@ -254,9 +260,8 @@ namespace game_framework {
 		}
 		else if(!(isMovingDown || isMovingLeft || isMovingRight || isRising))
 		{
-			/*if (isShooting) heroStand.OnShow_Shoot();
-			else heroStand.OnShow_Stand();*/
-			heroStand.OnShow_Stand();
+			if (isShooting) heroStand.OnShow_Shoot();
+			else heroStand.OnShow_Stand();
 		}
 
 		#pragma endregion
@@ -272,7 +277,9 @@ namespace game_framework {
 
 		void CHero::ResumeDirection()
 		{
-			direction = dir_horizontal;
+			if (isMovingLeft) direction = 1;
+			else if (isMovingRight) direction = 2;
+			else direction = dir_horizontal;
 			heroStand.SetDirection(direction);
 			heroJump.SetDirection(direction);
 			heroCrouch.SetDirection(direction);
@@ -447,40 +454,27 @@ namespace game_framework {
 		mapX = 0;
 		mapY = SIZE_Y - 721;
 		size = 20;
-		weight = 5121 / size;
+		weight = 5130 / size;
 		height = 721 / size;
 		isMovingLeft = isMovingRight = false;
 		for (int i = 0; i < height+1; i++)
-			for (int j = 0; j < weight+1; j++)
+			for (int j = 0; j < weight + 1; j++)
 			{
 				map[i][j] = 0;							//0為空白
-				if (i > 640 / size - 1) map[i][j] = 1;	//1為障礙物
-			}				
+				if (i > (640 / 20 - 1)) map[i][j] = 1;	//1為障礙物
+			}
 		#pragma region setBlock
-			/*SetBlock(4, 9, 11, 12);
-			SetBlock(10, 13, 9, 10);
-			SetBlock(15, 20, 12, 13);
-			SetBlock(21, 23, 8, 9);
-			SetBlock(28, 33, 13, 14);
-			SetBlock(37, 41, 12, 13);
-			SetBlock(41, 45, 8, 9);
-			SetBlock(42, 47, 11, 12);
-			SetBlock(47, 50, 8, 9);
-			SetBlock(51, 59, 5, 6);
-			SetBlock(51, 59, 13, 14);
-			SetBlock(81, 86, 11, 12);
-			SetBlock(94, 99, 11, 12);*/
-		SetBlock(1, 8, 13, 14);
-		SetBlock(9, 18, 22, 23);
-		SetBlock(12, 28, 18, 19);
-		SetBlock(30, 40, 24, 25);
-		SetBlock(57, 67, 25, 26);
-		SetBlock(75, 83, 24, 25);
-		SetBlock(85, 94, 22, 23);
-		SetBlock(95, 101, 17, 18);
-		SetBlock(104, 118, 25, 26);
-		SetBlock(162, 172, 23, 24);
-		SetBlock(190, 198, 22, 23);
+			SetBlock(1, 8, 13, 14);
+			SetBlock(9, 18, 22, 23);
+			SetBlock(12, 28, 18, 19);
+			SetBlock(30, 40, 24, 25);
+			SetBlock(57, 67, 25, 26);
+			SetBlock(75, 83, 24, 25);
+			SetBlock(85, 94, 22, 23);
+			SetBlock(95, 101, 17, 18);
+			SetBlock(104, 118, 25, 26);
+			SetBlock(162, 172, 23, 24);
+			SetBlock(190, 198, 22, 23);
 		#pragma endregion
 
 	}
@@ -749,31 +743,17 @@ namespace game_framework {
 		step = ini_step;
 		x = *nx;
 		y = *ny;
-		if (isShooting)		//讓主角射擊的時候會停下來無法移動
+		if (isMovingLeft) x -= step;
+		if (isMovingRight) x += step;
+		if (isShooting)
 		{
-			if (isMovingLeft)
-			{
-				x -= step;
-				CMoveShoot.OnMoveL();
-			}
-			else if (isMovingRight)
-			{
-				x += step;
-				CMoveShoot.OnMoveR();
-			}
+			if (direction == 1) CMoveShoot.OnMoveL();
+			else if (direction == 2) CMoveShoot.OnMoveR();
 		}
 		else
 		{
-			if (isMovingLeft)
-			{
-				x -= step;
-				CmoveL.OnMove();
-			}
-			if (isMovingRight)
-			{
-				x += step;
-				CmoveR.OnMove();
-			}
+			if (direction == 1) CmoveL.OnMove();
+			else if (direction == 2) CmoveR.OnMove();
 		}
 		*nx = x;
 		*ny = y;
@@ -833,12 +813,12 @@ namespace game_framework {
 
 	void CMove::OnShow()
 	{
-		if (isMovingLeft)
+		if (direction == 1)
 		{
 			CmoveL.SetTopLeft(x, y);
 			CmoveL.OnShow();
 		}
-		else if (isMovingRight)
+		else if (direction == 2)
 		{
 			CmoveR.SetTopLeft(x, y);
 			CmoveR.OnShow();
@@ -866,6 +846,7 @@ namespace game_framework {
 	{
 		x = y = 0;
 		direction = dir_horizontal = 1;
+		isShooting = false;
 	}
 
 #pragma region load
@@ -901,16 +882,16 @@ namespace game_framework {
 	{
 		x = nx;
 		y = ny;
-		/*if (isShooting)
+		if (isShooting)
 		{
 			if (direction == 1) CStandShoot.OnMoveL();
 			else if (direction == 2) CStandShoot.OnMoveR();
 		}
 		else
-		{*/
+		{
 			if (direction == 1) CStandL.OnMove();
 			else if (direction == 2) CStandR.OnMove();
-		//}
+		}
 	}
 
 	void CStand::OnShow_Shoot()
@@ -1480,7 +1461,6 @@ namespace game_framework {
 		hero.Initialize();
 		gameMap.LoadBitmap();
 		gameMap.Initialize();
-		//background.SetTopLeft(0, SIZE_Y-background.Height());		// 設定背景的起始座標
 		help.SetTopLeft(0, SIZE_Y - help.Height());			// 設定說明圖的起始座標
 		hits_left.SetInteger(HITS_LEFT);					// 指定剩下的撞擊數
 		hits_left.SetTopLeft(HITS_LEFT_X, HITS_LEFT_Y);		// 指定剩下撞擊數的座標
@@ -1586,14 +1566,12 @@ namespace game_framework {
 		{
 			eraser.SetMovingLeft(true);
 			hero.SetMovingLeft(true);
-			//gameMap.SetMovingLeft(true);
 			hero.SetDirection(1);
 		}
 		if (nChar == KEY_RIGHT)
 		{
 			eraser.SetMovingRight(true);
 			hero.SetMovingRight(true);
-			//gameMap.SetMovingRight(true);
 			hero.SetDirection(2);
 		}
 		if (nChar == KEY_UP)
@@ -1632,14 +1610,12 @@ namespace game_framework {
 		{
 			eraser.SetMovingLeft(false);
 			hero.SetMovingLeft(false);
-			//gameMap.SetMovingLeft(false);
 			hero.ResumeDirection();
 		}
 		if (nChar == KEY_RIGHT)
 		{
 			eraser.SetMovingRight(false);
 			hero.SetMovingRight(false);
-			//gameMap.SetMovingRight(false);
 			hero.ResumeDirection();
 		}
 		if (nChar == KEY_UP)
@@ -1654,10 +1630,10 @@ namespace game_framework {
 			hero.SetMovingDown(false);
 			hero.ResumeDirection();
 		}
-		/*if (nChar == KEY_A)
+		if (nChar == KEY_A)
 		{
 			hero.SetShooting(false);
-		}*/
+		}
 	}
 
 #pragma region OnButton
