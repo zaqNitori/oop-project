@@ -140,8 +140,8 @@ namespace game_framework {
 		heroCrouch.LoadBitmap_StandR(fileCrouchR[0]);
 		for (int i = 0; i < 4; i++)
 		{
-			//heroStandL.LoadBitmap(filestandL[i]);
-			//heroStandR.LoadBitmap(filestandR[i]);
+			heroStand.LoadBitmap_StandL(filestandL[i]);
+			heroStand.LoadBitmap_StandR(filestandR[i]);
 			heroMove.LoadBitmap_MoveL(filemoveL[i]);
 			heroMove.LoadBitmap_MoveR(filemoveR[i]);
 			heroCrouch.LoadBitmap_MoveL(fileCrouchMoveL[i]);
@@ -209,6 +209,7 @@ namespace game_framework {
 
 	void CHero::OnMove()
 	{
+		heroStand.OnMove(x, y);
 		heroMove.OnMove(&x, &y);
 		isFalling = heroJump.OnMove(&x, &y);
 		if (isFalling) isRising = false;
@@ -223,8 +224,7 @@ namespace game_framework {
 		if (isRising || isFalling) heroJump.SetXY(x, y);
 		if (isMovingLeft || isMovingRight) heroMove.SetXY(x, y);
 		if (isMovingDown) heroCrouch.SetXY(x, y);
-		heroStandL.SetXY(x, y);
-		heroStandR.SetXY(x, y);
+		heroStand.SetXY(x, y);
 		#pragma endregion
 
 		#pragma region OnShow
@@ -252,15 +252,11 @@ namespace game_framework {
 			if (isShooting) heroMove.OnShow_Shoot();
 			else heroMove.OnShow();
 		}
-		else if(!(isMovingDown || isMovingLeft || isMovingRight || isMovingUp))
+		else if(!(isMovingDown || isMovingLeft || isMovingRight || isRising))
 		{
-			/*if (isShooting)
-			{
-				if(direction == 1) 
-				else if(direction == 2)
-			}*/
-			if (direction == 1) heroStandL.OnShow();
-			else if (direction == 2) heroStandR.OnShow();
+			/*if (isShooting) heroStand.OnShow_Shoot();
+			else heroStand.OnShow_Stand();*/
+			heroStand.OnShow_Stand();
 		}
 
 		#pragma endregion
@@ -277,11 +273,11 @@ namespace game_framework {
 		void CHero::ResumeDirection()
 		{
 			direction = dir_horizontal;
-			heroStandL.SetDirection(direction);
-			heroStandR.SetDirection(direction);
+			heroStand.SetDirection(direction);
 			heroJump.SetDirection(direction);
 			heroCrouch.SetDirection(direction);
 			heroMove.SetDirection(direction);
+			
 		}
 
 		void CHero::SetDirection(int dir)
@@ -289,8 +285,7 @@ namespace game_framework {
 			direction = dir;
 			if (dir < 3)		//¦V¥ª©Î¦V¥k
 				dir_horizontal = dir;
-			heroStandL.SetDirection(dir);
-			heroStandR.SetDirection(dir);
+			heroStand.SetDirection(dir);
 			heroJump.SetDirection(dir);
 			heroCrouch.SetDirection(dir);
 			heroMove.SetDirection(dir);
@@ -849,6 +844,82 @@ namespace game_framework {
 	}
 
 	//CMove
+#pragma endregion
+
+#pragma region CStand
+
+	CStand::CStand()
+	{
+		Initialize();
+	}
+
+	void CStand::Initialize()
+	{
+		x = y = 0;
+		direction = dir_horizontal = 1;
+	}
+
+#pragma region load
+	void CStand::LoadBitmap_StandL(char* file)
+	{
+		CStandL.AddBitmap(file, Blue);
+	}
+
+	void CStand::LoadBitmap_StandR(char* file)
+	{
+		CStandR.AddBitmap(file, Blue);
+	}
+
+	void CStand::LoadBitmap_ShootL(char* file,char* file2)
+	{
+		CStandShoot.LoadShootLeft(file, file2);
+	}
+
+	void CStand::LoadBitmap_ShootR(char *file)
+	{
+		CStandShoot.LoadShootRight(file);
+	}
+
+#pragma endregion
+
+	void CStand::SetDirection(int dir)
+	{
+		direction = dir;
+		if (dir < 3) dir_horizontal = dir;
+	}
+	
+	void CStand::OnMove(int nx, int ny)
+	{
+		x = nx;
+		y = ny;
+		/*if (isShooting)
+		{
+			if (direction == 1) CStandShoot.OnMoveL();
+			else if (direction == 2) CStandShoot.OnMoveR();
+		}
+		else
+		{*/
+			if (direction == 1) CStandL.OnMove();
+			else if (direction == 2) CStandR.OnMove();
+		//}
+	}
+
+	void CStand::OnShow_Shoot()
+	{
+		CStandShoot.SetXY(x, y);
+		if (direction == 1) CStandShoot.OnShowL();
+		else if (direction == 2) CStandShoot.OnShowR();
+	}
+
+	void CStand::OnShow_Stand()
+	{
+		CStandL.SetTopLeft(x, y);
+		CStandR.SetTopLeft(x, y);
+		if (direction == 1) CStandL.OnShow();
+		else if (direction == 2) CStandR.OnShow();
+	}
+
+	//CStand
 #pragma endregion
 
 #pragma region CJump
@@ -1573,10 +1644,10 @@ namespace game_framework {
 			hero.SetMovingDown(false);
 			hero.ResumeDirection();
 		}
-		if (nChar == KEY_A)
+		/*if (nChar == KEY_A)
 		{
 			hero.SetShooting(false);
-		}
+		}*/
 	}
 
 #pragma region OnButton

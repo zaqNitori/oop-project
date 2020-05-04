@@ -183,6 +183,28 @@ private:
 
 };
 
+class CStand : public CMove
+{
+public:
+	CStand();
+	void Initialize();
+	void LoadBitmap_StandL(char*);
+	void LoadBitmap_StandR(char*);
+	void LoadBitmap_ShootL(char*, char*);
+	void LoadBitmap_ShootR(char*);
+	void SetDirection(int);
+	void OnMove(int, int);
+	void OnShow_Stand();
+	void OnShow_Shoot();
+
+private:
+	int x, y;
+	CAnimation CStandL;
+	CAnimation CStandR;
+	CShoot CStandShoot;
+	int direction, dir_horizontal;
+};
+
 class CJump : public CMove			//只處理上升下降
 {
 public:
@@ -280,9 +302,8 @@ public:
 
 private:
 #pragma region Class物件
-	CMove heroStandL;
-	CMove heroStandR;
 	CMove heroMove;
+	CStand heroStand;
 	CJump heroJump;
 	CCrouch heroCrouch;				//下蹲
 	CGameMap *gameMap;				
