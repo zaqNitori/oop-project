@@ -882,12 +882,9 @@ namespace game_framework {
 	{
 		x = nx;
 		y = ny;
-		if (isShooting)
-		{
-			if (direction == 1) CStandShoot.OnMoveL();
-			else if (direction == 2) CStandShoot.OnMoveR();
-		}
-		else
+		if (direction == 1) CStandShoot.OnMoveL();
+		else if (direction == 2) CStandShoot.OnMoveR();
+		if(!isShooting)
 		{
 			if (direction == 1) CStandL.OnMove();
 			else if (direction == 2) CStandR.OnMove();
