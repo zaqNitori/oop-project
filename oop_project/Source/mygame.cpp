@@ -446,15 +446,18 @@ namespace game_framework {
 	{
 		mapX = 0;
 		mapY = SIZE_Y - 721;
+		size = 20;
+		weight = 5121 / size;
+		height = 721 / size;
 		isMovingLeft = isMovingRight = false;
-		for (int i = 0; i < 18; i++)
-			for (int j = 0; j < 130; j++)
+		for (int i = 0; i < height+1; i++)
+			for (int j = 0; j < weight+1; j++)
 			{
-				map[i][j] = 0;					//0為空白
-				if (i > 15) map[i][j] = 1;		//1為障礙物
+				map[i][j] = 0;							//0為空白
+				if (i > 640 / size - 1) map[i][j] = 1;	//1為障礙物
 			}				
 		#pragma region setBlock
-			SetBlock(4, 9, 11, 12);
+			/*SetBlock(4, 9, 11, 12);
 			SetBlock(10, 13, 9, 10);
 			SetBlock(15, 20, 12, 13);
 			SetBlock(21, 23, 8, 9);
@@ -466,7 +469,18 @@ namespace game_framework {
 			SetBlock(51, 59, 5, 6);
 			SetBlock(51, 59, 13, 14);
 			SetBlock(81, 86, 11, 12);
-			SetBlock(94, 99, 11, 12);
+			SetBlock(94, 99, 11, 12);*/
+		SetBlock(1, 8, 13, 14);
+		SetBlock(9, 18, 22, 23);
+		SetBlock(12, 28, 18, 19);
+		SetBlock(30, 40, 24, 25);
+		SetBlock(57, 67, 25, 26);
+		SetBlock(75, 83, 24, 25);
+		SetBlock(85, 94, 22, 23);
+		SetBlock(95, 101, 17, 18);
+		SetBlock(104, 118, 25, 26);
+		SetBlock(162, 172, 23, 24);
+		SetBlock(190, 198, 22, 23);
 		#pragma endregion
 
 	}
@@ -505,16 +519,6 @@ namespace game_framework {
 		roof = 0;
 	}
 
-	/*void CGameMap::SetMovingLeft(bool flag)
-	{
-		isMovingLeft = flag;
-	}
-
-	void CGameMap::SetMovingRight(bool flag)
-	{
-		isMovingRight = flag;
-	}*/
-
 #pragma endregion
 
 #pragma region GetValue
@@ -531,6 +535,11 @@ namespace game_framework {
 	int CGameMap::getY()
 	{
 		return mapY;
+	}
+
+	int CGameMap::getSize()
+	{
+		return size;
 	}
 
 #pragma endregion
@@ -1026,6 +1035,7 @@ namespace game_framework {
 		{
 			mapX = gameMap->getX();
 			mapY = gameMap->getY();
+			_size = gameMap->getSize();
 			if (isShooting)
 			{
 				if (direction == 1) CJumpShoot.OnMoveL();
@@ -1040,13 +1050,13 @@ namespace game_framework {
 			{
 				y += velocity;
 				velocity+=2;
-				velocity = min(velocity, 23);
+				velocity = min(velocity, 20);
 			}
 			else
 			{
 				if (y + defaultHeight > 640 + mapY)
 					y = 640 - defaultHeight + mapY;
-				else y = (y / 40) * 40 - 1;
+				else y = (y / _size) * _size - 1;
 				isFalling = false;
 				velocity = ini_velocity;
 			}
@@ -1059,8 +1069,8 @@ namespace game_framework {
 	bool CJump::isEmpty(int nx, int ny)
 	{
 		if (ny > 640) return false;
-		int gx = nx / 40;
-		int gy = ny / 40;
+		int gx = nx / gameMap->getSize();
+		int gy = ny / gameMap->getSize();
 		return !(gameMap->getMapBlock(gy,gx));
 	}
 

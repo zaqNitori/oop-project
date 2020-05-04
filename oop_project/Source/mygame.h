@@ -66,8 +66,7 @@ public:
 	bool getMapBlock(int, int);
 	int getX();
 	int getY();
-	//void SetMovingLeft(bool flag);		//不該有，不需要
-	//void SetMovingRight(bool flag);		//不該有，不需要
+	int getSize();
 
 private:
 	void SetFloorRoof();
@@ -77,7 +76,10 @@ private:
 	bool isMovingRight;
 	int floor, roof;
 	int mapX, mapY;				//地圖座標
-	int map[18][130];			//地圖編輯
+	//int map[18][130];			//地圖編輯
+	int size;
+	int weight, height;
+	int map[36][256];
 
 };
 
@@ -239,6 +241,7 @@ private:
 	int velocity, ini_velocity;		//速度、初速度
 	int mapX, mapY;					//地圖座標
 	int direction, dir_horizontal;	//按鍵方向、上一個水平方向
+	int _size;
 
 };
 
