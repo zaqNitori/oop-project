@@ -83,6 +83,25 @@ private:
 
 };
 
+class CBullet
+{
+public:
+	CBullet(int, int, int);		//給予角色的xy座標和方向
+	~CBullet();
+	void Initialize();
+	void LoadBitmap(char*);
+	void OnShow();
+	void OnMove();
+	bool isDead();
+
+private:
+	CAnimation bullet;
+	int x, y;
+	int direction;
+	int velocity;
+
+};
+
 class CShoot
 {
 public:
@@ -296,6 +315,7 @@ public:
 	void Initialize();
 	void OnShow();
 	void OnMove();
+#pragma region Setstate
 	void SetGameMap(CGameMap*);
 	void SetMovingDown(bool flag);	// 設定是否正在落下
 	void SetMovingLeft(bool flag);	// 設定是否正在往左移動
@@ -304,10 +324,24 @@ public:
 	void SetShooting(bool flag);	// 設定是否攻擊
 	void SetRising(bool flag);
 	void SetDirection(int);			// 設定方向
-	void ResumeDirection();			// 將方向重新調回左和右
-	//void SetFalling(bool flag);
-	void getXY();
+	void ResumeDirection();			// 將方向重新調回左和右  
 	void SetXY(int, int);	//方便Demo使用
+#pragma endregion
+
+#pragma region Getstate
+	int getX();
+	int getY();
+	int getDir();
+#pragma endregion
+	
+#pragma region Bullet
+	bool isAvailableBullet();
+	void addBullet();		//new一個Bullet物件
+	void killBullet();		//delete已經死亡的Bullet物件
+	void OnMoveBullet();
+	void OonShowBullet();
+#pragma endregion
+
 
 private:
 #pragma region Class物件
@@ -318,6 +352,7 @@ private:
 	CGameMap *gameMap;				
 	CMovingBitmap CDefaultStand;	//不顯示、不移動，只處理碰撞
 	CMovingBitmap CDefaultCrouch;	//同上
+	vector<CBullet*> vCblt;
 #pragma endregion
 	
 #pragma region 變數宣告
@@ -330,10 +365,10 @@ private:
 	bool isShooting;				//攻擊
 	int direction;					//角色面向
 	int dir_horizontal;				//前一次的水平面向
-	int floor;						//地板
 	int mapX, mapY;					//地圖的座標
 	int x, y;						//角色在螢幕的座標
-	int defaultW, defaultH;			//站力圖片寬高
+	int defaultW, defaultH;			//站立圖片寬高
+	int maxBullet;					//場上同時能存在的子彈上限
 #pragma endregion
 	
 	void gameMap_OnMove();			//處理地圖移動

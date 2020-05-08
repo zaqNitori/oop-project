@@ -60,6 +60,7 @@
 #include "mygame.h"
 
 #define Blue RGB(0,0,255)
+#define Black RGB(0,0,0)
 
 namespace game_framework {
 
@@ -78,12 +79,12 @@ namespace game_framework {
 	{
 		const int ini_x = 200;		//5121
 		const int ini_y = 450;		//721
+		maxBullet = 5;
 		mapX = 0;
 		mapY = SIZE_Y - 721;
 		x = ini_x;
 		y = ini_y;
-		floor = 450;
-		direction = 1;				//預設向左
+		direction = dir_horizontal = 1;				//預設向左
 		isFalling = isRising = isMovingDown = isMovingLeft = isMovingRight = isMovingUp = isShooting = false;
 	}
 
@@ -174,6 +175,8 @@ namespace game_framework {
 
 	}
 
+#pragma region MapMove
+
 	void CHero::gameMap_OnMove()
 	{
 		if (isMovingDown && !isRising)		//根據不同動作給予不同default圖片以方便判斷
@@ -187,8 +190,8 @@ namespace game_framework {
 			defaultH = CDefaultStand.Height();
 			heroJump.SetDefaultHeight(defaultH);
 		}
-		
-		if (direction == 1)			//向左走
+
+		if (dir_horizontal == 1)			//向左走
 		{
 			if (x < 200)			//當超過左側自由移動範圍時
 			{
@@ -199,7 +202,7 @@ namespace game_framework {
 			}
 			if (x <= 0) x = 0;
 		}
-		else if (direction == 2)	//向右走
+		else if (dir_horizontal == 2)	//向右走
 		{
 			if (x > 600 - defaultW)					//當超過右側自由移動範圍時
 			{
@@ -212,6 +215,7 @@ namespace game_framework {
 		}
 		gameMap->setXY(mapX, mapY);					//設定地圖座標
 	}
+#pragma endregion
 
 	void CHero::OnMove()
 	{
@@ -238,46 +242,38 @@ namespace game_framework {
 		if (isRising||isFalling)
 		{
 			if (isShooting)
-			{
 				heroJump.OnShow_Shoot();
-				isShooting = heroJump.isfinalBitmap(dir_horizontal);
-			}
 			else
 			{
 				if (isRising) heroJump.OnShow_Rise();
 				if (isFalling) heroJump.OnShow_Fall();
 			}
+			//isShooting = heroJump.isfinalBitmap(dir_horizontal);
 		}
 		else if (isMovingDown)
 		{
 			if (isShooting)
-			{
 				heroCrouch.OnShow_Shoot();
-				isShooting = heroCrouch.isfinalBitmap(dir_horizontal);
-			}
 			else
 			{
 				if (isMovingLeft || isMovingRight) heroCrouch.OnShow_Move();
 				else heroCrouch.OnShow_Stand();
 			}
+			//isShooting = heroCrouch.isfinalBitmap(dir_horizontal);
 		}
 		else if (isMovingLeft||isMovingRight)
 		{
 			if (isShooting)
-			{
 				heroMove.OnShow_Shoot();
-				isShooting = heroMove.isfinalBitmap(dir_horizontal);
-			}
 			else heroMove.OnShow();
+			//isShooting = heroMove.isfinalBitmap(dir_horizontal);
 		}
 		else if(!(isMovingDown || isMovingLeft || isMovingRight || isRising))
 		{
 			if (isShooting)
-			{
 				heroStand.OnShow_Shoot();
-				isShooting = heroStand.isfinalBitmap(dir_horizontal);
-			}
 			else heroStand.OnShow_Stand();
+			//isShooting = heroStand.isfinalBitmap(dir_horizontal);
 		}
 
 		#pragma endregion
@@ -293,14 +289,13 @@ namespace game_framework {
 
 		void CHero::ResumeDirection()
 		{
-			if (isMovingLeft) direction = 1;
-			else if (isMovingRight) direction = 2;
+			if (isMovingLeft) direction = dir_horizontal = 1;
+			else if (isMovingRight) direction = dir_horizontal = 2;
 			else direction = dir_horizontal;
 			heroStand.SetDirection(direction);
 			heroJump.SetDirection(direction);
 			heroCrouch.SetDirection(direction);
 			heroMove.SetDirection(direction);
-			
 		}
 
 		void CHero::SetDirection(int dir)
@@ -349,6 +344,8 @@ namespace game_framework {
 		{
 			isShooting = flag;
 			heroMove.SetShooting(flag);
+			heroCrouch.SetShooting(flag);	//不可省略
+			heroJump.SetShooting(flag);		//不可省略
 		}
 
 		void CHero::SetXY(int nx, int ny)
@@ -359,7 +356,45 @@ namespace game_framework {
 
 	#pragma endregion
 
-	
+	#pragma region GetState
+		
+		int CHero::getX() { return x; }
+
+		int CHero::getY() { return y; }
+
+		int CHero::getDir() { return direction; }
+
+	#pragma endregion
+
+	#pragma region BulletState
+		bool CHero::isAvailableBullet() { return vCblt.size() < maxBullet; }
+
+		void CHero::addBullet()
+		{
+			vCblt.push_back(new CBullet(x, y, direction));
+		}
+
+		void CHero::killBullet()
+		{
+			for (int i = 0; i < vCblt.size(); i++)
+				if (vCblt[i]->isDead())
+					delete[] vCblt[i];
+		}
+
+		void CHero::OnMoveBullet()
+		{
+			for (int i = 0; i < vCblt.size(); i++)
+				vCblt[i]->OnMove();
+		}
+
+		void CHero::OonShowBullet()
+		{
+			for (int i = 0; i < vCblt.size(); i++)
+				vCblt[i]->OnShow();
+		}
+
+	#pragma endregion
+
 
 	//CHero
 #pragma endregion
@@ -456,6 +491,69 @@ namespace game_framework {
 
 	//CBall
 #pragma endregion
+
+
+#pragma region CBullet
+
+	CBullet::CBullet(int nx, int ny, int dir)
+	{
+		x = nx;
+		y = ny;
+		direction = dir;
+		Initialize();
+	}
+
+	void CBullet::Initialize()
+	{
+		char *fileBullet[] = { ".\\image\\bullet\\b1.bmp" , ".\\image\\bullet\\b2.bmp" , ".\\image\\bullet\\b3.bmp" , ".\\image\\bullet\\b4.bmp" };
+		for (int i = 0; i < 4; i++)
+			LoadBitmap(fileBullet[i]);
+		velocity = 10;
+	}
+
+	void CBullet::LoadBitmap(char* file)
+	{
+		bullet.AddBitmap(file, Black);
+	}
+
+	void CBullet::OnMove()
+	{
+		switch (direction)
+		{
+		case 1:
+			x -= velocity;
+			break;
+		case 2:
+			x += velocity;
+			break;
+		case 3:
+			y -= velocity;
+			break;
+		case 4:
+			y += velocity;
+			break;
+		default:
+			break;
+		}
+		bullet.OnMove();
+	}
+
+	void CBullet::OnShow()
+	{
+		bullet.SetTopLeft(x, y);
+		bullet.OnShow();
+	}
+
+	bool CBullet::isDead()
+	{
+		if (x > 800 || x < 0 || y>600 || y < 0) return true;
+		return false;
+	}
+
+	//CBullet
+#pragma endregion
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CGameMap: GameMap class
@@ -1330,7 +1428,6 @@ namespace game_framework {
 				CShootLHero.Reset();
 				return false;
 			}
-				
 		}
 		else if (dir == 2)
 		{
@@ -1340,7 +1437,7 @@ namespace game_framework {
 				return false;
 			}
 		}
-		return true;
+		return false;
 	}
 
 	//CShoot
@@ -1517,15 +1614,20 @@ namespace game_framework {
 			ball[i].SetIsAlive(true);
 		}
 		eraser.Initialize();
-		hero.Initialize();
-		gameMap.LoadBitmap();
-		gameMap.Initialize();
+		
 		help.SetTopLeft(0, SIZE_Y - help.Height());			// 設定說明圖的起始座標
+
 		hits_left.SetInteger(HITS_LEFT);					// 指定剩下的撞擊數
 		hits_left.SetTopLeft(HITS_LEFT_X, HITS_LEFT_Y);		// 指定剩下撞擊數的座標
+
 		CAudio::Instance()->Play(AUDIO_LAKE, true);			// 撥放 WAVE
 		CAudio::Instance()->Play(AUDIO_DING, false);		// 撥放 WAVE
 		CAudio::Instance()->Play(AUDIO_NTUT, true);			// 撥放 MIDI
+
+		gameMap.LoadBitmap();
+		gameMap.Initialize();
+
+		hero.Initialize();
 		hero.SetGameMap(&gameMap);
 	}
 
@@ -1649,6 +1751,8 @@ namespace game_framework {
 		if (nChar == KEY_A)
 		{
 			hero.SetShooting(true);
+			if (hero.isAvailableBullet())
+				hero.addBullet();
 		}
 		if (nChar == KEY_S)
 		{
@@ -1694,10 +1798,10 @@ namespace game_framework {
 			hero.SetMovingDown(false);
 			hero.ResumeDirection();
 		}
-		/*if (nChar == KEY_A)
+		if (nChar == KEY_A)
 		{
 			hero.SetShooting(false);
-		}*/
+		}
 	}
 
 #pragma region OnButton
