@@ -237,7 +237,11 @@ namespace game_framework {
 		
 		if (isRising||isFalling)
 		{
-			if (isShooting) heroJump.OnShow_Shoot();
+			if (isShooting)
+			{
+				heroJump.OnShow_Shoot();
+				isShooting = heroJump.isfinalBitmap(dir_horizontal);
+			}
 			else
 			{
 				if (isRising) heroJump.OnShow_Rise();
@@ -246,7 +250,11 @@ namespace game_framework {
 		}
 		else if (isMovingDown)
 		{
-			if (isShooting) heroCrouch.OnShow_Shoot();
+			if (isShooting)
+			{
+				heroCrouch.OnShow_Shoot();
+				isShooting = heroCrouch.isfinalBitmap(dir_horizontal);
+			}
 			else
 			{
 				if (isMovingLeft || isMovingRight) heroCrouch.OnShow_Move();
@@ -255,12 +263,20 @@ namespace game_framework {
 		}
 		else if (isMovingLeft||isMovingRight)
 		{
-			if (isShooting) heroMove.OnShow_Shoot();
+			if (isShooting)
+			{
+				heroMove.OnShow_Shoot();
+				isShooting = heroMove.isfinalBitmap(dir_horizontal);
+			}
 			else heroMove.OnShow();
 		}
 		else if(!(isMovingDown || isMovingLeft || isMovingRight || isRising))
 		{
-			if (isShooting) heroStand.OnShow_Shoot();
+			if (isShooting)
+			{
+				heroStand.OnShow_Shoot();
+				isShooting = heroStand.isfinalBitmap(dir_horizontal);
+			}
 			else heroStand.OnShow_Stand();
 		}
 
@@ -332,12 +348,15 @@ namespace game_framework {
 		void CHero::SetShooting(bool flag)
 		{
 			isShooting = flag;
-			heroCrouch.SetShooting(flag);
-			heroJump.SetShooting(flag);
 			heroMove.SetShooting(flag);
-			/*heroStandL.SetShooting(flag);
-			heroStandR.SetShooting(flag);*/
 		}
+
+		void CHero::SetXY(int nx, int ny)
+		{
+			x = nx;
+			y = ny;
+		}
+
 	#pragma endregion
 
 	
@@ -811,6 +830,11 @@ namespace game_framework {
 	//SetState
 #pragma endregion
 
+	bool CMove::isfinalBitmap(int dir)
+	{
+		return CMoveShoot.isfinalBitmap(dir);
+	}
+
 	void CMove::OnShow()
 	{
 		if (direction == 1)
@@ -891,6 +915,11 @@ namespace game_framework {
 		}
 	}
 
+	bool CStand::isfinalBitmap(int dir)
+	{
+		return CStandShoot.isfinalBitmap(dir);
+	}
+
 	void CStand::OnShow_Shoot()
 	{
 		CStandShoot.SetXY(x, y);
@@ -919,7 +948,7 @@ namespace game_framework {
 	void CJump::Initialize()
 	{
 		const int FLOOR = 450;			//地板高度
-		const int INI_VELOCITY = 28;	//初速
+		const int INI_VELOCITY = 30;	//初速
 		floor = FLOOR;
 		direction = dir_horizontal = 1;	//預設方向向左
 		velocity = ini_velocity = INI_VELOCITY;
@@ -1024,11 +1053,11 @@ namespace game_framework {
 				if (direction == 1) CFallL.OnMove();
 				else if (direction == 2) CFallR.OnMove();
 			}
-			if (isEmpty(mapX + x, y - mapY + defaultHeight))		//因為y軸一開始就在最下面,所以要反向加才能得到正確到座標
+			if (isEmpty(x - mapX, y - mapY + defaultHeight))		//因為y軸一開始就在最下面,所以要反向加才能得到正確到座標
 			{
 				y += velocity;
-				velocity+=2;
-				velocity = min(velocity, 20);
+				velocity += 2;
+				velocity = min(velocity, 19);
 			}
 			else
 			{
@@ -1050,6 +1079,11 @@ namespace game_framework {
 		int gx = nx / gameMap->getSize();
 		int gy = ny / gameMap->getSize();
 		return !(gameMap->getMapBlock(gy,gx));
+	}
+
+	bool CJump::isfinalBitmap(int dir)
+	{
+		return CJumpShoot.isfinalBitmap(dir);
 	}
 
 	void CJump::OnShow_Rise()
@@ -1171,6 +1205,11 @@ namespace game_framework {
 
 #pragma region OnShow
 
+	bool CCrouch::isfinalBitmap(int dir)
+	{
+		return CcrouchShoot.isfinalBitmap(dir);
+	}
+
 	void CCrouch::OnShow_Move()
 	{
 		if (dir_horizontal == 1)
@@ -1279,6 +1318,29 @@ namespace game_framework {
 	{
 		x = nx;
 		y = ny;
+	}
+
+	bool CShoot::isfinalBitmap(int dir)
+	{
+		if (dir == 1)
+		{
+			if (CShootLGun.IsFinalBitmap())
+			{
+				CShootLGun.Reset();
+				CShootLHero.Reset();
+				return false;
+			}
+				
+		}
+		else if (dir == 2)
+		{
+			if (CShootR.IsFinalBitmap())
+			{
+				CShootR.Reset();
+				return false;
+			}
+		}
+		return true;
 	}
 
 	//CShoot
@@ -1557,6 +1619,7 @@ namespace game_framework {
 		const char KEY_DOWN = 0x28;		// keyboard下箭頭
 		const char KEY_A = 0x41;		// keyboard a
 		const char KEY_S = 0x53;		// keyboard s
+		const char KEY_Q = 0x51;
 
 		//左1 右2 上3 下4
 		if (nChar == KEY_LEFT)
@@ -1590,6 +1653,10 @@ namespace game_framework {
 		if (nChar == KEY_S)
 		{
 			hero.SetRising(true);
+		}
+		if (nChar == KEY_Q)
+		{
+			hero.SetXY(100, 500);
 		}
 
 	}
@@ -1627,10 +1694,10 @@ namespace game_framework {
 			hero.SetMovingDown(false);
 			hero.ResumeDirection();
 		}
-		if (nChar == KEY_A)
+		/*if (nChar == KEY_A)
 		{
 			hero.SetShooting(false);
-		}
+		}*/
 	}
 
 #pragma region OnButton

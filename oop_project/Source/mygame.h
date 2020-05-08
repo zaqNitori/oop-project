@@ -96,6 +96,7 @@ public:
 	void OnShowL();
 	void OnShowR();
 	void SetXY(int, int);
+	bool isfinalBitmap(int);
 
 private:
 	CAnimation CShootLHero;
@@ -162,6 +163,7 @@ public:
 	void SetShooting(bool flag);
 	void SetDirection(int);
 	void SetXY(int nx, int ny);		// 設定左上角座標
+	bool isfinalBitmap(int);
 
 protected:
 	bool isMovingDown;				//下動
@@ -198,6 +200,7 @@ public:
 	void OnMove(int, int);
 	void OnShow_Stand();
 	void OnShow_Shoot();
+	bool isfinalBitmap(int);
 
 private:
 	int x, y;
@@ -225,6 +228,7 @@ public:
 	void SetRising(bool flag);
 	void SetDirection(int);
 	void SetGameMap(CGameMap*);
+	bool isfinalBitmap(int);
 
 private:
 	bool isEmpty(int,int);
@@ -261,6 +265,7 @@ public:
 	void OnShow_Stand();
 	void OnShow_Shoot();
 	void SetDirection(int);
+	bool isfinalBitmap(int);
 
 private:
 	CAnimation CMoveL;				//左走
@@ -302,6 +307,7 @@ public:
 	void ResumeDirection();			// 將方向重新調回左和右
 	//void SetFalling(bool flag);
 	void getXY();
+	void SetXY(int, int);	//方便Demo使用
 
 private:
 #pragma region Class物件
