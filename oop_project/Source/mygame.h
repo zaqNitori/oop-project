@@ -86,6 +86,7 @@ private:
 class CBullet
 {
 public:
+	CBullet();
 	CBullet(int, int, int);		//給予角色的xy座標和方向
 	~CBullet();
 	void Initialize();
@@ -93,12 +94,16 @@ public:
 	void OnShow();
 	void OnMove();
 	bool isDead();
+	bool isShow();
+	void SetLife(bool);
+	void SetBullet(int, int, int);
 
 private:
 	CAnimation bullet;
 	int x, y;
 	int direction;
 	int velocity;
+	bool isAlive;
 
 };
 
@@ -335,11 +340,11 @@ public:
 #pragma endregion
 	
 #pragma region Bullet
-	bool isAvailableBullet();
+	void InitialBullet();
 	void addBullet();		//new一個Bullet物件
 	void killBullet();		//delete已經死亡的Bullet物件
 	void OnMoveBullet();
-	void OonShowBullet();
+	void OnShowBullet();
 #pragma endregion
 
 
@@ -368,7 +373,7 @@ private:
 	int mapX, mapY;					//地圖的座標
 	int x, y;						//角色在螢幕的座標
 	int defaultW, defaultH;			//站立圖片寬高
-	int maxBullet;					//場上同時能存在的子彈上限
+	unsigned maxBullet;					//場上同時能存在的子彈上限
 #pragma endregion
 	
 	void gameMap_OnMove();			//處理地圖移動
