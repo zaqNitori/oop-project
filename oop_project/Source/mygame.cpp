@@ -185,6 +185,16 @@ namespace game_framework {
 	}
 
 #pragma region MapMove
+	void CHero::gravity()
+	{
+		int gx = (x - mapX) / gameMap->getSize();
+		int gy = (y - mapY + defaultH) / gameMap->getSize();
+		/*if (!isRising)
+		{
+			if (!gameMap->getMapBlock(gy+10, gx))
+
+		}*/
+	}
 
 	void CHero::gameMap_OnMove()
 	{
@@ -234,6 +244,7 @@ namespace game_framework {
 		if (isFalling) isRising = false;
 		heroCrouch.OnMove(x, y);
 		gameMap_OnMove();
+		gravity();
 	}
 
 	void CHero::OnShow()
@@ -525,11 +536,13 @@ namespace game_framework {
 
 	void CBullet::Initialize()
 	{
-		char *fileBullet[] = { ".\\image\\bullet\\b1.bmp" , ".\\image\\bullet\\b2.bmp" , ".\\image\\bullet\\b3.bmp" , ".\\image\\bullet\\b4.bmp" };
+		//char *fileBullet[] = { ".\\image\\bullet\\b1.bmp" , ".\\image\\bullet\\b2.bmp" , ".\\image\\bullet\\b3.bmp" , ".\\image\\bullet\\b4.bmp" };
+		char *fileRiseL[] = { ".\\image\\jump\\L1.bmp" , ".\\image\\jump\\L2.bmp" , ".\\image\\jump\\L3.bmp" , ".\\image\\jump\\L4.bmp" };
 		for (int i = 0; i < 4; i++)
-			LoadBitmap(fileBullet[i]);
+			LoadBitmap(fileRiseL[i]);
 		velocity = 20;
 		isAlive = false;
+		bullet.SetDelayCount(1);
 	}
 
 	void CBullet::LoadBitmap(char* file)
@@ -567,7 +580,7 @@ namespace game_framework {
 
 	bool CBullet::isDead()
 	{
-		if (x > 800 || x < 0 || y>600 || y < 0) return true;
+		if (x  > 800 || x + bullet.Width() < 0 || y > 600 || y + bullet.Height() < 0) return true;
 		return false;
 	}
 
@@ -625,14 +638,17 @@ namespace game_framework {
 			SetBlock(104, 118, 25, 26);
 			SetBlock(162, 172, 23, 24);
 			SetBlock(190, 198, 22, 23);
+			SetBlock(42, 46, 17, 18);
+			SetBlock(50, 68, 14, 15);
 		#pragma endregion
 
 	}
 
 	void CGameMap::LoadBitmap()
 	{
-		mapBmp.AddBitmap(IDB_GameMap);
+		//mapBmp.AddBitmap(IDB_GameMap);
 		//mapBmp.AddBitmap(IDB_gameMapBlock);
+		mapBmp.AddBitmap(".\\image\\Black_on_map.bmp");
 		SetFloorRoof();
 	}
 
@@ -1799,7 +1815,8 @@ namespace game_framework {
 		}
 		if (nChar == KEY_Q)
 		{
-			hero.SetXY(100, 500);
+			hero.SetXY(300, 400);
+			//hero.SetShooting(false);
 		}
 
 	}

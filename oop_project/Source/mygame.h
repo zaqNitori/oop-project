@@ -377,6 +377,7 @@ private:
 #pragma endregion
 	
 	void gameMap_OnMove();			//處理地圖移動
+	void gravity();					//重力
 
 };
 
