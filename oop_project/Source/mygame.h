@@ -250,6 +250,7 @@ public:
 	void OnShow_Fall();
 	void OnShow_Shoot();
 	void SetRising(bool flag);
+	void SetFalling(bool flag);
 	void SetDirection(int);
 	void SetGameMap(CGameMap*);
 	bool isfinalBitmap(int);

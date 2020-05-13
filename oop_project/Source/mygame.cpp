@@ -77,12 +77,10 @@ namespace game_framework {
 
 	void CHero::Initialize()
 	{
-		const int ini_x = 200;		//5121
-		const int ini_y = 450;		//721
 		mapX = 0;
 		mapY = SIZE_Y - 721;
-		x = ini_x;
-		y = ini_y;
+		x = 200;
+		y = 450;
 		direction = dir_horizontal = 1;				//¹w³]¦V¥ª
 		isFalling = isRising = isMovingDown = isMovingLeft = isMovingRight = isMovingUp = isShooting = false;
 	}
@@ -188,12 +186,15 @@ namespace game_framework {
 	void CHero::gravity()
 	{
 		int gx = (x - mapX) / gameMap->getSize();
-		int gy = (y - mapY + defaultH) / gameMap->getSize();
-		/*if (!isRising)
+		int gy = (y - mapY + CDefaultStand.Height()) / gameMap->getSize();
+		if (!isRising && !isFalling)
 		{
-			if (!gameMap->getMapBlock(gy+10, gx))
-
-		}*/
+			if (!gameMap->getMapBlock(gy + 1, gx))
+			{
+				heroJump.SetFalling(true);
+				isFalling = true;
+			}
+		}
 	}
 
 	void CHero::gameMap_OnMove()
@@ -238,13 +239,15 @@ namespace game_framework {
 
 	void CHero::OnMove()
 	{
+		gameMap_OnMove();
 		heroStand.OnMove(x, y);
 		heroMove.OnMove(&x, &y);
+		gravity();
 		isFalling = heroJump.OnMove(&x, &y);
 		if (isFalling) isRising = false;
 		heroCrouch.OnMove(x, y);
-		gameMap_OnMove();
-		gravity();
+		
+		
 	}
 
 	void CHero::OnShow()
@@ -969,6 +972,11 @@ namespace game_framework {
 		isRising = flag;
 	}
 
+	void CMove::SetFalling(bool flag)
+	{
+		isFalling = flag;
+	}
+
 	void CMove::SetShooting(bool flag)
 	{
 		isShooting = flag;
@@ -1146,6 +1154,11 @@ namespace game_framework {
 		void CJump::SetRising(bool flag)
 		{
 			isRising = flag;
+		}
+
+		void CJump::SetFalling(bool flag)
+		{
+			isFalling = flag;
 		}
 
 		void CJump::SetDirection(int dir)
