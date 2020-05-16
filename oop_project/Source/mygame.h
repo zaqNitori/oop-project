@@ -97,9 +97,10 @@ public:
 	bool isShow();
 	void SetLife(bool);
 	void SetBullet(int, int, int);
+	void SetBulletClass(CAnimation*);
 
 private:
-	CAnimation bullet;
+	CAnimation* bullet;
 	int x, y;
 	int direction;
 	int velocity;
@@ -342,8 +343,8 @@ public:
 	
 #pragma region Bullet
 	void InitialBullet();
-	void addBullet();		//new一個Bullet物件
-	void killBullet();		//delete已經死亡的Bullet物件
+	void addBullet();		//激活一個Bullet物件
+	void killBullet();		//反激活已經死亡的Bullet物件
 	void OnMoveBullet();
 	void OnShowBullet();
 #pragma endregion
@@ -358,6 +359,7 @@ private:
 	CGameMap *gameMap;				
 	CMovingBitmap CDefaultStand;	//不顯示、不移動，只處理碰撞
 	CMovingBitmap CDefaultCrouch;	//同上
+	CAnimation heroBullet;
 	vector<CBullet*> vCblt;
 #pragma endregion
 	
@@ -382,21 +384,32 @@ private:
 
 };
 
-/////////////////////////////////////////////////////////////////////////////
-// 這個class提供攝影機物件，是真正顯示出目前地圖
-// 
-/////////////////////////////////////////////////////////////////////////////
-
-class CGameCamera
+class CEnemy
 {
 public:
-	CGameCamera();
-	~CGameCamera();
-	void LoadBitmap();
+	CEnemy();
+	~CEnemy();
+	void Initialize();				//初始化
+	void LoadBitmap();			//載入圖片
+	void OnShow();					//顯示敵人
+	void OnMove();					//敵人移動
+	
+	void SetAlive(bool);			//設定生命(顯示設定)
+	void SetEnemy(int, int, int);	//設定敵人位置(x,y),第三個參數為主角的x座標
+	void SetOnBlock(bool);			//設定是否站在block上，gravity使用
+
+	bool isDead(int,int,int,int);	//是否死亡(碰撞判定)，不一定用的到
+	bool isShow();					//是否顯示(死亡則不顯示)
 
 private:
-	int map[16][12];		//以40px為一格,攝影機會顯示16*12的部分地圖
-	int nowX, nowY;			//攝影機左上角的格子
+	CStand enemyStand;
+	CAnimation enemyDeadL;
+	CAnimation enemyDeadR;
+	bool isAlive;
+	bool isOnBlock;
+	int direction, step;
+	int mapX, mapY;
+	int x, y;
 
 };
 
@@ -499,6 +512,8 @@ private:
 	
 	CHero hero;
 	CGameMap gameMap;
+
+	int mapX, mapY;
 };
 
 /////////////////////////////////////////////////////////////////////////////

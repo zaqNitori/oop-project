@@ -92,12 +92,13 @@ namespace game_framework {
 		{
 			vCblt.push_back(new CBullet(0, 0, 0));
 			vCblt[i]->SetLife(false);
+			vCblt[i]->SetBulletClass(&heroBullet);
 		}
 	}
 
 	void CHero::LoadBitmap()
 	{
-	
+		char *fileBullet[] = { ".\\image\\bullet\\1.bmp" , ".\\image\\bullet\\2.bmp" , ".\\image\\bullet\\3.bmp" };
 	#pragma region fileInput
 		char *fileDefaultStand[] = { ".\\image\\stand\\L1.bmp" };
 		char *fileDefaultCrouch[] = { ".\\image\\crouch\\L1.bmp" };
@@ -177,7 +178,10 @@ namespace game_framework {
 			heroJump.LoadBitmap_FallL(fileFallL[i]);
 			heroJump.LoadBitmap_FallR(fileFallR[i]);
 		}
-
+		for (int i = 0; i < 3; i++)
+		{
+			heroBullet.AddBitmap(fileBullet[i], Blue);
+		}
 	#pragma endregion
 
 	}
@@ -430,6 +434,47 @@ namespace game_framework {
 	//CHero
 #pragma endregion
 
+#pragma region CEnemy
+
+		CEnemy::CEnemy()
+		{
+			Initialize();
+		}
+
+		CEnemy::~CEnemy() {}
+
+		void CEnemy::Initialize()
+		{
+			mapX = mapY = 0;
+			x = y = direction = 0;
+			step = 20;
+			isAlive = false;
+		}
+
+		void CEnemy::LoadBitmap()
+		{
+
+		}
+
+		void CEnemy::OnMove()
+		{
+			if (!isOnBlock) y += step;
+		}
+
+		void CEnemy::OnShow()
+		{
+			if (isDead)
+			{
+				enemyDeadL.OnShow();	//現在沒時間寫
+				enemyDeadR.OnShow();	//之後再弄
+			}
+			else enemyStand.OnShow_Stand();
+		}
+
+	//CEnemy
+#pragma endregion
+
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -539,18 +584,20 @@ namespace game_framework {
 
 	void CBullet::Initialize()
 	{
-		//char *fileBullet[] = { ".\\image\\bullet\\b1.bmp" , ".\\image\\bullet\\b2.bmp" , ".\\image\\bullet\\b3.bmp" , ".\\image\\bullet\\b4.bmp" };
-		char *fileRiseL[] = { ".\\image\\jump\\L1.bmp" , ".\\image\\jump\\L2.bmp" , ".\\image\\jump\\L3.bmp" , ".\\image\\jump\\L4.bmp" };
-		for (int i = 0; i < 4; i++)
-			LoadBitmap(fileRiseL[i]);
 		velocity = 20;
 		isAlive = false;
-		bullet.SetDelayCount(1);
+		//bullet.SetDelayCount(2);
+	}
+
+	void CBullet::SetBulletClass(CAnimation* anime)
+	{
+		bullet = anime;
 	}
 
 	void CBullet::LoadBitmap(char* file)
 	{
-		bullet.AddBitmap(file, Black);
+		/*char *fileBullet[] = { ".\\image\\bullet\\1.bmp" , ".\\image\\bullet\\2.bmp" , ".\\image\\bullet\\3.bmp" };
+		bullet.AddBitmap(fileBullet[i], Blue);*/
 	}
 
 	void CBullet::OnMove()
@@ -572,18 +619,19 @@ namespace game_framework {
 		default:
 			break;
 		}
-		bullet.OnMove();
+		//bullet.OnMove();
+		bullet->OnMove();
 	}
 
 	void CBullet::OnShow()
 	{
-		bullet.SetTopLeft(x, y);
-		bullet.OnShow();
+		bullet->SetTopLeft(x, y);
+		bullet->OnShow();
 	}
 
 	bool CBullet::isDead()
 	{
-		if (x  > 800 || x + bullet.Width() < 0 || y > 600 || y + bullet.Height() < 0) return true;
+		if (x  > 800 || x + bullet->Width() < 0 || y > 600 || y + bullet->Height() < 0) return true;
 		return false;
 	}
 
@@ -1221,9 +1269,6 @@ namespace game_framework {
 			}
 			else
 			{
-				if (y + defaultHeight > 640 + mapY)
-					y = 640 - defaultHeight + mapY;
-				else y = (y / _size) * _size - 1;
 				isFalling = false;
 				velocity = ini_velocity;
 			}
@@ -1235,7 +1280,6 @@ namespace game_framework {
 
 	bool CJump::isEmpty(int nx, int ny)
 	{
-		if (ny > 640) return false;
 		int gx = nx / gameMap->getSize();
 		int gy = ny / gameMap->getSize();
 		return !(gameMap->getMapBlock(gy,gx));
@@ -1326,7 +1370,7 @@ namespace game_framework {
 			}
 		}
 		x = nx;
-		y = ny;
+		y = ny + 20;
 	}
 
 #pragma region LoadPicture
@@ -1676,6 +1720,9 @@ namespace game_framework {
 		// 如果希望修改cursor的樣式，則將下面程式的commment取消即可
 		// SetCursor(AfxGetApp()->LoadCursor(IDC_GAMECURSOR));
 
+
+		mapX = gameMap.getX();
+		mapY = gameMap.getY();
 		//移動子彈
 		hero.OnMoveBullet();
 		//刪除子彈
