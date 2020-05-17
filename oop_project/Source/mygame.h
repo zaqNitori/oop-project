@@ -309,6 +309,16 @@ private:
 
 };
 
+class CDead
+{
+public:
+	CDead();
+	~CDead();
+
+private:
+
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 // 這個class提供Hero物件
@@ -377,6 +387,7 @@ private:
 	int x, y;						//角色在螢幕的座標
 	int defaultW, defaultH;			//站立圖片寬高
 	unsigned maxBullet;					//場上同時能存在的子彈上限
+	int delayCount,constDelay;
 #pragma endregion
 	
 	void gameMap_OnMove();			//處理地圖移動
@@ -395,17 +406,27 @@ public:
 	void OnMove();					//敵人移動
 	
 	void SetAlive(bool);			//設定生命(顯示設定)
-	void SetEnemy(int, int, int);	//設定敵人位置(x,y),第三個參數為主角的x座標
+	void SetDead(bool);				//設定死亡
+	void SetDirection(int);
+	void SetEnemy(int);				//參數為主角的x座標
 	void SetOnBlock(bool);			//設定是否站在block上，gravity使用
 
-	bool isDead(int,int,int,int);	//是否死亡(碰撞判定)，不一定用的到
-	bool isShow();					//是否顯示(死亡則不顯示)
+	bool isShow();					//是否顯示
+	bool getAlive();					
+	bool getDead();
+	int getX1();
+	int getY1();
+	int getX2();
+	int getY2();
 
 private:
 	CStand enemyStand;
 	CAnimation enemyDeadL;
 	CAnimation enemyDeadR;
+	CMovingBitmap defaultStand;
+	int defaultHeight, defaultWidth;
 	bool isAlive;
+	bool isDead;
 	bool isOnBlock;
 	int direction, step;
 	int mapX, mapY;
@@ -512,6 +533,7 @@ private:
 	
 	CHero hero;
 	CGameMap gameMap;
+	CEnemy enemy;
 
 	int mapX, mapY;
 };
