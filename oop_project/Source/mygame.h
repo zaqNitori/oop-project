@@ -50,39 +50,11 @@ enum AUDIO_ID {				// 定義各種音效的編號
 
 namespace game_framework {
 
+	class CHero;
+	class CEnemy;
 /////////////////////////////////////////////////////////////////////////////
-// 這個class提供背景地圖,並不會移動(不是camera)
-// 
+// 這個class提供子彈
 /////////////////////////////////////////////////////////////////////////////
-
-class CGameMap
-{
-public:
-	CGameMap();
-	void Initialize();
-	void LoadBitmap();
-	void OnShow();
-	void setXY(int, int);
-	bool getMapBlock(int, int);
-	int getX();
-	int getY();
-	int getSize();
-
-private:
-	void SetFloorRoof();
-	void SetBlock(int, int, int, int);			//編輯地圖可跳上的障礙物
-	CAnimation mapBmp;
-	bool isMovingLeft;
-	bool isMovingRight;
-	int floor, roof;
-	int mapX, mapY;				//地圖座標
-	//int map[18][130];			//地圖編輯
-	int size;
-	int weight, height;
-	int map[40][260];
-
-};
-
 class CBullet
 {
 public:
@@ -98,6 +70,7 @@ public:
 	void SetLife(bool);
 	void SetBullet(int, int, int);
 	void SetBulletClass(CAnimation*);
+	bool isHit(int, int, int, int);
 
 private:
 	CAnimation* bullet;
@@ -130,6 +103,47 @@ private:
 	int width;
 	int x, y;		//繪製座標
 
+};
+
+/////////////////////////////////////////////////////////////////////////////
+// 這個class提供背景地圖,並不會移動(不是camera)
+/////////////////////////////////////////////////////////////////////////////
+
+class CGameMap
+{
+public:
+	CGameMap();
+	void Initialize();
+	void LoadBitmap();
+	void OnShow();
+	void setXY(int, int);
+	bool getMapBlock(int, int);
+	int getX();
+	int getY();
+	int getSize();
+
+#pragma region Bullet
+	void InitialBullet();
+	void addBullet(int,int,int,int);			//激活一個Bullet物件
+	void killBullet();							//反激活已經死亡的Bullet物件
+	void OnMoveBullet();
+	void OnShowBullet();
+	bool isBulletHit(CEnemy*);		//碰撞判斷
+	bool isBulletHit(CHero*);
+#pragma endregion
+
+private:
+	void SetBlock(int, int, int, int);			//編輯地圖可跳上的障礙物
+	
+	CAnimation heroBullet;
+	vector<CBullet*> vCblt;
+	CAnimation mapBmp;
+
+	int mapX, mapY;				//地圖座標
+	int size;
+	int weight, height;
+	int map[40][260];
+	unsigned maxBullet;				//場上同時能存在的子彈上限
 
 };
 
@@ -346,17 +360,12 @@ public:
 #pragma endregion
 
 #pragma region Getstate
-	int getX();
-	int getY();
+	int getX1();
+	int getY1();
+	int getX2();
+	int getY2();
 	int getDir();
-#pragma endregion
-	
-#pragma region Bullet
-	void InitialBullet();
-	void addBullet();		//激活一個Bullet物件
-	void killBullet();		//反激活已經死亡的Bullet物件
-	void OnMoveBullet();
-	void OnShowBullet();
+	int getDir_hor();
 #pragma endregion
 
 
@@ -369,8 +378,6 @@ private:
 	CGameMap *gameMap;				
 	CMovingBitmap CDefaultStand;	//不顯示、不移動，只處理碰撞
 	CMovingBitmap CDefaultCrouch;	//同上
-	CAnimation heroBullet;
-	vector<CBullet*> vCblt;
 #pragma endregion
 	
 #pragma region 變數宣告
@@ -386,7 +393,6 @@ private:
 	int mapX, mapY;					//地圖的座標
 	int x, y;						//角色在螢幕的座標
 	int defaultW, defaultH;			//站立圖片寬高
-	unsigned maxBullet;				//場上同時能存在的子彈上限
 	int delayCount,constDelay;
 #pragma endregion
 	
@@ -402,7 +408,7 @@ public:
 	CEnemy();
 	~CEnemy();
 	void Initialize();				//初始化
-	void LoadBitmap();			//載入圖片
+	void LoadBitmap();				//載入圖片
 	void OnShow();					//顯示敵人
 	void OnMove();					//敵人移動
 	
@@ -421,10 +427,11 @@ public:
 	int getY2();
 
 private:
+	
 	CStand enemyStand;
 	CAnimation enemyDeadL;
 	CAnimation enemyDeadR;
-	CMovingBitmap defaultStand;
+	CAnimation defaultStand;
 	int defaultHeight, defaultWidth;
 	bool isAlive;
 	bool isDead;
