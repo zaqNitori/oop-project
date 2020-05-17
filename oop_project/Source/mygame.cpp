@@ -525,11 +525,11 @@ namespace game_framework {
 
 	void CBullet::Initialize()
 	{
-		char *fileBullet[] = { ".\\image\\bullet\\b1.bmp" , ".\\image\\bullet\\b2.bmp" , ".\\image\\bullet\\b3.bmp" , ".\\image\\bullet\\b4.bmp" };
+		/*char *fileBullet[] = { ".\\image\\bullet\\b1.bmp" , ".\\image\\bullet\\b2.bmp" , ".\\image\\bullet\\b3.bmp" , ".\\image\\bullet\\b4.bmp" };
 		for (int i = 0; i < 4; i++)
 			LoadBitmap(fileBullet[i]);
 		velocity = 20;
-		isAlive = false;
+		isAlive = false;*/
 	}
 
 	void CBullet::LoadBitmap(char* file)
@@ -618,11 +618,14 @@ namespace game_framework {
 			SetBlock(9, 18, 22, 23);
 			SetBlock(12, 28, 18, 19);
 			SetBlock(30, 40, 24, 25);
+			SetBlock(42, 46, 17, 18);
+			SetBlock(50, 68, 14, 15);
 			SetBlock(57, 67, 25, 26);
 			SetBlock(75, 83, 24, 25);
 			SetBlock(85, 94, 22, 23);
 			SetBlock(95, 101, 17, 18);
 			SetBlock(104, 118, 25, 26);
+			SetBlock(134, 153, 16, 17);
 			SetBlock(162, 172, 23, 24);
 			SetBlock(190, 198, 22, 23);
 		#pragma endregion
