@@ -386,12 +386,13 @@ private:
 	int mapX, mapY;					//地圖的座標
 	int x, y;						//角色在螢幕的座標
 	int defaultW, defaultH;			//站立圖片寬高
-	unsigned maxBullet;					//場上同時能存在的子彈上限
+	unsigned maxBullet;				//場上同時能存在的子彈上限
 	int delayCount,constDelay;
 #pragma endregion
 	
 	void gameMap_OnMove();			//處理地圖移動
 	void gravity();					//重力
+	void ResumeShooting();
 
 };
 

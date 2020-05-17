@@ -243,6 +243,21 @@ namespace game_framework {
 		}
 		gameMap->setXY(mapX, mapY);					//設定地圖座標
 	}
+
+	void CHero::ResumeShooting()
+	{
+		if (isShooting)
+		{
+			delayCount--;
+			if (delayCount < 0)
+			{
+				delayCount = constDelay;
+				isShooting = false;
+				CHero::SetShooting(false);
+			}
+		}
+	}
+
 #pragma endregion
 
 	void CHero::OnMove()
@@ -254,28 +269,17 @@ namespace game_framework {
 		isFalling = heroJump.OnMove(&x, &y);
 		if (isFalling) isRising = false;
 		heroCrouch.OnMove(x, y);
-		if (isShooting)
-		{
-			delayCount--;
-			if (delayCount < 0)
-			{
-				delayCount = constDelay;
-				isShooting = false;
-				CHero::SetShooting(false);
-			}
-		}
+		ResumeShooting();
 		
 	}
 
 	void CHero::OnShow()
 	{
 		
-		#pragma region SetXY
-		if (isRising || isFalling) heroJump.SetXY(x, y);
+		/*if (isRising || isFalling) heroJump.SetXY(x, y);
 		if (isMovingLeft || isMovingRight) heroMove.SetXY(x, y);
 		if (isMovingDown) heroCrouch.SetXY(x, y);
-		heroStand.SetXY(x, y);
-		#pragma endregion
+		heroStand.SetXY(x, y);*/
 
 		#pragma region OnShow
 		
@@ -383,6 +387,7 @@ namespace game_framework {
 		void CHero::SetShooting(bool flag)
 		{
 			isShooting = flag;
+			heroStand.SetShooting(flag);
 			heroMove.SetShooting(flag);
 			heroCrouch.SetShooting(flag);	//不可省略
 			heroJump.SetShooting(flag);		//不可省略
@@ -414,8 +419,8 @@ namespace game_framework {
 			{
 				if (vCblt[i]->isShow() == false)
 				{
-					if (direction == 4) vCblt[i]->SetBullet(x, y + 50, dir_horizontal);
-					else vCblt[i]->SetBullet(x, y+40, dir_horizontal);
+					if (direction == 4) vCblt[i]->SetBullet(x, y + 60, dir_horizontal);
+					else vCblt[i]->SetBullet(x, y+30, dir_horizontal);
 					break;
 				}
 			}
@@ -461,6 +466,7 @@ namespace game_framework {
 		{
 			mapX = mapY = 0;
 			x = y = 300;
+			y = 525 - 165;
 			direction = 1;
 			step = 18;
 			isOnBlock = false;
@@ -483,12 +489,11 @@ namespace game_framework {
 		void CEnemy::OnMove()
 		{
 			if (!isOnBlock) y += step;
-			//x += 5;
+			enemyStand.OnMove(x, y);
 		}
 
 		void CEnemy::OnShow()
 		{
-			enemyStand.SetXY(x, y);
 			if (isDead)
 			{
 				enemyDeadL.OnShow();	//現在沒時間寫
@@ -510,7 +515,7 @@ namespace game_framework {
 
 		void CEnemy::SetEnemy(int heroX)
 		{
-			int r = rand() % (800 - defaultWidth);
+			//int r = rand() % (800 - defaultWidth);
 		}
 
 		void CEnemy::SetOnBlock(bool flag) { isOnBlock = flag; }
@@ -1171,12 +1176,16 @@ namespace game_framework {
 	{
 		x = nx;
 		y = ny;
-		if (direction == 1) CStandShoot.OnMoveL();
-		else if (direction == 2) CStandShoot.OnMoveR();
+		
 		if(!isShooting)
 		{
-			if (direction == 1) CStandL.OnMove();
-			else if (direction == 2) CStandR.OnMove();
+			if (dir_horizontal == 1) CStandL.OnMove();
+			else if (dir_horizontal == 2) CStandR.OnMove();
+		}
+		else
+		{
+			if (dir_horizontal == 1) CStandShoot.OnMoveL();
+			else if (dir_horizontal == 2) CStandShoot.OnMoveR();
 		}
 	}
 
@@ -1797,7 +1806,7 @@ namespace game_framework {
 
 		
 
-		if (!gameMap.getMapBlock(enemy.getX1(), enemy.getY2())) enemy.SetOnBlock(false);
+		if (!gameMap.getMapBlock(enemy.getY2(), enemy.getX1())) enemy.SetOnBlock(false);
 		else enemy.SetOnBlock(true);
 		enemy.OnMove();
 
