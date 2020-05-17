@@ -58,6 +58,8 @@
 #include "audio.h"
 #include "gamelib.h"
 #include "mygame.h"
+#include <cstdlib> 
+#include <ctime>   
 
 #define Blue RGB(0,0,255)
 #define Black RGB(0,0,0)
@@ -67,7 +69,7 @@ namespace game_framework {
 /////////////////////////////////////////////////////////////////////////////
 // CHero: Hero class
 /////////////////////////////////////////////////////////////////////////////
-
+	
 #pragma region CHero
 
 	CHero::CHero()
@@ -77,12 +79,12 @@ namespace game_framework {
 
 	void CHero::Initialize()
 	{
-		const int ini_x = 200;		//5121
-		const int ini_y = 450;		//721
 		mapX = 0;
 		mapY = SIZE_Y - 721;
-		x = ini_x;
-		y = ini_y;
+		x = 200;
+		y = 400;
+		constDelay = 9;
+		delayCount = constDelay;
 		direction = dir_horizontal = 1;				//預設向左
 		isFalling = isRising = isMovingDown = isMovingLeft = isMovingRight = isMovingUp = isShooting = false;
 	}
@@ -94,12 +96,13 @@ namespace game_framework {
 		{
 			vCblt.push_back(new CBullet(0, 0, 0));
 			vCblt[i]->SetLife(false);
+			vCblt[i]->SetBulletClass(&heroBullet);
 		}
 	}
 
 	void CHero::LoadBitmap()
 	{
-	
+		char *fileBullet[] = { ".\\image\\bullet\\1.bmp" , ".\\image\\bullet\\2.bmp" , ".\\image\\bullet\\3.bmp" };
 	#pragma region fileInput
 		char *fileDefaultStand[] = { ".\\image\\stand\\L1.bmp" };
 		char *fileDefaultCrouch[] = { ".\\image\\crouch\\L1.bmp" };
@@ -179,12 +182,28 @@ namespace game_framework {
 			heroJump.LoadBitmap_FallL(fileFallL[i]);
 			heroJump.LoadBitmap_FallR(fileFallR[i]);
 		}
-
+		for (int i = 0; i < 3; i++)
+		{
+			heroBullet.AddBitmap(fileBullet[i], Blue);
+		}
 	#pragma endregion
 
 	}
 
 #pragma region MapMove
+	void CHero::gravity()
+	{
+		int gx = (x - mapX) / gameMap->getSize();
+		int gy = (y - mapY + CDefaultStand.Height()) / gameMap->getSize();
+		if (!isRising && !isFalling)
+		{
+			if (!gameMap->getMapBlock(gy + 1, gx))
+			{
+				heroJump.SetFalling(true);
+				isFalling = true;
+			}
+		}
+	}
 
 	void CHero::gameMap_OnMove()
 	{
@@ -224,27 +243,43 @@ namespace game_framework {
 		}
 		gameMap->setXY(mapX, mapY);					//設定地圖座標
 	}
+
+	void CHero::ResumeShooting()
+	{
+		if (isShooting)
+		{
+			delayCount--;
+			if (delayCount < 0)
+			{
+				delayCount = constDelay;
+				isShooting = false;
+				CHero::SetShooting(false);
+			}
+		}
+	}
+
 #pragma endregion
 
 	void CHero::OnMove()
 	{
+		gameMap_OnMove();
 		heroStand.OnMove(x, y);
 		heroMove.OnMove(&x, &y);
+		gravity();
 		isFalling = heroJump.OnMove(&x, &y);
 		if (isFalling) isRising = false;
 		heroCrouch.OnMove(x, y);
-		gameMap_OnMove();
+		ResumeShooting();
+		
 	}
 
 	void CHero::OnShow()
 	{
 		
-		#pragma region SetXY
-		if (isRising || isFalling) heroJump.SetXY(x, y);
+		/*if (isRising || isFalling) heroJump.SetXY(x, y);
 		if (isMovingLeft || isMovingRight) heroMove.SetXY(x, y);
 		if (isMovingDown) heroCrouch.SetXY(x, y);
-		heroStand.SetXY(x, y);
-		#pragma endregion
+		heroStand.SetXY(x, y);*/
 
 		#pragma region OnShow
 		
@@ -352,6 +387,7 @@ namespace game_framework {
 		void CHero::SetShooting(bool flag)
 		{
 			isShooting = flag;
+			heroStand.SetShooting(flag);
 			heroMove.SetShooting(flag);
 			heroCrouch.SetShooting(flag);	//不可省略
 			heroJump.SetShooting(flag);		//不可省略
@@ -383,7 +419,8 @@ namespace game_framework {
 			{
 				if (vCblt[i]->isShow() == false)
 				{
-					vCblt[i]->SetBullet(x, y, direction);
+					if (direction == 4) vCblt[i]->SetBullet(x, y + 60, dir_horizontal);
+					else vCblt[i]->SetBullet(x, y+30, dir_horizontal);
 					break;
 				}
 			}
@@ -415,6 +452,95 @@ namespace game_framework {
 
 	//CHero
 #pragma endregion
+
+#pragma region CEnemy
+
+		CEnemy::CEnemy()
+		{
+			Initialize();
+		}
+
+		CEnemy::~CEnemy() {}
+
+		void CEnemy::Initialize()
+		{
+			mapX = mapY = 0;
+			x = y = 300;
+			y = 525 - 165;
+			direction = 1;
+			step = 18;
+			isOnBlock = false;
+			isAlive = isDead = false;
+			isAlive = true;	//test
+		}
+
+		void CEnemy::LoadBitmap()
+		{
+			defaultStand.LoadBitmap(".\\image\\enemy\\L1.bmp");
+			defaultHeight = defaultStand.Height();
+			defaultWidth = defaultStand.Width();
+			enemyStand.LoadBitmap_StandL(".\\image\\enemy\\L1.bmp");
+			enemyStand.LoadBitmap_StandR(".\\image\\enemy\\R1.bmp");
+			/*char* fileDeadL[] = { ".\\image\\enemy\\die\\L1.bmp" , ".\\image\\enemy\\die\\L3.bmp" , ".\\image\\enemy\\die\\L5.bmp" , ".\\image\\enemy\\die\\L7.bmp" , ".\\image\\enemy\\die\\L8.bmp" };
+			char* fileDeadR1[] = { ".\\image\\enemy\\die\\R1-1.bmp" , ".\\image\\enemy\\die\\R3-1.bmp" , ".\\image\\enemy\\die\\R5-1.bmp" , ".\\image\\enemy\\die\\R7-1.bmp" , ".\\image\\enemy\\die\\R8-1.bmp" };
+			char* fileDeadR2[] = { ".\\image\\enemy\\die\\R1-2.bmp" , ".\\image\\enemy\\die\\R3-2.bmp" , ".\\image\\enemy\\die\\R5-2.bmp" , ".\\image\\enemy\\die\\R7-2.bmp" , ".\\image\\enemy\\die\\R8-2.bmp" };*/
+		}
+
+		void CEnemy::OnMove()
+		{
+			if (!isOnBlock) y += step;
+			enemyStand.OnMove(x, y);
+		}
+
+		void CEnemy::OnShow()
+		{
+			if (isDead)
+			{
+				enemyDeadL.OnShow();	//現在沒時間寫
+				enemyDeadR.OnShow();	//之後再弄
+			}
+			else if(isAlive) enemyStand.OnShow_Stand();
+		}
+
+#pragma region SetState
+		void CEnemy::SetAlive(bool flag) { isAlive = flag; }
+
+		void CEnemy::SetDead(bool flag) { isDead = flag; }
+
+		void CEnemy::SetDirection(int dir)
+		{ 
+			direction = dir; 
+			enemyStand.SetDirection(dir);
+		}
+
+		void CEnemy::SetEnemy(int heroX)
+		{
+			//int r = rand() % (800 - defaultWidth);
+		}
+
+		void CEnemy::SetOnBlock(bool flag) { isOnBlock = flag; }
+
+#pragma endregion
+
+#pragma region GetState
+		bool CEnemy::isShow() { return (isAlive || isDead); }
+
+		bool CEnemy::getAlive() { return isAlive; }
+
+		bool CEnemy::getDead() { return isDead; }
+
+		int CEnemy::getX1() { return x; }
+		int CEnemy::getX2() { return x + defaultWidth; }
+		int CEnemy::getY1() { return y; }
+		int CEnemy::getY2() { return y + defaultHeight; }
+
+#pragma endregion
+
+
+
+	//CEnemy
+#pragma endregion
+
 
 
 
@@ -525,16 +651,20 @@ namespace game_framework {
 
 	void CBullet::Initialize()
 	{
-		char *fileBullet[] = { ".\\image\\bullet\\b1.bmp" , ".\\image\\bullet\\b2.bmp" , ".\\image\\bullet\\b3.bmp" , ".\\image\\bullet\\b4.bmp" };
-		for (int i = 0; i < 4; i++)
-			LoadBitmap(fileBullet[i]);
 		velocity = 20;
 		isAlive = false;
+		//bullet.SetDelayCount(2);
+	}
+
+	void CBullet::SetBulletClass(CAnimation* anime)
+	{
+		bullet = anime;
 	}
 
 	void CBullet::LoadBitmap(char* file)
 	{
-		bullet.AddBitmap(file, Black);
+		/*char *fileBullet[] = { ".\\image\\bullet\\1.bmp" , ".\\image\\bullet\\2.bmp" , ".\\image\\bullet\\3.bmp" };
+		bullet.AddBitmap(fileBullet[i], Blue);*/
 	}
 
 	void CBullet::OnMove()
@@ -547,27 +677,28 @@ namespace game_framework {
 		case 2:
 			x += velocity;
 			break;
-		case 3:
+		/*case 3:
 			y -= velocity;
 			break;
 		case 4:
 			y += velocity;
-			break;
+			break;*/
 		default:
 			break;
 		}
-		bullet.OnMove();
+		//bullet.OnMove();
+		bullet->OnMove();
 	}
 
 	void CBullet::OnShow()
 	{
-		bullet.SetTopLeft(x, y);
-		bullet.OnShow();
+		bullet->SetTopLeft(x, y);
+		bullet->OnShow();
 	}
 
 	bool CBullet::isDead()
 	{
-		if (x > 800 || x < 0 || y>600 || y < 0) return true;
+		if (x  > 800 || x + bullet->Width() < 0 || y > 600 || y + bullet->Height() < 0) return true;
 		return false;
 	}
 
@@ -625,14 +756,17 @@ namespace game_framework {
 			SetBlock(104, 118, 25, 26);
 			SetBlock(162, 172, 23, 24);
 			SetBlock(190, 198, 22, 23);
+			SetBlock(42, 46, 17, 18);
+			SetBlock(50, 68, 14, 15);
 		#pragma endregion
 
 	}
 
 	void CGameMap::LoadBitmap()
 	{
-		mapBmp.AddBitmap(IDB_GameMap);
+		//mapBmp.AddBitmap(IDB_GameMap);
 		//mapBmp.AddBitmap(IDB_gameMapBlock);
+		mapBmp.AddBitmap(".\\image\\Black_on_map.bmp");
 		SetFloorRoof();
 	}
 
@@ -953,6 +1087,11 @@ namespace game_framework {
 		isRising = flag;
 	}
 
+	void CMove::SetFalling(bool flag)
+	{
+		isFalling = flag;
+	}
+
 	void CMove::SetShooting(bool flag)
 	{
 		isShooting = flag;
@@ -1037,12 +1176,16 @@ namespace game_framework {
 	{
 		x = nx;
 		y = ny;
-		if (direction == 1) CStandShoot.OnMoveL();
-		else if (direction == 2) CStandShoot.OnMoveR();
+		
 		if(!isShooting)
 		{
-			if (direction == 1) CStandL.OnMove();
-			else if (direction == 2) CStandR.OnMove();
+			if (dir_horizontal == 1) CStandL.OnMove();
+			else if (dir_horizontal == 2) CStandR.OnMove();
+		}
+		else
+		{
+			if (dir_horizontal == 1) CStandShoot.OnMoveL();
+			else if (dir_horizontal == 2) CStandShoot.OnMoveR();
 		}
 	}
 
@@ -1054,16 +1197,16 @@ namespace game_framework {
 	void CStand::OnShow_Shoot()
 	{
 		CStandShoot.SetXY(x, y);
-		if (direction == 1) CStandShoot.OnShowL();
-		else if (direction == 2) CStandShoot.OnShowR();
+		if (dir_horizontal == 1) CStandShoot.OnShowL();
+		else if (dir_horizontal == 2) CStandShoot.OnShowR();
 	}
 
 	void CStand::OnShow_Stand()
 	{
 		CStandL.SetTopLeft(x, y);
 		CStandR.SetTopLeft(x, y);
-		if (direction == 1) CStandL.OnShow();
-		else if (direction == 2) CStandR.OnShow();
+		if (dir_horizontal == 1) CStandL.OnShow();
+		else if (dir_horizontal == 2) CStandR.OnShow();
 	}
 
 	//CStand
@@ -1132,6 +1275,11 @@ namespace game_framework {
 			isRising = flag;
 		}
 
+		void CJump::SetFalling(bool flag)
+		{
+			isFalling = flag;
+		}
+
 		void CJump::SetDirection(int dir)
 		{
 			direction = dir;
@@ -1149,13 +1297,13 @@ namespace game_framework {
 		{
 			if (isShooting)
 			{
-				if (direction == 1) CJumpShoot.OnMoveL();
-				else if (direction == 2) CJumpShoot.OnMoveR();
+				if (dir_horizontal == 1) CJumpShoot.OnMoveL();
+				else if (dir_horizontal == 2) CJumpShoot.OnMoveR();
 			}
 			else
 			{
-				if (direction == 1) CRiseL.OnMove();
-				else if (direction == 2) CRiseR.OnMove();
+				if (dir_horizontal == 1) CRiseL.OnMove();
+				else if (dir_horizontal == 2) CRiseR.OnMove();
 			}
 			if (velocity > 0)
 			{
@@ -1176,13 +1324,13 @@ namespace game_framework {
 			_size = gameMap->getSize();
 			if (isShooting)
 			{
-				if (direction == 1) CJumpShoot.OnMoveL();
-				else if (direction == 2) CJumpShoot.OnMoveR();
+				if (dir_horizontal == 1) CJumpShoot.OnMoveL();
+				else if (dir_horizontal == 2) CJumpShoot.OnMoveR();
 			}
 			else
 			{
-				if (direction == 1) CFallL.OnMove();
-				else if (direction == 2) CFallR.OnMove();
+				if (dir_horizontal == 1) CFallL.OnMove();
+				else if (dir_horizontal == 2) CFallR.OnMove();
 			}
 			if (isEmpty(x - mapX, y - mapY + defaultHeight))		//因為y軸一開始就在最下面,所以要反向加才能得到正確到座標
 			{
@@ -1192,9 +1340,6 @@ namespace game_framework {
 			}
 			else
 			{
-				if (y + defaultHeight > 640 + mapY)
-					y = 640 - defaultHeight + mapY;
-				else y = (y / _size) * _size - 1;
 				isFalling = false;
 				velocity = ini_velocity;
 			}
@@ -1206,7 +1351,6 @@ namespace game_framework {
 
 	bool CJump::isEmpty(int nx, int ny)
 	{
-		if (ny > 640) return false;
 		int gx = nx / gameMap->getSize();
 		int gy = ny / gameMap->getSize();
 		return !(gameMap->getMapBlock(gy,gx));
@@ -1219,12 +1363,12 @@ namespace game_framework {
 
 	void CJump::OnShow_Rise()
 	{
-		if (direction == 1)
+		if (dir_horizontal == 1)
 		{
 			CRiseL.SetTopLeft(x, y);
 			CRiseL.OnShow();
 		}
-		else if (direction == 2)
+		else if (dir_horizontal == 2)
 		{
 			CRiseR.SetTopLeft(x, y);
 			CRiseR.OnShow();
@@ -1233,12 +1377,12 @@ namespace game_framework {
 
 	void CJump::OnShow_Fall()
 	{
-		if (direction == 1)
+		if (dir_horizontal == 1)
 		{
 			CFallL.SetTopLeft(x, y);
 			CFallL.OnShow();
 		}
-		else if (direction == 2)
+		else if (dir_horizontal == 2)
 		{
 			CFallR.SetTopLeft(x, y);
 			CFallR.OnShow();
@@ -1248,8 +1392,8 @@ namespace game_framework {
 	void CJump::OnShow_Shoot()
 	{
 		CJumpShoot.SetXY(x, y);
-		if (direction == 1) CJumpShoot.OnShowL();
-		else if (direction == 2) CJumpShoot.OnShowR();
+		if (dir_horizontal == 1) CJumpShoot.OnShowL();
+		else if (dir_horizontal == 2) CJumpShoot.OnShowR();
 	}
 
 	//CJump
@@ -1297,7 +1441,7 @@ namespace game_framework {
 			}
 		}
 		x = nx;
-		y = ny;
+		y = ny + 20;
 	}
 
 #pragma region LoadPicture
@@ -1505,6 +1649,7 @@ namespace game_framework {
 		//
 		// 此OnInit動作會接到CGameStaterRun::OnInit()，所以進度還沒到100%
 		//
+		//srand(time(NULL));
 	}
 
 	void CGameStateInit::OnBeginState()
@@ -1621,37 +1766,15 @@ namespace game_framework {
 	CGameStateRun::CGameStateRun(CGame *g)
 		: CGameState(g), NUMBALLS(28)
 	{
-		ball = new CBall[NUMBALLS];
 	}
 
 	CGameStateRun::~CGameStateRun()
 	{
-		delete[] ball;
+
 	}
 
 	void CGameStateRun::OnBeginState()
 	{
-		const int BALL_GAP = 90;
-		const int BALL_XY_OFFSET = 45;
-		const int BALL_PER_ROW = 7;
-		const int HITS_LEFT = 50;
-		const int HITS_LEFT_X = 590;
-		const int HITS_LEFT_Y = 0;
-		const int BACKGROUND_X = 0;
-		const int ANIMATION_SPEED = 15;
-		for (int i = 0; i < NUMBALLS; i++) {				// 設定球的起始座標
-			int x_pos = i % BALL_PER_ROW;
-			int y_pos = i / BALL_PER_ROW;
-			ball[i].SetXY(x_pos * BALL_GAP + BALL_XY_OFFSET, y_pos * BALL_GAP + BALL_XY_OFFSET);
-			ball[i].SetDelay(x_pos);
-			ball[i].SetIsAlive(true);
-		}
-		eraser.Initialize();
-		
-		help.SetTopLeft(0, SIZE_Y - help.Height());			// 設定說明圖的起始座標
-
-		hits_left.SetInteger(HITS_LEFT);					// 指定剩下的撞擊數
-		hits_left.SetTopLeft(HITS_LEFT_X, HITS_LEFT_Y);		// 指定剩下撞擊數的座標
 
 		CAudio::Instance()->Play(AUDIO_LAKE, true);			// 撥放 WAVE
 		CAudio::Instance()->Play(AUDIO_DING, false);		// 撥放 WAVE
@@ -1662,40 +1785,34 @@ namespace game_framework {
 
 		hero.Initialize();
 		hero.SetGameMap(&gameMap);
+
+		enemy.Initialize();
 	}
 
 	void CGameStateRun::OnMove()							// 移動遊戲元素
 	{
-		//
 		// 如果希望修改cursor的樣式，則將下面程式的commment取消即可
-		//
 		// SetCursor(AfxGetApp()->LoadCursor(IDC_GAMECURSOR));
-		//
-		// 移動背景圖的座標
-		//
 
-		//
-		// 移動球
-		//
-		int i;
-		for (i = 0; i < NUMBALLS; i++)
-			ball[i].OnMove();
-		
+
+		mapX = gameMap.getX();
+		mapY = gameMap.getY();
 		//移動子彈
 		hero.OnMoveBullet();
 		//刪除子彈
 		hero.killBullet();
 
-		//
-		// 移動擦子
-		//
-		eraser.OnMove();
-
 		hero.OnMove();
-		//
+
+		
+
+		if (!gameMap.getMapBlock(enemy.getY2(), enemy.getX1())) enemy.SetOnBlock(false);
+		else enemy.SetOnBlock(true);
+		enemy.OnMove();
+
 		// 判斷擦子是否碰到球
 		//
-		for (i = 0; i < NUMBALLS; i++)
+		/*for (i = 0; i < NUMBALLS; i++)
 			if (ball[i].IsAlive() && ball[i].HitEraser(&eraser)) {
 				ball[i].SetIsAlive(false);
 				CAudio::Instance()->Play(AUDIO_DING);
@@ -1708,11 +1825,8 @@ namespace game_framework {
 					CAudio::Instance()->Stop(AUDIO_NTUT);	// 停止 MIDI
 					GotoGameState(GAME_STATE_OVER);
 				}
-			}
-		//
-		// 移動彈跳的球
-		//
-		bball.OnMove();
+			}*/
+		
 	}
 
 	void CGameStateRun::OnInit()  								// 遊戲的初值及圖形設定
@@ -1724,25 +1838,16 @@ namespace game_framework {
 		ShowInitProgress(33);	// 接個前一個狀態的進度，此處進度視為33%
 		//
 		// 開始載入資料
-		//
-		int i;
-		for (i = 0; i < NUMBALLS; i++)
-			ball[i].LoadBitmap();								// 載入第i個球的圖形
-		eraser.LoadBitmap();
-		//background.LoadBitmap(IDB_GameMap);					// 載入背景的圖形
-		//
 		// 完成部分Loading動作，提高進度
-		//
 		ShowInitProgress(50);
 		Sleep(300); // 放慢，以便看清楚進度，實際遊戲請刪除此Sleep
 		//
 		// 繼續載入其他資料
 		//
-		help.LoadBitmap(IDB_HELP, RGB(255, 255, 255));				// 載入說明的圖形
-		corner.LoadBitmap(IDB_CORNER);							// 載入角落圖形
-		//corner.ShowBitmap(background);							// 將corner貼到background
-		bball.LoadBitmap();										// 載入圖形
+		
 		hero.LoadBitmap();
+		enemy.LoadBitmap();
+
 		hits_left.LoadBitmap();
 		CAudio::Instance()->Load(AUDIO_DING, "sounds\\ding.wav");	// 載入編號0的聲音ding.wav
 		CAudio::Instance()->Load(AUDIO_LAKE, "sounds\\lake.mp3");	// 載入編號1的聲音lake.mp3
@@ -1766,25 +1871,21 @@ namespace game_framework {
 		//左1 右2 上3 下4
 		if (nChar == KEY_LEFT)
 		{
-			eraser.SetMovingLeft(true);
 			hero.SetMovingLeft(true);
 			hero.SetDirection(1);
 		}
 		if (nChar == KEY_RIGHT)
 		{
-			eraser.SetMovingRight(true);
 			hero.SetMovingRight(true);
 			hero.SetDirection(2);
 		}
 		if (nChar == KEY_UP)
 		{
-			eraser.SetMovingUp(true);
-			hero.SetMovingUp(true);
-			hero.SetDirection(3);
+			//hero.SetMovingUp(true);
+			//hero.SetDirection(3);
 		}
 		if (nChar == KEY_DOWN)
 		{
-			eraser.SetMovingDown(true);
 			hero.SetMovingDown(true);
 			hero.SetDirection(4);
 		}
@@ -1799,7 +1900,8 @@ namespace game_framework {
 		}
 		if (nChar == KEY_Q)
 		{
-			hero.SetXY(100, 500);
+			//hero.SetXY(300, 400);
+			enemy.SetAlive(true);
 		}
 
 	}
@@ -1815,43 +1917,39 @@ namespace game_framework {
 
 		if (nChar == KEY_LEFT)
 		{
-			eraser.SetMovingLeft(false);
 			hero.SetMovingLeft(false);
 			hero.ResumeDirection();
 		}
 		if (nChar == KEY_RIGHT)
 		{
-			eraser.SetMovingRight(false);
 			hero.SetMovingRight(false);
 			hero.ResumeDirection();
 		}
 		if (nChar == KEY_UP)
 		{
-			eraser.SetMovingUp(false);
-			hero.SetMovingUp(false);
-			hero.ResumeDirection();
+			//hero.SetMovingUp(false);
+			//hero.ResumeDirection();
 		}
 		if (nChar == KEY_DOWN)
 		{
-			eraser.SetMovingDown(false);
 			hero.SetMovingDown(false);
 			hero.ResumeDirection();
 		}
 		if (nChar == KEY_A)
 		{
-			hero.SetShooting(false);
+			//hero.SetShooting(false);
 		}
 	}
 
 #pragma region OnButton
 	void CGameStateRun::OnLButtonDown(UINT nFlags, CPoint point)  // 處理滑鼠的動作
 	{
-		eraser.SetMovingLeft(true);
+		//eraser.SetMovingLeft(true);
 	}
 
 	void CGameStateRun::OnLButtonUp(UINT nFlags, CPoint point)	// 處理滑鼠的動作
 	{
-		eraser.SetMovingLeft(false);
+		//eraser.SetMovingLeft(false);
 	}
 
 	void CGameStateRun::OnMouseMove(UINT nFlags, CPoint point)	// 處理滑鼠的動作
@@ -1861,12 +1959,12 @@ namespace game_framework {
 
 	void CGameStateRun::OnRButtonDown(UINT nFlags, CPoint point)  // 處理滑鼠的動作
 	{
-		eraser.SetMovingRight(true);
+		//eraser.SetMovingRight(true);
 	}
 
 	void CGameStateRun::OnRButtonUp(UINT nFlags, CPoint point)	// 處理滑鼠的動作
 	{
-		eraser.SetMovingRight(false);
+		//eraser.SetMovingRight(false);
 	}
 #pragma endregion
 
@@ -1880,21 +1978,11 @@ namespace game_framework {
 		//
 		//  貼上背景圖、撞擊數、球、擦子、彈跳的球
 		//
-		//background.ShowBitmap();			// 貼上背景圖
 		gameMap.OnShow();
-		/*help.ShowBitmap();					// 貼上說明圖
-		hits_left.ShowBitmap();
-		for (int i = 0; i < NUMBALLS; i++)
-			ball[i].OnShow();				// 貼上第i號球
-		bball.OnShow();						// 貼上彈跳的球
-		eraser.OnShow();					// 貼上擦子*/
 		//
 		//  貼上左上及右下角落的圖
 		//
-		corner.SetTopLeft(0, 0);
-		corner.ShowBitmap();
-		corner.SetTopLeft(SIZE_X - corner.Width(), SIZE_Y - corner.Height());
-		corner.ShowBitmap();
+		if (enemy.isShow()) enemy.OnShow();
 		hero.OnShowBullet();
 		hero.OnShow();
 	}
