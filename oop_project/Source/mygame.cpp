@@ -82,7 +82,7 @@ namespace game_framework {
 		mapX = 0;
 		mapY = SIZE_Y - 721;
 		x = 200;
-		y = 400;
+		y = 450;
 		constDelay = 9;
 		delayCount = constDelay;
 		direction = dir_horizontal = 1;				//¹w³]¦V¥ª
@@ -651,6 +651,11 @@ namespace game_framework {
 
 	void CBullet::Initialize()
 	{
+		/*char *fileBullet[] = { ".\\image\\bullet\\b1.bmp" , ".\\image\\bullet\\b2.bmp" , ".\\image\\bullet\\b3.bmp" , ".\\image\\bullet\\b4.bmp" };
+		for (int i = 0; i < 4; i++)
+			LoadBitmap(fileBullet[i]);
+		velocity = 20;
+		isAlive = false;*/
 		velocity = 20;
 		isAlive = false;
 		//bullet.SetDelayCount(2);
@@ -749,11 +754,14 @@ namespace game_framework {
 			SetBlock(9, 18, 22, 23);
 			SetBlock(12, 28, 18, 19);
 			SetBlock(30, 40, 24, 25);
+			SetBlock(42, 46, 17, 18);
+			SetBlock(50, 68, 14, 15);
 			SetBlock(57, 67, 25, 26);
 			SetBlock(75, 83, 24, 25);
 			SetBlock(85, 94, 22, 23);
 			SetBlock(95, 101, 17, 18);
 			SetBlock(104, 118, 25, 26);
+			SetBlock(134, 153, 16, 17);
 			SetBlock(162, 172, 23, 24);
 			SetBlock(190, 198, 22, 23);
 			SetBlock(42, 46, 17, 18);
@@ -1197,16 +1205,16 @@ namespace game_framework {
 	void CStand::OnShow_Shoot()
 	{
 		CStandShoot.SetXY(x, y);
-		if (dir_horizontal == 1) CStandShoot.OnShowL();
-		else if (dir_horizontal == 2) CStandShoot.OnShowR();
+		if (direction == 1) CStandShoot.OnShowL();
+		else if (direction == 2) CStandShoot.OnShowR();
 	}
 
 	void CStand::OnShow_Stand()
 	{
 		CStandL.SetTopLeft(x, y);
 		CStandR.SetTopLeft(x, y);
-		if (dir_horizontal == 1) CStandL.OnShow();
-		else if (dir_horizontal == 2) CStandR.OnShow();
+		if (direction == 1) CStandL.OnShow();
+		else if (direction == 2) CStandR.OnShow();
 	}
 
 	//CStand
