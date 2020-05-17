@@ -422,11 +422,18 @@ namespace game_framework {
 			
 			char* fileStandL[] = { ".\\image\\enemy\\L1.bmp" };
 			char* fileStandR[] = { ".\\image\\enemy\\R1.bmp" };
+			char* fileDeadL[] = { ".\\image\\enemy\\die\\L1.bmp" , ".\\image\\enemy\\die\\L3.bmp" , ".\\image\\enemy\\die\\L5.bmp" , ".\\image\\enemy\\die\\L7.bmp" , ".\\image\\enemy\\die\\L8.bmp" , ".\\image\\enemy\\die\\L8.bmp" };
+			char* fileDeadR1[] = { ".\\image\\enemy\\die\\R1-1.bmp" , ".\\image\\enemy\\die\\R3-1.bmp" , ".\\image\\enemy\\die\\R5-1.bmp" , ".\\image\\enemy\\die\\R7-1.bmp" , ".\\image\\enemy\\die\\R8-1.bmp" , ".\\image\\enemy\\die\\R8-1.bmp" };
+			char* fileDeadR2[] = { ".\\image\\enemy\\die\\R1-2.bmp" , ".\\image\\enemy\\die\\R3-2.bmp" , ".\\image\\enemy\\die\\R5-2.bmp" , ".\\image\\enemy\\die\\R7-2.bmp" , ".\\image\\enemy\\die\\R8-2.bmp" , ".\\image\\enemy\\die\\R8-2.bmp" };
+
 			enemyStand.LoadBitmap_StandL(fileStandL[0]);
 			enemyStand.LoadBitmap_StandR(fileStandR[0]);
-			/*char* fileDeadL[] = { ".\\image\\enemy\\die\\L1.bmp" , ".\\image\\enemy\\die\\L3.bmp" , ".\\image\\enemy\\die\\L5.bmp" , ".\\image\\enemy\\die\\L7.bmp" , ".\\image\\enemy\\die\\L8.bmp" };
-			char* fileDeadR1[] = { ".\\image\\enemy\\die\\R1-1.bmp" , ".\\image\\enemy\\die\\R3-1.bmp" , ".\\image\\enemy\\die\\R5-1.bmp" , ".\\image\\enemy\\die\\R7-1.bmp" , ".\\image\\enemy\\die\\R8-1.bmp" };
-			char* fileDeadR2[] = { ".\\image\\enemy\\die\\R1-2.bmp" , ".\\image\\enemy\\die\\R3-2.bmp" , ".\\image\\enemy\\die\\R5-2.bmp" , ".\\image\\enemy\\die\\R7-2.bmp" , ".\\image\\enemy\\die\\R8-2.bmp" };*/
+			for (int i = 0; i < 6; i++)
+			{
+				enemyDead.LoadBitmap_L(fileDeadL[i]);
+				enemyDead.LoadBitmap_R(fileDeadR1[i], fileDeadR2[i]);
+			}
+
 			defaultStand.AddBitmap(fileStandL[0], Blue);
 			defaultHeight = defaultStand.Height();
 			defaultWidth = defaultStand.Width();
@@ -435,18 +442,22 @@ namespace game_framework {
 		void CEnemy::OnMove()
 		{
 			if (!isOnBlock) y += step;
-			enemyStand.OnMove(x, y);
-			
+			if (isAlive) enemyStand.OnMove(x, y);
+			else if (isDead) enemyDead.OnMove(x, y);
+			if (isDead)
+			{
+				if (enemyDead.isfinalBitmap())
+					isDead = false;
+			}
 		}
 
 		void CEnemy::OnShow()
 		{
-			/*if (isDead)
+			if (isDead)
 			{
-				enemyDeadL.OnShow();	//現在沒時間寫
-				enemyDeadR.OnShow();	//之後再弄
-			}*/
-			if (isAlive)
+				enemyDead.OnShow();	
+			}
+			else if (isAlive)
 			{
 				enemyStand.OnShow_Stand();
 			}
@@ -459,16 +470,18 @@ namespace game_framework {
 			isDead = !flag;
 		}
 
-		void CEnemy::SetDead(bool flag) 
+		void CEnemy::SetDead(bool flag, int dir)
 		{ 
 			isDead = flag;
 			isAlive = !flag;
+			enemyDead.SetDir(dir);
 		}
 
-		void CEnemy::SetDirection(int dir)
+		void CEnemy::SetDirection(int heroX)
 		{ 
-			direction = dir; 
-			enemyStand.SetDirection(dir);
+			if (heroX > x) direction = 2;
+			else direction = 1;
+			enemyStand.SetDirection(direction);
 		}
 
 		void CEnemy::SetEnemy(int heroX)
@@ -841,6 +854,7 @@ namespace game_framework {
 
 	bool CGameMap::isBulletHit(CEnemy *enemy)
 	{
+		if (!enemy->getAlive()) return false;
 		for (unsigned i = 0; i < maxBullet; i++)
 		{
 			if (vCblt[i]->isShow())
@@ -1655,7 +1669,86 @@ namespace game_framework {
 	//CShoot
 #pragma endregion
 
+#pragma region CDead
 
+	CDead::CDead()
+	{
+		Initialize();
+	}
+
+	CDead::~CDead() {}
+
+	void CDead::Initialize()
+	{
+		x = y = 0;
+		direction = 1;
+	}
+
+	void CDead::LoadBitmap_L(char* file)
+	{
+		CDeadL.AddBitmap(file, Blue);
+	}
+
+	void CDead::LoadBitmap_R(char* file, char* file2)
+	{
+		CDeadRMan.AddBitmap(file, Blue);
+		CDeadRGun.AddBitmap(file2, Blue);
+	}
+
+	void CDead::OnMove(int nx, int ny)
+	{
+		x = nx;
+		y = ny;
+		if (direction == 1) CDeadL.OnMove();
+		else
+		{
+			CDeadRMan.OnMove();
+			CDeadRGun.OnMove();
+		}
+	}
+
+	void CDead::OnShow()
+	{
+		if (direction == 1)
+		{
+			CDeadL.SetTopLeft(x, y);
+			CDeadL.OnShow();
+		}
+		else
+		{
+			CDeadRMan.SetTopLeft(x, y);
+			CDeadRGun.SetTopLeft(x - CDeadRGun.Width(), y);
+			CDeadRMan.OnShow();
+			CDeadRGun.OnShow();
+		}
+	}
+
+	void CDead::SetDir(int dir) { direction = dir; }
+
+	bool CDead::isfinalBitmap()
+	{
+		if (direction == 1)
+		{
+			if (CDeadL.IsFinalBitmap())
+			{
+				CDeadL.Reset();
+				return true;
+			}
+		}
+		else
+		{
+			if (CDeadRMan.IsFinalBitmap())
+			{
+				CDeadRMan.Reset();
+				CDeadRGun.Reset();
+				return true;
+			}
+		}
+		return false;
+	}
+
+	//CDead
+#pragma endregion
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1684,7 +1777,9 @@ namespace game_framework {
 		//
 		// 此OnInit動作會接到CGameStaterRun::OnInit()，所以進度還沒到100%
 		//
-		//srand(time(NULL));
+		srand(loop);
+		loop++;
+		loop %= 10;
 	}
 
 	void CGameStateInit::OnBeginState()
@@ -1836,7 +1931,7 @@ namespace game_framework {
 
 		if (gameMap.isBulletHit(&enemy))
 		{
-			enemy.SetDead(true);
+			enemy.SetDead(true,hero.getDir_hor());
 		}
 
 		//刪除子彈
@@ -1848,6 +1943,7 @@ namespace game_framework {
 
 		if (!gameMap.getMapBlock(enemy.getY2(), enemy.getX1())) enemy.SetOnBlock(false);
 		else enemy.SetOnBlock(true);
+		enemy.SetDirection(hero.getX1());
 		enemy.OnMove();
 
 		// 判斷擦子是否碰到球

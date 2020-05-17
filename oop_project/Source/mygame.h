@@ -316,7 +316,6 @@ private:
 	bool isMovingLeft;
 	bool isMovingRight;
 	int x, y;						//座標
-	int floor;						//最下方地板
 	int step;
 	int velocity, ini_velocity;		//速度、初速度
 	int direction, dir_horizontal;	//按鍵方向、上一個水平方向
@@ -328,8 +327,20 @@ class CDead
 public:
 	CDead();
 	~CDead();
+	void Initialize();
+	void LoadBitmap_L(char*);
+	void LoadBitmap_R(char*,char*);
+	void OnMove(int, int);
+	void OnShow();
+	void SetDir(int);
+	bool isfinalBitmap();
 
 private:
+	CAnimation CDeadL;
+	CAnimation CDeadRGun;
+	CAnimation CDeadRMan;
+	int x, y;
+	int direction;
 
 };
 
@@ -413,7 +424,7 @@ public:
 	void OnMove();					//敵人移動
 	
 	void SetAlive(bool);			//設定生命(顯示設定)
-	void SetDead(bool);				//設定死亡
+	void SetDead(bool,int);			//設定死亡及死亡方向
 	void SetDirection(int);
 	void SetEnemy(int);				//參數為主角的x座標
 	void SetOnBlock(bool);			//設定是否站在block上，gravity使用
@@ -429,8 +440,7 @@ public:
 private:
 	
 	CStand enemyStand;
-	CAnimation enemyDeadL;
-	CAnimation enemyDeadR;
+	CDead enemyDead;
 	CAnimation defaultStand;
 	int defaultHeight, defaultWidth;
 	bool isAlive;
@@ -510,6 +520,7 @@ protected:
 	void OnShow();									// 顯示這個狀態的遊戲畫面
 private:
 	CMovingBitmap logo;								// csie的logo
+	int loop = 0;
 	
 };
 
