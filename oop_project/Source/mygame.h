@@ -516,10 +516,23 @@ public:
 	void OnBeginState();							// 設定每次重玩所需的變數
 	void OnKeyUp(UINT, UINT, UINT); 				// 處理鍵盤Up的動作
 	void OnLButtonDown(UINT nFlags, CPoint point);  // 處理滑鼠的動作
+	void OnMouseMove(UINT nFlags, CPoint point);	// 滑鼠滑動
+
 protected:
+	void OnMove();
 	void OnShow();									// 顯示這個狀態的遊戲畫面
+
 private:
-	CMovingBitmap logo;								// csie的logo
+
+	CMovingBitmap gameUI;					//game介面
+	CMovingBitmap btnGo;					//開始按鈕
+	CMovingBitmap btnGoHover;				//開始按鈕Hover
+	CMovingBitmap hoverEffect;				//Hover特效
+	CMovingBitmap btnExit;					//離開按鈕
+	CMovingBitmap btnExitHover;				//離開按鈕Hover
+	CAnimation manScream;					//尖叫特效
+	CAnimation fire1, fire2, fire3, fire4;	//火焰特效
+	bool ishoverGo, ishoverExit;
 	int loop = 0;
 	
 };

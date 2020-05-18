@@ -1772,7 +1772,24 @@ namespace game_framework {
 		//
 		// 開始載入資料
 		//
-		logo.LoadBitmap(IDB_BACKGROUND);
+		ishoverGo = ishoverExit = false;
+		char *fileFire[] = { ".\\image\\interface\\95.bmp" , ".\\image\\interface\\96.bmp" , ".\\image\\interface\\97.bmp" , ".\\image\\interface\\98.bmp" };
+		char *fileScream[] = { ".\\image\\interface\\scream\\1.bmp" , ".\\image\\interface\\scream\\2.bmp" , ".\\image\\interface\\scream\\3.bmp" , ".\\image\\interface\\scream\\4.bmp"
+			, ".\\image\\interface\\scream\\5.bmp" , ".\\image\\interface\\scream\\6.bmp" , ".\\image\\interface\\scream\\7.bmp" , ".\\image\\interface\\scream\\8.bmp" };
+		for (int i = 0; i < 8; i++) manScream.AddBitmap(fileScream[i], Black);
+		for (int i = 0; i < 4; i++)
+		{
+			fire1.AddBitmap(fileFire[i], Black);
+			fire3.AddBitmap(fileFire[i], Black);
+			fire2.AddBitmap(fileFire[3 - i], Black);
+			fire4.AddBitmap(fileFire[3 - i], Black);
+		}
+		gameUI.LoadBitmap(".\\image\\interface\\interfaceBig.bmp");
+		btnGo.LoadBitmap(".\\image\\interface\\btnGo.bmp", Black);
+		btnGoHover.LoadBitmap(".\\image\\interface\\btnGoHover.bmp", Black);
+		hoverEffect.LoadBitmap(".\\image\\interface\\hoverEffect.bmp", Black);
+		btnExit.LoadBitmap(".\\image\\interface\\btnExit.bmp", Black);
+		btnExitHover.LoadBitmap(".\\image\\interface\\btnExitHover.bmp", Black);
 		Sleep(300);				// 放慢，以便看清楚進度，實際遊戲請刪除此Sleep
 		//
 		// 此OnInit動作會接到CGameStaterRun::OnInit()，所以進度還沒到100%
@@ -1790,28 +1807,94 @@ namespace game_framework {
 	{
 		const char KEY_ESC = 27;
 		const char KEY_SPACE = ' ';
-		if (nChar == KEY_SPACE)
-			GotoGameState(GAME_STATE_RUN);						// 切換至GAME_STATE_RUN
-		else if (nChar == KEY_ESC)								// Demo 關閉遊戲的方法
+		if (nChar == KEY_ESC)								// Demo 關閉遊戲的方法
 			PostMessage(AfxGetMainWnd()->m_hWnd, WM_CLOSE, 0, 0);	// 關閉遊戲
 	}
 
 	void CGameStateInit::OnLButtonDown(UINT nFlags, CPoint point)
 	{
-		GotoGameState(GAME_STATE_RUN);		// 切換至GAME_STATE_RUN
+		if (ishoverGo)
+			GotoGameState(GAME_STATE_RUN);		// 切換至GAME_STATE_RUN
+		else if (ishoverExit)
+			PostMessage(AfxGetMainWnd()->m_hWnd, WM_CLOSE, 0, 0);
+	}
+
+	void CGameStateInit::OnMouseMove(UINT nFlags, CPoint point)
+	{
+		if (point.x >= 310 && point.x <= 310 + 154 && point.y >= 100 && point.y <= 100 + 175)
+			ishoverGo = true;
+		else if (point.x >= 550 && point.x <= 550 + 191 && point.y >= 50 && point.y <= 50 + 83)
+			ishoverExit = true;
+		else
+		{
+			ishoverGo = ishoverExit = false;
+		}
+	}
+
+	void CGameStateInit::OnMove()
+	{
+		fire1.OnMove();
+		fire2.OnMove();
+		fire3.OnMove();
+		fire4.OnMove();
+		manScream.OnMove();
 	}
 
 	void CGameStateInit::OnShow()
 	{
-		//
-		// 貼上logo
-		//
-		logo.SetTopLeft((SIZE_X - logo.Width()) / 2, SIZE_Y / 8);
-		logo.ShowBitmap();
-		//
+
+		gameUI.SetTopLeft(0, 0);
+		gameUI.ShowBitmap();
+		
+		manScream.SetTopLeft(60, 230);
+		manScream.OnShow();
+
+#pragma region fireAnimation
+		fire1.SetTopLeft(230, 427);
+		fire1.OnShow();
+
+		fire2.SetTopLeft(488, 380);
+		fire2.OnShow();
+
+		fire3.SetTopLeft(323, 315);
+		fire3.OnShow();
+
+		fire4.SetTopLeft(400, 420);
+		fire4.OnShow();
+#pragma endregion
+
+#pragma region button
+
+		if (!ishoverGo)
+		{
+			btnGo.SetTopLeft(310, 100);
+			btnGo.ShowBitmap();
+		}
+		else
+		{
+			int x = 310 - (hoverEffect.Width() - btnGoHover.Width()) / 2;
+			int y = 100 - (hoverEffect.Height() - btnGoHover.Height());
+			btnGoHover.SetTopLeft(310, 100);
+			hoverEffect.SetTopLeft(x, y);
+			btnGoHover.ShowBitmap();
+			hoverEffect.ShowBitmap();
+		}
+
+		if (!ishoverExit)
+		{
+			btnExit.SetTopLeft(550, 50);
+			btnExit.ShowBitmap();
+		}
+		else
+		{
+			btnExitHover.SetTopLeft(550, 50);
+			btnExitHover.ShowBitmap();
+		}
+
+#pragma endregion
+
 		// Demo螢幕字型的使用，不過開發時請盡量避免直接使用字型，改用CMovingBitmap比較好
-		//
-		CDC *pDC = CDDraw::GetBackCDC();			// 取得 Back Plain 的 CDC 
+		/*CDC *pDC = CDDraw::GetBackCDC();			// 取得 Back Plain 的 CDC 
 		CFont f, *fp;
 		f.CreatePointFont(160, "Times New Roman");	// 產生 font f; 160表示16 point的字
 		fp = pDC->SelectObject(&f);					// 選用 font f
@@ -1824,7 +1907,9 @@ namespace game_framework {
 		pDC->TextOut(5, 455, "Press Alt-F4 or ESC to Quit.");
 		pDC->SelectObject(fp);						// 放掉 font f (千萬不要漏了放掉)
 		CDDraw::ReleaseBackCDC();					// 放掉 Back Plain 的 CDC
+		*/
 	}
+
 	//CGaneStateInit
 #pragma endregion
 
