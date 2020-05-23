@@ -429,7 +429,8 @@ namespace game_framework {
 			isOnBlock = canShoot = false;
 			isAlive = isDead = false;
 			isAlive = true;	//test
-			constDelay = delayCount = 15;
+			//constDelay = delayCount = 15; 太快
+			constDelay = delayCount = 25;
 		}
 
 		void CEnemy::LoadBitmap()
@@ -485,6 +486,7 @@ namespace game_framework {
 			}
 			else if (isAlive)
 			{
+				enemyStand.SetXY(x, y);
 				enemyStand.OnShow_Stand();
 			}
 		}
@@ -520,6 +522,22 @@ namespace game_framework {
 		void CEnemy::SetShootDelay(int delay) { constDelay = delay; }
 
 		void CEnemy::SetShootState(bool flag) { canShoot = flag; }
+
+		void CEnemy::SetMapXY(int mx, int my)
+		{
+			if (mx > mapX)			//主角向左走
+			{
+				x += (mx - mapX);
+				if (x > 700 - 126) x = 700 - 126;
+			}
+			else if (mx < mapX)		//主角向右走
+			{
+				x += (mx - mapX);
+				if (x < 100) x = 100;
+			}
+			mapX = mx;
+			mapY = my;
+		}
 
 #pragma endregion
 
@@ -718,30 +736,32 @@ namespace game_framework {
 		isAlive = true;
 	}
 
-	void CBullet::SetBullet(int nx, int ny, int dx, int dy)
+	void CBullet::SetBullet(int nowX, int nowY, int heroX, int heroY)
 	{
-		x = nx;
-		y = ny;
-		dx += getRandom() * 10;		//x誤差調整
-		dy += getRandom() * 10;		//y誤差調整
-		vx = dx - nx;
-		vy = dy - ny;
-		if (vx > vy && vx > 20)
+		x = nowX;
+		y = nowY;
+		heroX += getRandom() * 10;		//x誤差調整
+		heroY += getRandom() * 10;		//y誤差調整
+		vx = heroX - nowX;
+		vy = heroY - nowY;
+		if (abs(vx) > abs(vy) && abs(vx) > 20)
 		{
-			vy /= vx / 20;
-			vx = 20;
+			vy /= abs(vx) / 20;
+			if (vx < 0) vx = -20;
+			else vx = 20;
 		}
-		else if (vx < vy && vy > 20)
+		else if (abs(vx) < abs(vy) && abs(vy) > 20)
 		{
-			vx /= vy / 20;
-			vy = 20;
+			vx /= abs(vy) / 20;
+			if (vy < 0) vy = -20;
+			else vy = 20;
 		}
 		isAlive = true;
 	}
 
 	int CBullet::getRandom()
 	{
-		int r = (rand() % 20) - 5;
+		int r = (rand() % 18) - 5;
 		return r;
 	}
 
@@ -807,11 +827,11 @@ namespace game_framework {
 	{
 		mapBmp.AddBitmap(IDB_GameMap);
 		char *fileBullet[] = { ".\\image\\bullet\\1.bmp" , ".\\image\\bullet\\2.bmp" , ".\\image\\bullet\\3.bmp" };
-		char *fileBulletEnemy[] = { ".\\image\\bullet\\enemy\\1.bmp" , ".\\image\\bullet\\enemy\\2.bmp" , ".\\image\\bullet\\enemy\\3.bmp" , ".\\image\\bullet\\enemy\\4.bmp" };
+		char *fileBulletEnemy[] = { ".\\image\\bullet\\enemy\\1.bmp" , ".\\image\\bullet\\enemy\\2.bmp" , ".\\image\\bullet\\enemy\\3.bmp" };
 
 		for (int i = 0; i < 3; i++)
 			heroBullet.AddBitmap(fileBullet[i], Blue);
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < 3; i++)
 			enemyBullet.AddBitmap(fileBulletEnemy[i], Black);
 	}
 
@@ -2118,6 +2138,7 @@ namespace game_framework {
 		enemy.Initialize();
 		seed = (unsigned)time(NULL);
 		srand(seed);
+		mapX = mapY = 0;
 	}
 
 	void CGameStateRun::OnMove()							// 移動遊戲元素
@@ -2131,6 +2152,7 @@ namespace game_framework {
 		//移動子彈
 		if (enemy.isShow())
 		{
+			enemy.SetMapXY(mapX, mapY);
 			if (enemy.getShootState())
 			{
 				gameMap.addEnemyBullet(enemy.getX1(), enemy.getY1(), hero.getX1(), hero.getY1());

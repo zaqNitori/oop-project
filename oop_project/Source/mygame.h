@@ -439,6 +439,7 @@ public:
 	void SetOnBlock(bool);			//設定是否站在block上，gravity使用
 	void SetShootDelay(int);
 	void SetShootState(bool);
+	void SetMapXY(int, int);
 
 	bool getShootState();
 	bool isShow();					//是否顯示
