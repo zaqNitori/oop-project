@@ -136,12 +136,14 @@ namespace game_framework {
 
 	#pragma endregion
 
+		char *fileHeart[] = { ".\\image\\heart.bmp" };
 	#pragma endregion
 
 	#pragma region 動畫載入
 		CDefaultStand.LoadBitmap(fileDefaultStand[0], Blue);
 		CDefaultCrouch.LoadBitmap(fileDefaultCrouch[0], Blue);
-		
+		CHeart.LoadBitmap(fileHeart[0], Black);
+
 		heroCrouch.LoadBitmap_StandL(fileCrouchL[0]);
 		heroCrouch.LoadBitmap_StandR(fileCrouchR[0]);
 		for (int i = 0; i < 4; i++)
@@ -175,7 +177,7 @@ namespace game_framework {
 
 	}
 
-#pragma region MapMove
+#pragma region privateFunction
 	void CHero::gravity()
 	{
 		int gx = (x - mapX) / gameMap->getSize();
@@ -243,6 +245,13 @@ namespace game_framework {
 		}
 	}
 
+	void CHero::SetHeart()
+	{
+		heartX = x + CDefaultStand.Width() / 2 - CHeart.Width() / 2;
+		heartY = y + 50;
+	}
+
+	//private Function
 #pragma endregion
 
 	void CHero::OnMove()
@@ -255,13 +264,13 @@ namespace game_framework {
 		if (isFalling) isRising = false;
 		heroCrouch.OnMove(x, y);
 		ResumeShooting();
-		
+		SetHeart();
 	}
 
 	void CHero::OnShow()
 	{
 
-		#pragma region OnShow
+		#pragma region OnShowAction
 		
 		if (isRising||isFalling)
 		{
@@ -298,6 +307,8 @@ namespace game_framework {
 
 		#pragma endregion
 
+		CHeart.SetTopLeft(heartX, heartY);
+		CHeart.ShowBitmap();
 	}
 
 	#pragma region SetState
@@ -399,6 +410,14 @@ namespace game_framework {
 				return y + CDefaultStand.Height();
 		}
 
+		int CHero::getHeartX1() { return heartX; }
+
+		int CHero::getHeartY1() { return heartY; }
+
+		int CHero::getHeartX2() { return heartX + CHeart.Width(); }
+
+		int CHero::getHeartY2() { return heartY + CHeart.Height(); }
+
 		int CHero::getDir() { return direction; }
 
 		int CHero::getDir_hor() { return dir_horizontal; }
@@ -429,8 +448,8 @@ namespace game_framework {
 			isOnBlock = canShoot = false;
 			isAlive = isDead = false;
 			isAlive = true;	//test
-			//constDelay = delayCount = 15; 太快
-			constDelay = delayCount = 25;
+			constDelay = delayCount = 15; 
+			//constDelay = delayCount = 25;
 		}
 
 		void CEnemy::LoadBitmap()
@@ -538,6 +557,9 @@ namespace game_framework {
 			mapX = mx;
 			mapY = my;
 		}
+
+		// 0->pistol 1->shotgun 2->machineGun 3->sniper
+		void CEnemy::SetGunMode(int mode) { gunMode = mode; }
 
 #pragma endregion
 
@@ -736,32 +758,43 @@ namespace game_framework {
 		isAlive = true;
 	}
 
-	void CBullet::SetBullet(int nowX, int nowY, int heroX, int heroY)
+	void CBullet::SetBullet(int nowX, int nowY, int heroX, int heroY, int gunMode)
 	{
+		// 0->pistol 1->shotgun 2->machineGun 3->sniper
 		x = nowX;
 		y = nowY;
-		heroX += getRandom() * 10;		//x誤差調整
-		heroY += getRandom() * 10;		//y誤差調整
+		if (gunMode < 3)
+		{
+			maxSpeed = 20;
+			heroX += getRandom(gunMode) * 10;		//x誤差調整
+			heroY += getRandom(gunMode) * 10;		//y誤差調整
+		}
+		else maxSpeed = 35;
 		vx = heroX - nowX;
 		vy = heroY - nowY;
-		if (abs(vx) > abs(vy) && abs(vx) > 20)
+		if (abs(vx) > abs(vy) && abs(vx) > maxSpeed)
 		{
-			vy /= abs(vx) / 20;
-			if (vx < 0) vx = -20;
-			else vx = 20;
+			vy /= abs(vx) / maxSpeed;
+			if (vx < 0) vx = -(maxSpeed);
+			else vx = maxSpeed;
 		}
 		else if (abs(vx) < abs(vy) && abs(vy) > 20)
 		{
-			vx /= abs(vy) / 20;
-			if (vy < 0) vy = -20;
-			else vy = 20;
+			vx /= abs(vy) / maxSpeed;
+			if (vy < 0) vy = -(maxSpeed);
+			else vy = maxSpeed;
 		}
 		isAlive = true;
 	}
 
-	int CBullet::getRandom()
+	int CBullet::getRandom(int gunMode)
 	{
-		int r = (rand() % 18) - 5;
+		// 0->pistol 1->shotgun 2->machineGun 3->sniper
+		if (gunMode == 0) mistake = 10;
+		else if (gunMode == 1) mistake = 15;
+		else if (gunMode == 2) mistake = 20;
+		else return 0;
+		int r = (rand() % mistake) - 5;
 		return r;
 	}
 
@@ -890,7 +923,7 @@ namespace game_framework {
 			vCblt.push_back(new CBullet(0, 0));
 			vCblt[loop]->SetBulletClass(&heroBullet);
 		}
-		maxEnemyBullet = 100;
+		maxEnemyBullet = 150;
 		for (loop = 0; loop < maxEnemyBullet; loop++)
 		{
 			vCbltEnemy.push_back(new CBullet(0, 0));
@@ -917,7 +950,7 @@ namespace game_framework {
 
 	void CGameMap::addEnemyBullet(int nx, int ny, int dx, int dy)
 	{
-		int newX = 0, newY = 0;
+		/*int newX = 0, newY = 0;
 		for (loop = 0; loop < maxEnemyBullet; loop++)
 		{
 			if (!vCbltEnemy[loop]->isShow())
@@ -927,6 +960,46 @@ namespace game_framework {
 				newY = ny + 50;
 				vCbltEnemy[loop]->SetBullet(newX, newY, dx, dy);
 				break;
+			}
+		}*/
+	}
+
+	void CGameMap::addEnemyBullet(CEnemy* enemy, int dx, int dy, int gunMode)
+	{
+		// 0->pistol 1->shotgun 2->machineGun 3->sniper
+		int nx = enemy->getX1(), ny = enemy->getY1();
+		switch (gunMode)
+		{
+		case 0:
+			bulletNumer = 1;
+			gunDelay = 15;
+			break;
+		case 1:
+			bulletNumer = 4;
+			gunDelay = 25;
+			break;
+		case 2:
+			bulletNumer = 10;
+			gunDelay = 50;
+			break;
+		case 3:
+			bulletNumer = 1;
+			gunDelay = 35;
+			break;
+		default:
+			break;
+		}
+		enemy->SetShootDelay(gunDelay);
+		enemy->SetGunMode(gunMode);
+		for (loop = 0; loop < maxEnemyBullet && bulletNumer > 0; loop++)
+		{
+			if (!vCbltEnemy[loop]->isShow())		//子彈沒顯示
+			{
+				if (dx >= nx) nx += 80;
+				else nx -= 40;
+				ny += 50;
+				vCbltEnemy[loop]->SetBullet(nx, ny, dx, dy, gunMode);
+				bulletNumer--;
 			}
 		}
 	}
@@ -998,7 +1071,7 @@ namespace game_framework {
 		{
 			if (vCbltEnemy[loop]->isShow())
 			{
-				if (vCbltEnemy[loop]->isHit(hero->getX1(), hero->getY1(), hero->getX2(), hero->getY2()))
+				if (vCbltEnemy[loop]->isHit(hero->getHeartX1(), hero->getHeartY1(), hero->getHeartX2(), hero->getHeartY2()))
 				{
 					vCbltEnemy[loop]->SetLife(false);
 					return true;
@@ -2149,18 +2222,21 @@ namespace game_framework {
 
 		mapX = gameMap.getX();
 		mapY = gameMap.getY();
-		//移動子彈
-		if (enemy.isShow())
+
+#pragma region BulletControl子彈狀態控制
+		if (enemy.isShow())				//敵人狀態判定
 		{
-			enemy.SetMapXY(mapX, mapY);
-			if (enemy.getShootState())
+			enemy.SetMapXY(mapX, mapY);	//敵人位置修正
+			if (enemy.getShootState())	//確認填彈狀態，是否可以生成子彈
 			{
-				gameMap.addEnemyBullet(enemy.getX1(), enemy.getY1(), hero.getX1(), hero.getY1());
+				r = rand() % 4;			//1手槍 1散彈槍 1機槍 1狙擊槍 -> 槍枝機率
+				gameMap.addEnemyBullet(&enemy, hero.getX1(), hero.getY1(), r);
 				enemy.SetShootState(false);
 			}
 		}
-
-		gameMap.OnMoveBullet();
+		gameMap.OnMoveBullet();			//子彈移動
+		gameMap.killBullet();			//子彈刪除
+#pragma endregion
 
 		if (gameMap.isBulletHit(&enemy))
 		{
@@ -2170,12 +2246,8 @@ namespace game_framework {
 		{
 			;
 		}
-		//刪除子彈
-		gameMap.killBullet();
-
-		hero.OnMove();
-
 		
+		hero.OnMove();
 
 		if (!gameMap.getMapBlock(enemy.getY2(), enemy.getX1())) enemy.SetOnBlock(false);
 		else enemy.SetOnBlock(true);
@@ -2277,8 +2349,7 @@ namespace game_framework {
 		}
 		if (nChar == KEY_Q)
 		{
-			//hero.SetXY(300, 400);
-			enemy.SetAlive(true);
+			//enemy.SetAlive(true);
 		}
 		if (nChar == KEY_R)
 		{
@@ -2363,8 +2434,9 @@ namespace game_framework {
 		//  貼上左上及右下角落的圖
 		//
 		if (enemy.isShow()) enemy.OnShow();
-		gameMap.OnShowBullet();
 		hero.OnShow();
+		gameMap.OnShowBullet();
+		
 	}
 	//CGameStateRun
 #pragma endregion

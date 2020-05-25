@@ -69,7 +69,7 @@ public:
 	bool isShow();
 	void SetLife(bool);
 	void SetBullet(int, int, int);
-	void SetBullet(int, int, int, int);
+	void SetBullet(int, int, int, int, int);
 	void SetBulletClass(CAnimation*);
 	bool isHit(int, int, int, int);
 
@@ -80,8 +80,11 @@ private:
 	int vx, vy;
 	bool isAlive;
 	double rate;			//子彈速度比率
+	
+	int mistake;			//槍枝誤差
+	int maxSpeed;			//槍枝最大速度
 
-	int getRandom();		//誤差
+	int getRandom(int);		//槍枝誤差
 
 };
 
@@ -131,6 +134,7 @@ public:
 	void InitialBullet();
 	void addBullet(int,int,int,int);			//激活一個Bullet物件
 	void addEnemyBullet(int, int, int, int);
+	void addEnemyBullet(CEnemy*, int, int, int);
 	void killBullet();							//反激活已經死亡的Bullet物件
 	void OnMoveBullet();
 	void OnShowBullet();
@@ -151,6 +155,8 @@ private:
 	int size;
 	int weight, height;
 	int map[40][260];
+	int bulletNumer;					//槍枝子彈數
+	int gunDelay;						//槍枝填彈速度
 	unsigned loop;
 	unsigned maxHeroBullet;				//場上同時能存在我方的子彈上限
 	unsigned maxEnemyBullet;			//場上同時能存在敵方的子彈上限
@@ -375,14 +381,18 @@ public:
 	void SetRising(bool flag);
 	void SetDirection(int);			// 設定方向
 	void ResumeDirection();			// 將方向重新調回左和右  
-	void SetXY(int, int);	//方便Demo使用
+	void SetXY(int, int);			//方便Demo使用
 #pragma endregion
 
 #pragma region Getstate
-	int getX1();
-	int getY1();
-	int getX2();
-	int getY2();
+	int getX1();					//取得heroLeft
+	int getY1();					//get heroTop
+	int getX2();					//get heroRight
+	int getY2();					//get heroBottom
+	int getHeartX1();
+	int getHeartY1();
+	int getHeartX2();
+	int getHeartY2();
 	int getDir();
 	int getDir_hor();
 	bool isNowRising();
@@ -396,6 +406,7 @@ private:
 	CJump heroJump;
 	CCrouch heroCrouch;				//下蹲
 	CGameMap *gameMap;				
+	CMovingBitmap CHeart;			//心臟、弱點
 	CMovingBitmap CDefaultStand;	//不顯示、不移動，只處理碰撞
 	CMovingBitmap CDefaultCrouch;	//同上
 #pragma endregion
@@ -412,6 +423,7 @@ private:
 	int dir_horizontal;				//前一次的水平面向
 	int mapX, mapY;					//地圖的座標
 	int x, y;						//角色在螢幕的座標
+	int heartX, heartY;				//心臟起始座標
 	int defaultW, defaultH;			//站立圖片寬高
 	int delayCount,constDelay;
 #pragma endregion
@@ -419,6 +431,7 @@ private:
 	void gameMap_OnMove();			//處理地圖移動
 	void gravity();					//重力
 	void ResumeShooting();
+	void SetHeart();
 
 };
 
@@ -440,6 +453,7 @@ public:
 	void SetShootDelay(int);
 	void SetShootState(bool);
 	void SetMapXY(int, int);
+	void SetGunMode(int);			// 0->pistol 1->shotgun 2->machineGun 3->sniper
 
 	bool getShootState();
 	bool isShow();					//是否顯示
@@ -463,7 +477,7 @@ private:
 	int direction, step;
 	int mapX, mapY;
 	int x, y;
-
+	int gunMode;						//槍枝種類
 	int constDelay, delayCount;
 
 };
@@ -584,6 +598,7 @@ private:
 
 	unsigned seed;
 	int mapX, mapY;
+	int r;
 };
 
 /////////////////////////////////////////////////////////////////////////////
