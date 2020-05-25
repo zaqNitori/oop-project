@@ -447,7 +447,6 @@ public:
 	void SetAlive(bool);			//設定生命(顯示設定)
 	void SetDead(bool,int);			//設定死亡及死亡方向
 	void SetDirection(int);
-	void SetEnemy(int);				//參數為主角的x座標
 	void SetOnBlock(bool);			//設定是否站在block上，gravity使用
 	void SetShootDelay(int);
 	void SetShootState(bool);
@@ -468,7 +467,6 @@ private:
 	
 	CStand enemyStand;
 	CDead enemyDead;
-	//CAnimation defaultStand;
 	CMovingBitmap defaultStand;
 	int defaultHeight, defaultWidth;
 	bool isAlive;

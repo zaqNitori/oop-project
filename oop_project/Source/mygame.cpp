@@ -843,9 +843,9 @@ namespace game_framework {
 
 	CGameMap::~CGameMap()
 	{
-		for (loop = 0; loop < maxHeroBullet; loop++)
+		for (loop = 0; loop < vCblt.size(); loop++)
 			delete[] vCblt[loop];
-		for (loop = 0; loop < maxEnemyBullet; loop++)
+		for (loop = 0; loop < vCbltEnemy.size(); loop++)
 			delete[] vCbltEnemy[loop];
 	}
 
@@ -945,16 +945,32 @@ namespace game_framework {
 	void CGameMap::InitialBullet()
 	{
 		maxHeroBullet = 5;
-		for (loop = 0; loop < maxHeroBullet; loop++)
+		if (vCblt.size() == 0)
 		{
-			vCblt.push_back(new CBullet(0, 0));
-			vCblt[loop]->SetBulletClass(&heroBullet);
+			for (loop = 0; loop < maxHeroBullet; loop++)
+			{
+				vCblt.push_back(new CBullet(0, 0));
+				vCblt[loop]->SetBulletClass(&heroBullet);
+			}
+		}
+		else
+		{
+			for (loop = 0; loop < maxHeroBullet; loop++)
+				vCblt[loop]->SetLife(false);
 		}
 		maxEnemyBullet = 150;
-		for (loop = 0; loop < maxEnemyBullet; loop++)
+		if (vCbltEnemy.size() == 0)
 		{
-			vCbltEnemy.push_back(new CBullet(0, 0));
-			vCbltEnemy[loop]->SetBulletClass(&enemyBullet);
+			for (loop = 0; loop < maxEnemyBullet; loop++)
+			{
+				vCbltEnemy.push_back(new CBullet(0, 0));
+				vCbltEnemy[loop]->SetBulletClass(&enemyBullet);
+			}
+		}
+		else
+		{
+			for (loop = 0; loop < maxEnemyBullet; loop++)
+				vCbltEnemy[loop]->SetLife(false);
 		}
 	}
 
@@ -2050,7 +2066,9 @@ namespace game_framework {
 	void CGameStateInit::OnLButtonDown(UINT nFlags, CPoint point)
 	{
 		if (ishoverGo)
+		{
 			GotoGameState(GAME_STATE_RUN);		// 切換至GAME_STATE_RUN
+		}
 		else if (ishoverExit)
 			PostMessage(AfxGetMainWnd()->m_hWnd, WM_CLOSE, 0, 0);
 	}
@@ -2232,6 +2250,7 @@ namespace game_framework {
 		CAudio::Instance()->Play(AUDIO_NTUT, true);			// 撥放 MIDI
 
 		gameMap.Initialize();
+		gameMap.InitialBullet();
 
 		hero.Initialize();
 		hero.SetGameMap(&gameMap);
@@ -2246,7 +2265,7 @@ namespace game_framework {
 	{
 		// 如果希望修改cursor的樣式，則將下面程式的commment取消即可
 		// SetCursor(AfxGetApp()->LoadCursor(IDC_GAMECURSOR));
-
+		
 
 		mapX = gameMap.getX();
 		mapY = gameMap.getY();
@@ -2338,7 +2357,6 @@ namespace game_framework {
 		//
 		// 此OnInit動作會接到CGameStaterOver::OnInit()，所以進度還沒到100%
 		//
-		gameMap.InitialBullet();
 	}
 
 	void CGameStateRun::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
