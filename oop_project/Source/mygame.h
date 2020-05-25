@@ -59,7 +59,7 @@ class CBullet
 {
 public:
 	CBullet();
-	CBullet(int, int, int);		//給予角色的xy座標和方向
+	CBullet(int, int);			
 	~CBullet();
 	void Initialize();
 	void LoadBitmap(char*);
@@ -69,6 +69,7 @@ public:
 	bool isShow();
 	void SetLife(bool);
 	void SetBullet(int, int, int);
+	void SetBullet(int, int, int, int, int);
 	void SetBulletClass(CAnimation*);
 	bool isHit(int, int, int, int);
 
@@ -76,12 +77,18 @@ private:
 	CAnimation* bullet;
 	int x, y;
 	int direction;
-	int velocity;
+	int vx, vy;
 	bool isAlive;
+	double rate;			//子彈速度比率
+	
+	int mistake;			//槍枝誤差
+	int maxSpeed;			//槍枝最大速度
+
+	int getRandom(int);		//槍枝誤差
 
 };
 
-class CShoot
+class CShoot				//此為動作執行的class
 {
 public:
 	CShoot();
@@ -113,6 +120,7 @@ class CGameMap
 {
 public:
 	CGameMap();
+	~CGameMap();
 	void Initialize();
 	void LoadBitmap();
 	void OnShow();
@@ -125,6 +133,8 @@ public:
 #pragma region Bullet
 	void InitialBullet();
 	void addBullet(int,int,int,int);			//激活一個Bullet物件
+	void addEnemyBullet(int, int, int, int);
+	void addEnemyBullet(CEnemy*, int, int, int);
 	void killBullet();							//反激活已經死亡的Bullet物件
 	void OnMoveBullet();
 	void OnShowBullet();
@@ -136,14 +146,20 @@ private:
 	void SetBlock(int, int, int, int);			//編輯地圖可跳上的障礙物
 	
 	CAnimation heroBullet;
+	CAnimation enemyBullet;
 	vector<CBullet*> vCblt;
+	vector<CBullet*> vCbltEnemy;
 	CAnimation mapBmp;
 
-	int mapX, mapY;				//地圖座標
+	int mapX, mapY;						//地圖座標
 	int size;
 	int weight, height;
 	int map[40][260];
-	unsigned maxBullet;				//場上同時能存在的子彈上限
+	int bulletNumer;					//槍枝子彈數
+	int gunDelay;						//槍枝填彈速度
+	unsigned loop;
+	unsigned maxHeroBullet;				//場上同時能存在我方的子彈上限
+	unsigned maxEnemyBullet;			//場上同時能存在敵方的子彈上限
 
 };
 
@@ -219,7 +235,6 @@ private:
 	CAnimation CmoveL;				//動畫
 	CAnimation CmoveR;
 	CShoot CMoveShoot;
-	int floor;						//地板高度
 	int step, ini_step;				//移動速度
 	int velocity, ini_velocity;		//速度(上升、下降)
 	int direction, dir_horizontal;	//按鍵方向、前一個水平方向
@@ -281,7 +296,6 @@ private:
 	bool isRising;					//正在上升
 	bool isFalling;					//正在下降
 	int x, y;						//座標
-	int floor;						//最下方地板
 	int velocity, ini_velocity;		//速度、初速度
 	int mapX, mapY;					//地圖座標
 	int direction, dir_horizontal;	//按鍵方向、上一個水平方向
@@ -367,16 +381,21 @@ public:
 	void SetRising(bool flag);
 	void SetDirection(int);			// 設定方向
 	void ResumeDirection();			// 將方向重新調回左和右  
-	void SetXY(int, int);	//方便Demo使用
+	void SetXY(int, int);			//方便Demo使用
 #pragma endregion
 
 #pragma region Getstate
-	int getX1();
-	int getY1();
-	int getX2();
-	int getY2();
+	int getX1();					//取得heroLeft
+	int getY1();					//get heroTop
+	int getX2();					//get heroRight
+	int getY2();					//get heroBottom
+	int getHeartX1();
+	int getHeartY1();
+	int getHeartX2();
+	int getHeartY2();
 	int getDir();
 	int getDir_hor();
+	bool isNowRising();
 #pragma endregion
 
 
@@ -387,6 +406,7 @@ private:
 	CJump heroJump;
 	CCrouch heroCrouch;				//下蹲
 	CGameMap *gameMap;				
+	CMovingBitmap CHeart;			//心臟、弱點
 	CMovingBitmap CDefaultStand;	//不顯示、不移動，只處理碰撞
 	CMovingBitmap CDefaultCrouch;	//同上
 #pragma endregion
@@ -403,6 +423,7 @@ private:
 	int dir_horizontal;				//前一次的水平面向
 	int mapX, mapY;					//地圖的座標
 	int x, y;						//角色在螢幕的座標
+	int heartX, heartY;				//心臟起始座標
 	int defaultW, defaultH;			//站立圖片寬高
 	int delayCount,constDelay;
 #pragma endregion
@@ -410,6 +431,7 @@ private:
 	void gameMap_OnMove();			//處理地圖移動
 	void gravity();					//重力
 	void ResumeShooting();
+	void SetHeart();
 
 };
 
@@ -428,7 +450,12 @@ public:
 	void SetDirection(int);
 	void SetEnemy(int);				//參數為主角的x座標
 	void SetOnBlock(bool);			//設定是否站在block上，gravity使用
+	void SetShootDelay(int);
+	void SetShootState(bool);
+	void SetMapXY(int, int);
+	void SetGunMode(int);			// 0->pistol 1->shotgun 2->machineGun 3->sniper
 
+	bool getShootState();
 	bool isShow();					//是否顯示
 	bool getAlive();					
 	bool getDead();
@@ -446,9 +473,12 @@ private:
 	bool isAlive;
 	bool isDead;
 	bool isOnBlock;
+	bool canShoot;
 	int direction, step;
 	int mapX, mapY;
 	int x, y;
+	int gunMode;						//槍枝種類
+	int constDelay, delayCount;
 
 };
 
@@ -516,11 +546,23 @@ public:
 	void OnBeginState();							// 設定每次重玩所需的變數
 	void OnKeyUp(UINT, UINT, UINT); 				// 處理鍵盤Up的動作
 	void OnLButtonDown(UINT nFlags, CPoint point);  // 處理滑鼠的動作
+	void OnMouseMove(UINT nFlags, CPoint point);	// 滑鼠滑動
+
 protected:
+	void OnMove();
 	void OnShow();									// 顯示這個狀態的遊戲畫面
+
 private:
-	CMovingBitmap logo;								// csie的logo
-	int loop = 0;
+
+	CMovingBitmap gameUI;					//game介面
+	CMovingBitmap btnGo;					//開始按鈕
+	CMovingBitmap btnGoHover;				//開始按鈕Hover
+	CMovingBitmap hoverEffect;				//Hover特效
+	CMovingBitmap btnExit;					//離開按鈕
+	CMovingBitmap btnExitHover;				//離開按鈕Hover
+	CAnimation manScream;					//尖叫特效
+	CAnimation fire1, fire2, fire3, fire4;	//火焰特效
+	bool ishoverGo, ishoverExit;
 	
 };
 
@@ -554,7 +596,9 @@ private:
 	CGameMap gameMap;
 	CEnemy enemy;
 
+	unsigned seed;
 	int mapX, mapY;
+	int r;
 };
 
 /////////////////////////////////////////////////////////////////////////////

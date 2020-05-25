@@ -136,12 +136,14 @@ namespace game_framework {
 
 	#pragma endregion
 
+		char *fileHeart[] = { ".\\image\\heart.bmp" };
 	#pragma endregion
 
 	#pragma region 動畫載入
 		CDefaultStand.LoadBitmap(fileDefaultStand[0], Blue);
 		CDefaultCrouch.LoadBitmap(fileDefaultCrouch[0], Blue);
-		
+		CHeart.LoadBitmap(fileHeart[0], Black);
+
 		heroCrouch.LoadBitmap_StandL(fileCrouchL[0]);
 		heroCrouch.LoadBitmap_StandR(fileCrouchR[0]);
 		for (int i = 0; i < 4; i++)
@@ -175,7 +177,7 @@ namespace game_framework {
 
 	}
 
-#pragma region MapMove
+#pragma region privateFunction
 	void CHero::gravity()
 	{
 		int gx = (x - mapX) / gameMap->getSize();
@@ -243,6 +245,13 @@ namespace game_framework {
 		}
 	}
 
+	void CHero::SetHeart()
+	{
+		heartX = x + CDefaultStand.Width() / 2 - CHeart.Width() / 2;
+		heartY = y + 50;
+	}
+
+	//private Function
 #pragma endregion
 
 	void CHero::OnMove()
@@ -255,13 +264,13 @@ namespace game_framework {
 		if (isFalling) isRising = false;
 		heroCrouch.OnMove(x, y);
 		ResumeShooting();
-		
+		SetHeart();
 	}
 
 	void CHero::OnShow()
 	{
 
-		#pragma region OnShow
+		#pragma region OnShowAction
 		
 		if (isRising||isFalling)
 		{
@@ -298,6 +307,8 @@ namespace game_framework {
 
 		#pragma endregion
 
+		CHeart.SetTopLeft(heartX, heartY);
+		CHeart.ShowBitmap();
 	}
 
 	#pragma region SetState
@@ -383,13 +394,35 @@ namespace game_framework {
 
 		int CHero::getY1() { return y; }
 
-		int CHero::getX2() { return 0; }
+		int CHero::getX2() 
+		{ 
+			if (isMovingDown)
+				return x + CDefaultCrouch.Width();
+			else
+				return x + CDefaultStand.Width();
+		}
 
-		int CHero::getY2() { return 0; }
+		int CHero::getY2() 
+		{ 
+			if (isMovingDown)
+				return y + CDefaultCrouch.Height();
+			else
+				return y + CDefaultStand.Height();
+		}
+
+		int CHero::getHeartX1() { return heartX; }
+
+		int CHero::getHeartY1() { return heartY; }
+
+		int CHero::getHeartX2() { return heartX + CHeart.Width(); }
+
+		int CHero::getHeartY2() { return heartY + CHeart.Height(); }
 
 		int CHero::getDir() { return direction; }
 
 		int CHero::getDir_hor() { return dir_horizontal; }
+
+		bool CHero::isNowRising() { return isRising; }
 	#pragma endregion
 
 	//CHero
@@ -408,13 +441,15 @@ namespace game_framework {
 		void CEnemy::Initialize()
 		{
 			mapX = mapY = 0;
-			x = y = 300;
+			x = 100;
 			y = 525 - 165;
 			direction = 2;
 			step = 18;
-			isOnBlock = false;
+			isOnBlock = canShoot = false;
 			isAlive = isDead = false;
 			isAlive = true;	//test
+			constDelay = delayCount = 15; 
+			//constDelay = delayCount = 25;
 		}
 
 		void CEnemy::LoadBitmap()
@@ -441,14 +476,25 @@ namespace game_framework {
 
 		void CEnemy::OnMove()
 		{
-			if (!isOnBlock) y += step;
-			if (isAlive) enemyStand.OnMove(x, y);
-			else if (isDead) enemyDead.OnMove(x, y);
-			if (isDead)
+			if (!isOnBlock) y += step;					//gravity
+			if (isAlive) enemyStand.OnMove(x, y);		//站立動作
+			else if (isDead)
 			{
-				if (enemyDead.isfinalBitmap())
+				enemyDead.OnMove(x, y);					//死亡動作
+				if (enemyDead.isfinalBitmap())			//解除死亡狀態
 					isDead = false;
 			}
+			
+			if (!canShoot)			//射擊間隔處理
+			{
+				delayCount--;
+				if (delayCount == 0)
+				{
+					canShoot = true;
+					delayCount = constDelay;
+				}
+			}
+			
 		}
 
 		void CEnemy::OnShow()
@@ -459,6 +505,7 @@ namespace game_framework {
 			}
 			else if (isAlive)
 			{
+				enemyStand.SetXY(x, y);
 				enemyStand.OnShow_Stand();
 			}
 		}
@@ -491,9 +538,34 @@ namespace game_framework {
 
 		void CEnemy::SetOnBlock(bool flag) { isOnBlock = flag; }
 
+		void CEnemy::SetShootDelay(int delay) { constDelay = delay; }
+
+		void CEnemy::SetShootState(bool flag) { canShoot = flag; }
+
+		void CEnemy::SetMapXY(int mx, int my)
+		{
+			if (mx > mapX)			//主角向左走
+			{
+				x += (mx - mapX);
+				if (x > 700 - 126) x = 700 - 126;
+			}
+			else if (mx < mapX)		//主角向右走
+			{
+				x += (mx - mapX);
+				if (x < 100) x = 100;
+			}
+			mapX = mx;
+			mapY = my;
+		}
+
+		// 0->pistol 1->shotgun 2->machineGun 3->sniper
+		void CEnemy::SetGunMode(int mode) { gunMode = mode; }
+
 #pragma endregion
 
 #pragma region GetState
+		bool CEnemy::getShootState() { return canShoot; }
+
 		bool CEnemy::isShow() { return (isAlive || isDead); }
 
 		bool CEnemy::getAlive() { return isAlive; }
@@ -612,22 +684,18 @@ namespace game_framework {
 
 	CBullet::~CBullet() {};
 
-	CBullet::CBullet(int nx, int ny, int dir)
+	CBullet::CBullet(int nx, int ny)
 	{
 		x = nx;
 		y = ny;
-		direction = dir;
 		Initialize();
 	}
 
 	void CBullet::Initialize()
 	{
-		/*char *fileBullet[] = { ".\\image\\bullet\\b1.bmp" , ".\\image\\bullet\\b2.bmp" , ".\\image\\bullet\\b3.bmp" , ".\\image\\bullet\\b4.bmp" };
-		for (int i = 0; i < 4; i++)
-			LoadBitmap(fileBullet[i]);*/
-		velocity = 23;
-		isAlive = false;
-		//bullet.SetDelayCount(2);
+		vx = vy = 23;			//預設速度
+		isAlive = false;		//預設不顯示
+		direction = 5;			//預設為朝著目標座標飛行
 	}
 
 	void CBullet::SetBulletClass(CAnimation* anime)
@@ -645,22 +713,19 @@ namespace game_framework {
 	{
 		switch (direction)
 		{
-		case 1:
-			x -= velocity;
+		case 1:			//向左射
+			x -= vx;
 			break;
-		case 2:
-			x += velocity;
+		case 2:			//向右射
+			x += vx;
 			break;
-		/*case 3:
-			y -= velocity;
+		case 5:			//往目標位置射
+			x += vx;
+			y += vy;
 			break;
-		case 4:
-			y += velocity;
-			break;*/
 		default:
 			break;
 		}
-		//bullet.OnMove();
 		bullet->OnMove();
 	}
 
@@ -670,20 +735,20 @@ namespace game_framework {
 		bullet->OnShow();
 	}
 
-	bool CBullet::isDead()
+	bool CBullet::isDead()		//判斷是否超出邊界導致死亡
 	{
 		if (x  > 800 || x + bullet->Width() < 0 || y > 600 || y + bullet->Height() < 0) return true;
 		return false;
 	}
 
-	bool CBullet::isShow() { return isAlive; }
+	bool CBullet::isShow() { return isAlive; }				//取得生命狀態(顯示狀態)
 
-	bool CBullet::isHit(int tx1, int ty1, int tx2, int ty2)
+	bool CBullet::isHit(int tx1, int ty1, int tx2, int ty2)	//判斷是否碰撞到物件導致死亡
 	{
 		return (tx2 >= x && tx1 <= x + bullet->Width() && ty2 >= y && ty1 <= y + bullet->Height());
 	}
 
-	void CBullet::SetLife(bool life) { isAlive = life; }
+	void CBullet::SetLife(bool life) { isAlive = life; }	//生命設定(是否顯示)
 
 	void CBullet::SetBullet(int nx, int ny, int dir)
 	{
@@ -691,6 +756,46 @@ namespace game_framework {
 		y = ny;
 		direction = dir;
 		isAlive = true;
+	}
+
+	void CBullet::SetBullet(int nowX, int nowY, int heroX, int heroY, int gunMode)
+	{
+		// 0->pistol 1->shotgun 2->machineGun 3->sniper
+		x = nowX;
+		y = nowY;
+		if (gunMode < 3)
+		{
+			maxSpeed = 20;
+			heroX += getRandom(gunMode) * 10;		//x誤差調整
+			heroY += getRandom(gunMode) * 10;		//y誤差調整
+		}
+		else maxSpeed = 35;
+		vx = heroX - nowX;
+		vy = heroY - nowY;
+		if (abs(vx) > abs(vy) && abs(vx) > maxSpeed)
+		{
+			vy /= abs(vx) / maxSpeed;
+			if (vx < 0) vx = -(maxSpeed);
+			else vx = maxSpeed;
+		}
+		else if (abs(vx) < abs(vy) && abs(vy) > 20)
+		{
+			vx /= abs(vy) / maxSpeed;
+			if (vy < 0) vy = -(maxSpeed);
+			else vy = maxSpeed;
+		}
+		isAlive = true;
+	}
+
+	int CBullet::getRandom(int gunMode)
+	{
+		// 0->pistol 1->shotgun 2->machineGun 3->sniper
+		if (gunMode == 0) mistake = 10;
+		else if (gunMode == 1) mistake = 15;
+		else if (gunMode == 2) mistake = 20;
+		else return 0;
+		int r = (rand() % mistake) - 5;
+		return r;
 	}
 
 	//CBullet
@@ -707,6 +812,14 @@ namespace game_framework {
 	CGameMap::CGameMap()
 	{
 		Initialize();
+	}
+
+	CGameMap::~CGameMap()
+	{
+		for (loop = 0; loop < maxHeroBullet; loop++)
+			delete[] vCblt[loop];
+		for (loop = 0; loop < maxEnemyBullet; loop++)
+			delete[] vCbltEnemy[loop];
 	}
 
 	void CGameMap::Initialize()
@@ -747,8 +860,12 @@ namespace game_framework {
 	{
 		mapBmp.AddBitmap(IDB_GameMap);
 		char *fileBullet[] = { ".\\image\\bullet\\1.bmp" , ".\\image\\bullet\\2.bmp" , ".\\image\\bullet\\3.bmp" };
+		char *fileBulletEnemy[] = { ".\\image\\bullet\\enemy\\1.bmp" , ".\\image\\bullet\\enemy\\2.bmp" , ".\\image\\bullet\\enemy\\3.bmp" };
+
 		for (int i = 0; i < 3; i++)
 			heroBullet.AddBitmap(fileBullet[i], Blue);
+		for (int i = 0; i < 3; i++)
+			enemyBullet.AddBitmap(fileBulletEnemy[i], Black);
 	}
 
 	void CGameMap::OnShow()
@@ -800,68 +917,163 @@ namespace game_framework {
 #pragma region BulletState
 	void CGameMap::InitialBullet()
 	{
-		maxBullet = 5;
-		for (unsigned i = 0; i < maxBullet; i++)
+		maxHeroBullet = 5;
+		for (loop = 0; loop < maxHeroBullet; loop++)
 		{
-			vCblt.push_back(new CBullet(0, 0, 0));
-			vCblt[i]->SetLife(false);
-			vCblt[i]->SetBulletClass(&heroBullet);
+			vCblt.push_back(new CBullet(0, 0));
+			vCblt[loop]->SetBulletClass(&heroBullet);
+		}
+		maxEnemyBullet = 150;
+		for (loop = 0; loop < maxEnemyBullet; loop++)
+		{
+			vCbltEnemy.push_back(new CBullet(0, 0));
+			vCbltEnemy[loop]->SetBulletClass(&enemyBullet);
 		}
 	}
 
 	void CGameMap::addBullet(int x, int y, int direction, int dir_horizontal)
 	{
 		int newY = 0, newX = 0;
-		for (unsigned i = 0; i < maxBullet; i++)
+		for (loop = 0; loop < maxHeroBullet; loop++)
 		{
-			if (vCblt[i]->isShow() == false)
+			if (vCblt[loop]->isShow() == false)
 			{
 				if (direction == 4) newY = y + 60;
 				else newY = y + 30;
 				if (dir_horizontal == 2) newX = x + 100;
 				else newX = x - 40;
-				vCblt[i]->SetBullet(newX, newY, dir_horizontal);
+				vCblt[loop]->SetBullet(newX, newY, dir_horizontal);
 				break;
+			}
+		}
+	}
+
+	void CGameMap::addEnemyBullet(int nx, int ny, int dx, int dy)
+	{
+		/*int newX = 0, newY = 0;
+		for (loop = 0; loop < maxEnemyBullet; loop++)
+		{
+			if (!vCbltEnemy[loop]->isShow())
+			{
+				if (dx >= nx) newX = nx + 100;
+				else newX = nx - 40;
+				newY = ny + 50;
+				vCbltEnemy[loop]->SetBullet(newX, newY, dx, dy);
+				break;
+			}
+		}*/
+	}
+
+	void CGameMap::addEnemyBullet(CEnemy* enemy, int dx, int dy, int gunMode)
+	{
+		// 0->pistol 1->shotgun 2->machineGun 3->sniper
+		int nx = enemy->getX1(), ny = enemy->getY1();
+		switch (gunMode)
+		{
+		case 0:
+			bulletNumer = 1;
+			gunDelay = 15;
+			break;
+		case 1:
+			bulletNumer = 4;
+			gunDelay = 25;
+			break;
+		case 2:
+			bulletNumer = 10;
+			gunDelay = 50;
+			break;
+		case 3:
+			bulletNumer = 1;
+			gunDelay = 35;
+			break;
+		default:
+			break;
+		}
+		enemy->SetShootDelay(gunDelay);
+		enemy->SetGunMode(gunMode);
+		for (loop = 0; loop < maxEnemyBullet && bulletNumer > 0; loop++)
+		{
+			if (!vCbltEnemy[loop]->isShow())		//子彈沒顯示
+			{
+				if (dx >= nx) nx += 80;
+				else nx -= 40;
+				ny += 50;
+				vCbltEnemy[loop]->SetBullet(nx, ny, dx, dy, gunMode);
+				bulletNumer--;
 			}
 		}
 	}
 
 	void CGameMap::killBullet()
 	{
-		for (unsigned i = 0; i < maxBullet; i++)
+		for (loop = 0; loop < maxHeroBullet; loop++)
 		{
-			if (vCblt[i]->isShow())
+			if (vCblt[loop]->isShow())
 			{
-				if (vCblt[i]->isDead())
-					vCblt[i]->SetLife(false);
+				if (vCblt[loop]->isDead())
+					vCblt[loop]->SetLife(false);
+			}
+		}
+		for (loop = 0; loop < maxEnemyBullet; loop++)
+		{
+			if (vCbltEnemy[loop]->isShow())
+			{
+				if (vCbltEnemy[loop]->isDead())
+					vCbltEnemy[loop]->SetLife(false);
 			}
 		}
 	}
 
 	void CGameMap::OnMoveBullet()
 	{
-		for (unsigned i = 0; i < maxBullet; i++)
-			if (vCblt[i]->isShow())
-				vCblt[i]->OnMove();
+		for (loop = 0; loop < maxHeroBullet; loop++)
+			if (vCblt[loop]->isShow())
+				vCblt[loop]->OnMove();
+		for (loop = 0; loop < maxEnemyBullet; loop++)
+		{
+			if (vCbltEnemy[loop]->isShow())
+				vCbltEnemy[loop]->OnMove();
+		}
 	}
 
 	void CGameMap::OnShowBullet()
 	{
-		for (unsigned i = 0; i < maxBullet; i++)
-			if (vCblt[i]->isShow())
-				vCblt[i]->OnShow();
+		for (loop = 0; loop < maxHeroBullet; loop++)
+			if (vCblt[loop]->isShow())
+				vCblt[loop]->OnShow();
+		for (loop = 0; loop < maxEnemyBullet; loop++)
+		{
+			if (vCbltEnemy[loop]->isShow())
+				vCbltEnemy[loop]->OnShow();
+		}
 	}
 
 	bool CGameMap::isBulletHit(CEnemy *enemy)
 	{
 		if (!enemy->getAlive()) return false;
-		for (unsigned i = 0; i < maxBullet; i++)
+		for (loop = 0; loop < maxHeroBullet; loop++)
 		{
-			if (vCblt[i]->isShow())
+			if (vCblt[loop]->isShow())
 			{
-				if (vCblt[i]->isHit(enemy->getX1(), enemy->getY1(), enemy->getX2(), enemy->getY2()))
+				if (vCblt[loop]->isHit(enemy->getX1(), enemy->getY1(), enemy->getX2(), enemy->getY2()))
 				{
-					vCblt[i]->SetLife(false);
+					vCblt[loop]->SetLife(false);
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	bool CGameMap::isBulletHit(CHero *hero)
+	{
+		for (loop = 0; loop < maxEnemyBullet; loop++)
+		{
+			if (vCbltEnemy[loop]->isShow())
+			{
+				if (vCbltEnemy[loop]->isHit(hero->getHeartX1(), hero->getHeartY1(), hero->getHeartX2(), hero->getHeartY2()))
+				{
+					vCbltEnemy[loop]->SetLife(false);
 					return true;
 				}
 			}
@@ -1272,7 +1484,6 @@ namespace game_framework {
 	{
 		const int FLOOR = 450;			//地板高度
 		const int INI_VELOCITY = 30;	//初速
-		floor = FLOOR;
 		direction = dir_horizontal = 1;	//預設方向向左
 		velocity = ini_velocity = INI_VELOCITY;
 		isRising = isFalling = false;
@@ -1772,14 +1983,28 @@ namespace game_framework {
 		//
 		// 開始載入資料
 		//
-		logo.LoadBitmap(IDB_BACKGROUND);
+		ishoverGo = ishoverExit = false;
+		char *fileFire[] = { ".\\image\\interface\\95.bmp" , ".\\image\\interface\\96.bmp" , ".\\image\\interface\\97.bmp" , ".\\image\\interface\\98.bmp" };
+		char *fileScream[] = { ".\\image\\interface\\scream\\1.bmp" , ".\\image\\interface\\scream\\2.bmp" , ".\\image\\interface\\scream\\3.bmp" , ".\\image\\interface\\scream\\4.bmp"
+			, ".\\image\\interface\\scream\\5.bmp" , ".\\image\\interface\\scream\\6.bmp" , ".\\image\\interface\\scream\\7.bmp" , ".\\image\\interface\\scream\\8.bmp" };
+		for (int i = 0; i < 8; i++) manScream.AddBitmap(fileScream[i], Black);
+		for (int i = 0; i < 4; i++)
+		{
+			fire1.AddBitmap(fileFire[i], Black);
+			fire3.AddBitmap(fileFire[i], Black);
+			fire2.AddBitmap(fileFire[3 - i], Black);
+			fire4.AddBitmap(fileFire[3 - i], Black);
+		}
+		gameUI.LoadBitmap(".\\image\\interface\\interfaceBig.bmp");
+		btnGo.LoadBitmap(".\\image\\interface\\btnGo.bmp", Black);
+		btnGoHover.LoadBitmap(".\\image\\interface\\btnGoHover.bmp", Black);
+		hoverEffect.LoadBitmap(".\\image\\interface\\hoverEffect.bmp", Black);
+		btnExit.LoadBitmap(".\\image\\interface\\btnExit.bmp", Black);
+		btnExitHover.LoadBitmap(".\\image\\interface\\btnExitHover.bmp", Black);
 		Sleep(300);				// 放慢，以便看清楚進度，實際遊戲請刪除此Sleep
 		//
 		// 此OnInit動作會接到CGameStaterRun::OnInit()，所以進度還沒到100%
 		//
-		srand(loop);
-		loop++;
-		loop %= 10;
 	}
 
 	void CGameStateInit::OnBeginState()
@@ -1790,28 +2015,94 @@ namespace game_framework {
 	{
 		const char KEY_ESC = 27;
 		const char KEY_SPACE = ' ';
-		if (nChar == KEY_SPACE)
-			GotoGameState(GAME_STATE_RUN);						// 切換至GAME_STATE_RUN
-		else if (nChar == KEY_ESC)								// Demo 關閉遊戲的方法
+		if (nChar == KEY_ESC)								// Demo 關閉遊戲的方法
 			PostMessage(AfxGetMainWnd()->m_hWnd, WM_CLOSE, 0, 0);	// 關閉遊戲
 	}
 
 	void CGameStateInit::OnLButtonDown(UINT nFlags, CPoint point)
 	{
-		GotoGameState(GAME_STATE_RUN);		// 切換至GAME_STATE_RUN
+		if (ishoverGo)
+			GotoGameState(GAME_STATE_RUN);		// 切換至GAME_STATE_RUN
+		else if (ishoverExit)
+			PostMessage(AfxGetMainWnd()->m_hWnd, WM_CLOSE, 0, 0);
+	}
+
+	void CGameStateInit::OnMouseMove(UINT nFlags, CPoint point)
+	{
+		if (point.x >= 310 && point.x <= 310 + 154 && point.y >= 100 && point.y <= 100 + 175)
+			ishoverGo = true;
+		else if (point.x >= 550 && point.x <= 550 + 191 && point.y >= 50 && point.y <= 50 + 83)
+			ishoverExit = true;
+		else
+		{
+			ishoverGo = ishoverExit = false;
+		}
+	}
+
+	void CGameStateInit::OnMove()
+	{
+		fire1.OnMove();
+		fire2.OnMove();
+		fire3.OnMove();
+		fire4.OnMove();
+		manScream.OnMove();
 	}
 
 	void CGameStateInit::OnShow()
 	{
-		//
-		// 貼上logo
-		//
-		logo.SetTopLeft((SIZE_X - logo.Width()) / 2, SIZE_Y / 8);
-		logo.ShowBitmap();
-		//
+
+		gameUI.SetTopLeft(0, 0);
+		gameUI.ShowBitmap();
+		
+		manScream.SetTopLeft(60, 230);
+		manScream.OnShow();
+
+#pragma region fireAnimation
+		fire1.SetTopLeft(230, 427);
+		fire1.OnShow();
+
+		fire2.SetTopLeft(488, 380);
+		fire2.OnShow();
+
+		fire3.SetTopLeft(323, 315);
+		fire3.OnShow();
+
+		fire4.SetTopLeft(400, 420);
+		fire4.OnShow();
+#pragma endregion
+
+#pragma region button
+
+		if (!ishoverGo)
+		{
+			btnGo.SetTopLeft(310, 100);
+			btnGo.ShowBitmap();
+		}
+		else
+		{
+			int x = 310 - (hoverEffect.Width() - btnGoHover.Width()) / 2;
+			int y = 100 - (hoverEffect.Height() - btnGoHover.Height());
+			btnGoHover.SetTopLeft(310, 100);
+			hoverEffect.SetTopLeft(x, y);
+			btnGoHover.ShowBitmap();
+			hoverEffect.ShowBitmap();
+		}
+
+		if (!ishoverExit)
+		{
+			btnExit.SetTopLeft(550, 50);
+			btnExit.ShowBitmap();
+		}
+		else
+		{
+			btnExitHover.SetTopLeft(550, 50);
+			btnExitHover.ShowBitmap();
+		}
+
+#pragma endregion
+
 		// Demo螢幕字型的使用，不過開發時請盡量避免直接使用字型，改用CMovingBitmap比較好
-		//
-		CDC *pDC = CDDraw::GetBackCDC();			// 取得 Back Plain 的 CDC 
+		/*CDC *pDC = CDDraw::GetBackCDC();			// 取得 Back Plain 的 CDC 
 		CFont f, *fp;
 		f.CreatePointFont(160, "Times New Roman");	// 產生 font f; 160表示16 point的字
 		fp = pDC->SelectObject(&f);					// 選用 font f
@@ -1824,7 +2115,9 @@ namespace game_framework {
 		pDC->TextOut(5, 455, "Press Alt-F4 or ESC to Quit.");
 		pDC->SelectObject(fp);						// 放掉 font f (千萬不要漏了放掉)
 		CDDraw::ReleaseBackCDC();					// 放掉 Back Plain 的 CDC
+		*/
 	}
+
 	//CGaneStateInit
 #pragma endregion
 
@@ -1916,6 +2209,9 @@ namespace game_framework {
 		hero.SetGameMap(&gameMap);
 
 		enemy.Initialize();
+		seed = (unsigned)time(NULL);
+		srand(seed);
+		mapX = mapY = 0;
 	}
 
 	void CGameStateRun::OnMove()							// 移動遊戲元素
@@ -1926,20 +2222,32 @@ namespace game_framework {
 
 		mapX = gameMap.getX();
 		mapY = gameMap.getY();
-		//移動子彈
-		gameMap.OnMoveBullet();
+
+#pragma region BulletControl子彈狀態控制
+		if (enemy.isShow())				//敵人狀態判定
+		{
+			enemy.SetMapXY(mapX, mapY);	//敵人位置修正
+			if (enemy.getShootState())	//確認填彈狀態，是否可以生成子彈
+			{
+				r = rand() % 4;			//1手槍 1散彈槍 1機槍 1狙擊槍 -> 槍枝機率
+				gameMap.addEnemyBullet(&enemy, hero.getX1(), hero.getY1(), r);
+				enemy.SetShootState(false);
+			}
+		}
+		gameMap.OnMoveBullet();			//子彈移動
+		gameMap.killBullet();			//子彈刪除
+#pragma endregion
 
 		if (gameMap.isBulletHit(&enemy))
 		{
 			enemy.SetDead(true,hero.getDir_hor());
 		}
-
-		//刪除子彈
-		gameMap.killBullet();
-
-		hero.OnMove();
-
+		if (gameMap.isBulletHit(&hero))
+		{
+			;
+		}
 		
+		hero.OnMove();
 
 		if (!gameMap.getMapBlock(enemy.getY2(), enemy.getX1())) enemy.SetOnBlock(false);
 		else enemy.SetOnBlock(true);
@@ -2004,6 +2312,7 @@ namespace game_framework {
 		const char KEY_A = 0x41;		// keyboard a
 		const char KEY_S = 0x53;		// keyboard s
 		const char KEY_Q = 0x51;
+		const char KEY_R = 0x52;
 
 		//左1 右2 上3 下4
 		if (nChar == KEY_LEFT)
@@ -2023,8 +2332,11 @@ namespace game_framework {
 		}
 		if (nChar == KEY_DOWN)
 		{
-			hero.SetMovingDown(true);
-			hero.SetDirection(4);
+			if (!hero.isNowRising())
+			{
+				hero.SetMovingDown(true);
+				hero.SetDirection(4);
+			}
 		}
 		if (nChar == KEY_A)
 		{
@@ -2037,10 +2349,12 @@ namespace game_framework {
 		}
 		if (nChar == KEY_Q)
 		{
-			//hero.SetXY(300, 400);
-			enemy.SetAlive(true);
+			//enemy.SetAlive(true);
 		}
-
+		if (nChar == KEY_R)
+		{
+			GotoGameState(GAME_STATE_INIT);
+		}
 	}
 
 	void CGameStateRun::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -2120,8 +2434,9 @@ namespace game_framework {
 		//  貼上左上及右下角落的圖
 		//
 		if (enemy.isShow()) enemy.OnShow();
-		gameMap.OnShowBullet();
 		hero.OnShow();
+		gameMap.OnShowBullet();
+		
 	}
 	//CGameStateRun
 #pragma endregion
