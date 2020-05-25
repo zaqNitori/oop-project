@@ -79,11 +79,10 @@ private:
 	int direction;
 	int vx, vy;
 	bool isAlive;
-	double rate;			//子彈速度比率
 	
 	int mistake;			//槍枝誤差
 	int maxSpeed;			//槍枝最大速度
-
+	int mistakeRate;		//誤差比率
 	int getRandom(int);		//槍枝誤差
 
 };
@@ -459,6 +458,7 @@ public:
 	bool isShow();					//是否顯示
 	bool getAlive();					
 	bool getDead();
+	int getGunMode();
 	int getX1();
 	int getY1();
 	int getX2();
@@ -468,17 +468,20 @@ private:
 	
 	CStand enemyStand;
 	CDead enemyDead;
-	CAnimation defaultStand;
+	//CAnimation defaultStand;
+	CMovingBitmap defaultStand;
 	int defaultHeight, defaultWidth;
 	bool isAlive;
 	bool isDead;
 	bool isOnBlock;
 	bool canShoot;
+	bool isMovingLeft, isMovingRight;
 	int direction, step;
 	int mapX, mapY;
 	int x, y;
 	int gunMode;						//槍枝種類
-	int constDelay, delayCount;
+	int constDelay, delayCount;			//子彈裝填時間
+	int machineGunShootDelay, constMachineGunDelay;		//機槍持續射擊時間
 
 };
 
@@ -598,7 +601,7 @@ private:
 
 	unsigned seed;
 	int mapX, mapY;
-	int r;
+	int gunMode;
 };
 
 /////////////////////////////////////////////////////////////////////////////

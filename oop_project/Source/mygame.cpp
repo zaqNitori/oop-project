@@ -248,7 +248,8 @@ namespace game_framework {
 	void CHero::SetHeart()
 	{
 		heartX = x + CDefaultStand.Width() / 2 - CHeart.Width() / 2;
-		heartY = y + 50;
+		heartY = y + 65;
+		if (isMovingDown) heartY = y + 80;
 	}
 
 	//private Function
@@ -448,8 +449,8 @@ namespace game_framework {
 			isOnBlock = canShoot = false;
 			isAlive = isDead = false;
 			isAlive = true;	//test
-			constDelay = delayCount = 15; 
-			//constDelay = delayCount = 25;
+			constDelay = delayCount = 20; 
+			machineGunShootDelay = constMachineGunDelay = 12;
 		}
 
 		void CEnemy::LoadBitmap()
@@ -469,7 +470,7 @@ namespace game_framework {
 				enemyDead.LoadBitmap_R(fileDeadR1[i], fileDeadR2[i]);
 			}
 
-			defaultStand.AddBitmap(fileStandL[0], Blue);
+			defaultStand.LoadBitmap(fileStandL[0], Blue);
 			defaultHeight = defaultStand.Height();
 			defaultWidth = defaultStand.Width();
 		}
@@ -495,6 +496,19 @@ namespace game_framework {
 				}
 			}
 			
+			if (gunMode == 2)	//machineGun
+			{
+				if (canShoot)
+				{
+					machineGunShootDelay--;
+					if (machineGunShootDelay == 0)
+					{
+						canShoot = false;
+						machineGunShootDelay = constMachineGunDelay;
+					}
+				}
+			}
+
 		}
 
 		void CEnemy::OnShow()
@@ -531,14 +545,9 @@ namespace game_framework {
 			enemyStand.SetDirection(direction);
 		}
 
-		void CEnemy::SetEnemy(int heroX)
-		{
-			//int r = rand() % (800 - defaultWidth);
-		}
-
 		void CEnemy::SetOnBlock(bool flag) { isOnBlock = flag; }
 
-		void CEnemy::SetShootDelay(int delay) { constDelay = delay; }
+		void CEnemy::SetShootDelay(int delay) { delayCount = constDelay = delay; }
 
 		void CEnemy::SetShootState(bool flag) { canShoot = flag; }
 
@@ -571,6 +580,8 @@ namespace game_framework {
 		bool CEnemy::getAlive() { return isAlive; }
 
 		bool CEnemy::getDead() { return isDead; }
+
+		int CEnemy::getGunMode() { return gunMode; }
 
 		int CEnemy::getX1() { return x; }
 		int CEnemy::getX2() { return x + defaultWidth; }
@@ -763,13 +774,29 @@ namespace game_framework {
 		// 0->pistol 1->shotgun 2->machineGun 3->sniper
 		x = nowX;
 		y = nowY;
-		if (gunMode < 3)
+		switch (gunMode)
 		{
+		case 0:
+			mistakeRate = 10;
+			maxSpeed = 15;
+			break;
+		case 1:
+			mistakeRate = 12;
 			maxSpeed = 20;
-			heroX += getRandom(gunMode) * 10;		//x誤差調整
-			heroY += getRandom(gunMode) * 10;		//y誤差調整
+			break;
+		case 2:
+			mistakeRate = 15;
+			maxSpeed = 23;
+			break;
+		case 3:
+			mistakeRate = 0;
+			maxSpeed = 30;
+			break;
+		default:
+			break;
 		}
-		else maxSpeed = 35;
+		heroX += getRandom(gunMode) * mistakeRate;		//x誤差調整
+		heroY += getRandom(gunMode) * mistakeRate;		//y誤差調整
 		vx = heroX - nowX;
 		vy = heroY - nowY;
 		if (abs(vx) > abs(vy) && abs(vx) > maxSpeed)
@@ -968,6 +995,7 @@ namespace game_framework {
 	{
 		// 0->pistol 1->shotgun 2->machineGun 3->sniper
 		int nx = enemy->getX1(), ny = enemy->getY1();
+		int tx, ty;
 		switch (gunMode)
 		{
 		case 0:
@@ -975,16 +1003,16 @@ namespace game_framework {
 			gunDelay = 15;
 			break;
 		case 1:
-			bulletNumer = 4;
-			gunDelay = 25;
+			bulletNumer = 3;
+			gunDelay = 30;
 			break;
 		case 2:
-			bulletNumer = 10;
+			bulletNumer = 1;
 			gunDelay = 50;
 			break;
 		case 3:
 			bulletNumer = 1;
-			gunDelay = 35;
+			gunDelay = 40;
 			break;
 		default:
 			break;
@@ -995,10 +1023,10 @@ namespace game_framework {
 		{
 			if (!vCbltEnemy[loop]->isShow())		//子彈沒顯示
 			{
-				if (dx >= nx) nx += 80;
-				else nx -= 40;
-				ny += 50;
-				vCbltEnemy[loop]->SetBullet(nx, ny, dx, dy, gunMode);
+				if (dx >= nx) tx = nx + 80;
+				else tx = nx - 40;
+				ty = ny + 50;
+				vCbltEnemy[loop]->SetBullet(tx, ty, dx, dy, gunMode);
 				bulletNumer--;
 			}
 		}
@@ -2224,35 +2252,45 @@ namespace game_framework {
 		mapY = gameMap.getY();
 
 #pragma region BulletControl子彈狀態控制
+		//gunMode = rand() % 4;			//0手槍 1散彈槍 2機槍 3狙擊槍 
+		gunMode = 2;
 		if (enemy.isShow())				//敵人狀態判定
 		{
 			enemy.SetMapXY(mapX, mapY);	//敵人位置修正
 			if (enemy.getShootState())	//確認填彈狀態，是否可以生成子彈
 			{
-				r = rand() % 4;			//1手槍 1散彈槍 1機槍 1狙擊槍 -> 槍枝機率
-				gameMap.addEnemyBullet(&enemy, hero.getX1(), hero.getY1(), r);
-				enemy.SetShootState(false);
+				gameMap.addEnemyBullet(&enemy, hero.getX1(), hero.getY1(), gunMode);
+				if (enemy.getGunMode() != 2) enemy.SetShootState(false);
 			}
 		}
 		gameMap.OnMoveBullet();			//子彈移動
 		gameMap.killBullet();			//子彈刪除
+
 #pragma endregion
 
+#pragma region 子彈&角色的碰撞判定
 		if (gameMap.isBulletHit(&enemy))
 		{
 			enemy.SetDead(true,hero.getDir_hor());
 		}
 		if (gameMap.isBulletHit(&hero))
 		{
-			;
+			GotoGameState(GAME_STATE_OVER);
 		}
+#pragma endregion
 		
 		hero.OnMove();
 
+#pragma region 敵人的移動
 		if (!gameMap.getMapBlock(enemy.getY2(), enemy.getX1())) enemy.SetOnBlock(false);
 		else enemy.SetOnBlock(true);
 		enemy.SetDirection(hero.getX1());
 		enemy.OnMove();
+
+#pragma endregion
+
+
+		
 
 		// 判斷擦子是否碰到球
 		//
