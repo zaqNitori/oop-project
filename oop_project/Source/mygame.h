@@ -43,9 +43,9 @@
 /////////////////////////////////////////////////////////////////////////////
 
 enum AUDIO_ID {				// 定義各種音效的編號
-	AUDIO_DING,				// 0
-	AUDIO_LAKE,				// 1
-	AUDIO_NTUT				// 2
+	AUDIO_heroJump,					// 0
+	AUDIO_enemyDead,				// 1
+	AUDIO_BGM_normal				// 2
 };
 
 namespace game_framework {
@@ -124,7 +124,7 @@ public:
 	void LoadBitmap();
 	void OnShow();
 	void setXY(int, int);
-	bool getMapBlock(int, int);
+	int getMapBlock(int, int);
 	int getX();
 	int getY();
 	int getSize();
@@ -282,10 +282,11 @@ public:
 	void SetFalling(bool flag);
 	void SetDirection(int);
 	void SetGameMap(CGameMap*);
+	void SetCanFallFromBlock(bool);
 	bool isfinalBitmap(int);
 
 private:
-	bool isEmpty(int,int);
+	int isEmpty(int,int);
 	CAnimation CRiseL;
 	CAnimation CRiseR;
 	CAnimation CFallL;
@@ -294,11 +295,13 @@ private:
 	CShoot CJumpShoot;
 	bool isRising;					//正在上升
 	bool isFalling;					//正在下降
+	bool canFall;
 	int x, y;						//座標
 	int velocity, ini_velocity;		//速度、初速度
 	int mapX, mapY;					//地圖座標
 	int direction, dir_horizontal;	//按鍵方向、上一個水平方向
 	int _size;
+	int temp;
 
 };
 
@@ -379,6 +382,7 @@ public:
 	void SetShooting(bool flag);	// 設定是否攻擊
 	void SetRising(bool flag);
 	void SetDirection(int);			// 設定方向
+	void SetFallDownFromBlock(bool);
 	void ResumeDirection();			// 將方向重新調回左和右  
 	void SetXY(int, int);			//方便Demo使用
 #pragma endregion

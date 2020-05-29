@@ -341,18 +341,25 @@ namespace game_framework {
 			heroMove.SetDirection(dir);
 		}
 		
+		void CHero::SetFallDownFromBlock(bool flag)
+		{
+			heroJump.SetCanFallFromBlock(flag);
+		}
+
 		void CHero::SetRising(bool flag)
 		{
-			if (!(isFalling))
+			if (!(isFalling || isRising))
 			{
 				isRising = flag;
 				heroJump.SetRising(flag);
+				CAudio::Instance()->Play(AUDIO_heroJump, false);
 			}
 		}
 
 		void CHero::SetMovingDown(bool flag)
 		{
 			isMovingDown = flag;
+			heroJump.SetMovingDown(flag);
 		}
 	
 		void CHero::SetMovingUp(bool flag)
@@ -801,13 +808,13 @@ namespace game_framework {
 		vy = heroY - nowY;
 		if (abs(vx) > abs(vy) && abs(vx) > maxSpeed)
 		{
-			vy /= abs(vx) / maxSpeed;
+			vy /= max(abs(vx),maxSpeed) / maxSpeed;		//預防/0的狀況
 			if (vx < 0) vx = -(maxSpeed);
 			else vx = maxSpeed;
 		}
 		else if (abs(vx) < abs(vy) && abs(vy) > 20)
 		{
-			vx /= abs(vy) / maxSpeed;
+			vx /= max(abs(vy),maxSpeed) / maxSpeed;		//同上
 			if (vy < 0) vy = -(maxSpeed);
 			else vy = maxSpeed;
 		}
@@ -860,7 +867,7 @@ namespace game_framework {
 			for (int j = 0; j < weight + 1; j++)
 			{
 				map[i][j] = 0;							//0為空白
-				if (i > (640 / 20 - 1)) map[i][j] = 1;	//1為障礙物
+				if (i > (640 / 20 - 1)) map[i][j] = 1;	//1為地板
 			}
 		#pragma region setBlock
 			SetBlock(1, 8, 13, 14);
@@ -906,7 +913,7 @@ namespace game_framework {
 	{
 		for (int i = x1; i < x2; i++)
 			for (int j = y1; j < y2; j++)
-				map[j][i] = 1;				//1為可跳上的障礙物
+				map[j][i] = 2;				//2為可跳上的障礙物
 		
 	}
 
@@ -919,7 +926,7 @@ namespace game_framework {
 #pragma endregion
 
 #pragma region GetValue
-	bool CGameMap::getMapBlock(int ny, int nx)
+	int CGameMap::getMapBlock(int ny, int nx)
 	{
 		return map[ny][nx];
 	}
@@ -1530,7 +1537,7 @@ namespace game_framework {
 		const int INI_VELOCITY = 30;	//初速
 		direction = dir_horizontal = 1;	//預設方向向左
 		velocity = ini_velocity = INI_VELOCITY;
-		isRising = isFalling = false;
+		isRising = isFalling = canFall = false;
 	}
 
 	#pragma region Loadpicture
@@ -1590,6 +1597,7 @@ namespace game_framework {
 			if (dir < 3) dir_horizontal = dir;
 		}
 
+		void CJump::SetCanFallFromBlock(bool flag) { canFall = flag; }
 	#pragma endregion
 
 
@@ -1597,6 +1605,22 @@ namespace game_framework {
 	{
 		x = *nx;
 		y = *ny;
+		mapX = gameMap->getX();
+		mapY = gameMap->getY();
+		_size = gameMap->getSize();
+		temp = isEmpty(x - mapX, y - mapY + defaultHeight);
+		if (isEmpty(x - mapX, y - mapY + defaultHeight) == 2)		//在障礙物上，是否可以往下跳
+		{
+			if (isMovingDown)			
+			{
+				if (canFall)
+				{
+					isFalling = true;
+					isRising = false;
+					y += 20;
+				}
+			}
+		}
 		if (isRising)
 		{
 			if (isShooting)
@@ -1609,6 +1633,7 @@ namespace game_framework {
 				if (dir_horizontal == 1) CRiseL.OnMove();
 				else if (dir_horizontal == 2) CRiseR.OnMove();
 			}
+			
 			if (velocity > 0)
 			{
 				y -= velocity;
@@ -1623,9 +1648,6 @@ namespace game_framework {
 		}
 		else if(isFalling)
 		{
-			mapX = gameMap->getX();
-			mapY = gameMap->getY();
-			_size = gameMap->getSize();
 			if (isShooting)
 			{
 				if (dir_horizontal == 1) CJumpShoot.OnMoveL();
@@ -1636,7 +1658,8 @@ namespace game_framework {
 				if (dir_horizontal == 1) CFallL.OnMove();
 				else if (dir_horizontal == 2) CFallR.OnMove();
 			}
-			if (isEmpty(x - mapX, y - mapY + defaultHeight))		//因為y軸一開始就在最下面,所以要反向加才能得到正確到座標
+			//因為y軸一開始就在最下面,所以要反向加才能得到正確到座標
+			if (isEmpty(x - mapX, y - mapY + defaultHeight) == 0)		//底下沒有障礙物
 			{
 				y += velocity;
 				velocity += 2;
@@ -1653,11 +1676,11 @@ namespace game_framework {
 		return isFalling;
 	}
 
-	bool CJump::isEmpty(int nx, int ny)
+	int CJump::isEmpty(int nx, int ny)
 	{
 		int gx = nx / gameMap->getSize();
 		int gy = ny / gameMap->getSize();
-		return !(gameMap->getMapBlock(gy,gx));
+		return gameMap->getMapBlock(gy, gx);
 	}
 
 	bool CJump::isfinalBitmap(int dir)
@@ -2239,15 +2262,15 @@ namespace game_framework {
 
 	CGameStateRun::~CGameStateRun()
 	{
-
+		CAudio::Instance()->Stop(AUDIO_BGM_normal);
 	}
 
 	void CGameStateRun::OnBeginState()
 	{
 
-		CAudio::Instance()->Play(AUDIO_LAKE, true);			// 撥放 WAVE
-		CAudio::Instance()->Play(AUDIO_DING, false);		// 撥放 WAVE
-		CAudio::Instance()->Play(AUDIO_NTUT, true);			// 撥放 MIDI
+		//CAudio::Instance()->Play(AUDIO_heroJump, false);			// 撥放 主角跳躍
+		//CAudio::Instance()->Play(AUDIO_enemyDead, false);			// 撥放 敵人死亡
+		CAudio::Instance()->Play(AUDIO_BGM_normal, true);			// 撥放 背景音樂
 
 		gameMap.Initialize();
 		gameMap.InitialBullet();
@@ -2290,11 +2313,12 @@ namespace game_framework {
 #pragma region 子彈&角色的碰撞判定
 		if (gameMap.isBulletHit(&enemy))
 		{
+			CAudio::Instance()->Play(AUDIO_enemyDead, false);
 			enemy.SetDead(true,hero.getDir_hor());
 		}
 		if (gameMap.isBulletHit(&hero))
 		{
-			GotoGameState(GAME_STATE_OVER);
+			//GotoGameState(GAME_STATE_OVER);
 		}
 #pragma endregion
 		
@@ -2351,9 +2375,9 @@ namespace game_framework {
 		
 
 		hits_left.LoadBitmap();
-		CAudio::Instance()->Load(AUDIO_DING, "sounds\\ding.wav");	// 載入編號0的聲音ding.wav
-		CAudio::Instance()->Load(AUDIO_LAKE, "sounds\\lake.mp3");	// 載入編號1的聲音lake.mp3
-		CAudio::Instance()->Load(AUDIO_NTUT, "sounds\\ntut.mid");	// 載入編號2的聲音ntut.mid
+		CAudio::Instance()->Load(AUDIO_heroJump, "sounds\\heroJump.mp3");		// 載入編號0的聲音ding.wav
+		CAudio::Instance()->Load(AUDIO_enemyDead, "sounds\\enemyDead.mp3");		// 載入編號1的聲音lake.mp3
+		CAudio::Instance()->Load(AUDIO_BGM_normal, "sounds\\BGM_normal.mp3");	// 載入編號2的聲音ntut.mid
 		//
 		// 此OnInit動作會接到CGameStaterOver::OnInit()，所以進度還沒到100%
 		//
@@ -2401,14 +2425,16 @@ namespace game_framework {
 		}
 		if (nChar == KEY_S)
 		{
+			hero.SetFallDownFromBlock(true);
 			hero.SetRising(true);
 		}
 		if (nChar == KEY_Q)
 		{
-			//enemy.SetAlive(true);
+			enemy.SetAlive(true);
 		}
 		if (nChar == KEY_R)
 		{
+			CAudio::Instance()->Stop(AUDIO_BGM_normal);
 			GotoGameState(GAME_STATE_INIT);
 		}
 	}
@@ -2445,6 +2471,10 @@ namespace game_framework {
 		if (nChar == KEY_A)
 		{
 			//hero.SetShooting(false);
+		}
+		if (nChar == KEY_S)
+		{
+			hero.SetFallDownFromBlock(false);
 		}
 	}
 
