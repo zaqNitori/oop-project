@@ -132,8 +132,7 @@ public:
 #pragma region Bullet
 	void InitialBullet();
 	void addBullet(int,int,int,int);			//激活一個Bullet物件
-	void addEnemyBullet(int, int, int, int);
-	void addEnemyBullet(CEnemy*, int, int, int);
+	void addEnemyBullet(CEnemy*, int, int);
 	void killBullet();							//反激活已經死亡的Bullet物件
 	void OnMoveBullet();
 	void OnShowBullet();
@@ -155,7 +154,6 @@ private:
 	int weight, height;
 	int map[40][260];
 	int bulletNumer;					//槍枝子彈數
-	int gunDelay;						//槍枝填彈速度
 	unsigned loop;
 	unsigned maxHeroBullet;				//場上同時能存在我方的子彈上限
 	unsigned maxEnemyBullet;			//場上同時能存在敵方的子彈上限
@@ -449,12 +447,14 @@ public:
 	void OnMove();					//敵人移動
 	
 	void SetAlive(bool);			//設定生命(顯示設定)
+	void SetDead(bool);				//設定為死亡狀態
 	void SetDead(bool,int);			//設定死亡及死亡方向
 	void SetDirection(int);
 	void SetOnBlock(bool);			//設定是否站在block上，gravity使用
 	void SetShootDelay(int);
 	void SetShootState(bool);
 	void SetMapXY(int, int);
+	void SetXY(int, int);
 	void SetGunMode(int);			// 0->pistol 1->shotgun 2->machineGun 3->sniper
 
 	bool getShootState();
@@ -597,13 +597,19 @@ private:
 	CEraser			eraser;		// 拍子
 	CInteger		hits_left;	// 剩下的撞擊數
 	
-	CHero hero;
-	CGameMap gameMap;
-	CEnemy enemy;
+	CHero hero;					//主角
+	CGameMap gameMap;			//地圖
+	CEnemy enemy;				//test敵人
+	vector<CEnemy*> vecEnemy;	//敵方軍隊
 
+	bool canAddEnemy;
+	unsigned maxEnemyNumber;		//最大敵人數
+	unsigned remainEnemy;			//關卡剩餘敵人數
+	unsigned nowAliveEnemy;			//場上存活敵人數
+	unsigned loop;					//for使用
 	unsigned seed;
 	int mapX, mapY;
-	int gunMode;
+	int gunMode;					//敵人槍枝種類
 };
 
 /////////////////////////////////////////////////////////////////////////////

@@ -449,13 +449,13 @@ namespace game_framework {
 		void CEnemy::Initialize()
 		{
 			mapX = mapY = 0;
-			x = 100;
-			y = 525 - 165;
+			/*x = 100;
+			y = 360;*/
+			x = y = 0;
 			direction = 2;
 			step = 18;
 			isOnBlock = canShoot = false;
 			isAlive = isDead = false;
-			isAlive = true;	//test
 			constDelay = delayCount = 20; 
 			machineGunShootDelay = constMachineGunDelay = 12;
 		}
@@ -493,25 +493,27 @@ namespace game_framework {
 					isDead = false;
 			}
 			
-			if (!canShoot)			//射擊間隔處理
+			if (isAlive)
 			{
-				delayCount--;
-				if (delayCount == 0)
+				if (!canShoot)			//射擊間隔處理
 				{
-					canShoot = true;
-					delayCount = constDelay;
-				}
-			}
-			
-			if (gunMode == 2)	//machineGun
-			{
-				if (canShoot)
-				{
-					machineGunShootDelay--;
-					if (machineGunShootDelay == 0)
+					delayCount--;
+					if (delayCount == 0)
 					{
-						canShoot = false;
-						machineGunShootDelay = constMachineGunDelay;
+						canShoot = true;
+						delayCount = constDelay;
+					}
+				}
+				if (gunMode == 2)	//machineGun
+				{
+					if (canShoot)
+					{
+						machineGunShootDelay--;
+						if (machineGunShootDelay == 0)
+						{
+							canShoot = false;
+							machineGunShootDelay = constMachineGunDelay;
+						}
 					}
 				}
 			}
@@ -535,13 +537,13 @@ namespace game_framework {
 		void CEnemy::SetAlive(bool flag) 
 		{ 
 			isAlive = flag; 
-			isDead = !flag;
 		}
+
+		void CEnemy::SetDead(bool flag) { isDead = flag; }
 
 		void CEnemy::SetDead(bool flag, int dir)
 		{ 
 			isDead = flag;
-			isAlive = !flag;
 			enemyDead.SetDir(dir);
 		}
 
@@ -558,12 +560,19 @@ namespace game_framework {
 
 		void CEnemy::SetShootState(bool flag) { canShoot = flag; }
 
+		void CEnemy::SetXY(int nx, int ny)
+		{
+			x = nx;
+			y = ny;
+		}
+
 		void CEnemy::SetMapXY(int mx, int my)
 		{
+			//x += (mx - mapX);
 			if (mx > mapX)			//主角向左走
 			{
 				x += (mx - mapX);
-				if (x > 700 - 126) x = 700 - 126;
+				if (x > 574) x = 574;
 			}
 			else if (mx < mapX)		//主角向右走
 			{
@@ -575,7 +584,27 @@ namespace game_framework {
 		}
 
 		// 0->pistol 1->shotgun 2->machineGun 3->sniper
-		void CEnemy::SetGunMode(int mode) { gunMode = mode; }
+		void CEnemy::SetGunMode(int mode) 
+		{ 
+			gunMode = mode; 
+			switch (gunMode)
+			{
+			case 0:
+				CEnemy::SetShootDelay(15);		//pistol
+				break;
+			case 1:
+				CEnemy::SetShootDelay(30);		//shotgun
+				break;
+			case 2:
+				CEnemy::SetShootDelay(50);		//machinegun
+				break;
+			case 3:
+				CEnemy::SetShootDelay(40);		//sniper
+				break;
+			default:
+				break;
+			}
+		}
 
 #pragma endregion
 
@@ -998,50 +1027,16 @@ namespace game_framework {
 		}
 	}
 
-	void CGameMap::addEnemyBullet(int nx, int ny, int dx, int dy)
-	{
-		/*int newX = 0, newY = 0;
-		for (loop = 0; loop < maxEnemyBullet; loop++)
-		{
-			if (!vCbltEnemy[loop]->isShow())
-			{
-				if (dx >= nx) newX = nx + 100;
-				else newX = nx - 40;
-				newY = ny + 50;
-				vCbltEnemy[loop]->SetBullet(newX, newY, dx, dy);
-				break;
-			}
-		}*/
-	}
-
-	void CGameMap::addEnemyBullet(CEnemy* enemy, int dx, int dy, int gunMode)
+	void CGameMap::addEnemyBullet(CEnemy* enemy, int dx, int dy)
 	{
 		// 0->pistol 1->shotgun 2->machineGun 3->sniper
 		int nx = enemy->getX1(), ny = enemy->getY1();
 		int tx, ty;
-		switch (gunMode)
-		{
-		case 0:
-			bulletNumer = 1;
-			gunDelay = 15;
-			break;
-		case 1:
-			bulletNumer = 3;
-			gunDelay = 30;
-			break;
-		case 2:
-			bulletNumer = 1;
-			gunDelay = 50;
-			break;
-		case 3:
-			bulletNumer = 1;
-			gunDelay = 40;
-			break;
-		default:
-			break;
-		}
-		enemy->SetShootDelay(gunDelay);
-		enemy->SetGunMode(gunMode);
+		int gunMode = enemy->getGunMode();
+
+		if (gunMode == 1) bulletNumer = 3;
+		else bulletNumer = 1;
+
 		for (loop = 0; loop < maxEnemyBullet && bulletNumer > 0; loop++)
 		{
 			if (!vCbltEnemy[loop]->isShow())		//子彈沒顯示
@@ -1053,6 +1048,7 @@ namespace game_framework {
 				bulletNumer--;
 			}
 		}
+		if (gunMode != 2) enemy->SetShootState(false);
 	}
 
 	void CGameMap::killBullet()
@@ -2278,7 +2274,13 @@ namespace game_framework {
 		hero.Initialize();
 		hero.SetGameMap(&gameMap);
 
-		enemy.Initialize();
+		for (loop = 0; loop < maxEnemyNumber; loop++)
+			vecEnemy[loop]->Initialize();
+
+		//enemy.Initialize();
+		nowAliveEnemy = 0;
+		canAddEnemy = false;
+
 		seed = (unsigned)time(NULL);
 		srand(seed);
 		mapX = mapY = 0;
@@ -2293,28 +2295,66 @@ namespace game_framework {
 		mapX = gameMap.getX();
 		mapY = gameMap.getY();
 
-#pragma region BulletControl子彈狀態控制
-		//gunMode = rand() % 4;			//0手槍 1散彈槍 2機槍 3狙擊槍 
-		gunMode = 2;
-		if (enemy.isShow())				//敵人狀態判定
+#pragma region addEnemyControl
+		//敵人生成控制
+
+		if (nowAliveEnemy == 0 || canAddEnemy)
+		{
+			for (loop = 0; loop < maxEnemyNumber; loop++)
+			{
+				int pos = rand() % 2;	//test用
+				if (!vecEnemy[loop]->isShow())
+				{
+					nowAliveEnemy++;						//存活人數++
+					gunMode = rand() % 4;					//0手槍 1散彈槍 2機槍 3狙擊槍 
+					vecEnemy[loop]->SetAlive(true);			//設定成存活
+					vecEnemy[loop]->SetGunMode(gunMode);	//設定槍枝種類
+					//test進入位置
+					if (pos == 0) vecEnemy[loop]->SetXY(100 + 5 * loop, 360);
+					else vecEnemy[loop]->SetXY(574 - 5 * loop, 360);
+					canAddEnemy = false;
+					break;
+				}
+			}
+		}
+
+#pragma endregion
+
+#pragma region BulletControl
+		//子彈生成、移動、死亡控制
+		for (loop = 0; loop < maxEnemyNumber; loop++)
+		{
+			if (vecEnemy[loop]->isShow())					//狀態判定
+			{
+				vecEnemy[loop]->SetMapXY(mapX, mapY);		//設定相關座標
+				if (vecEnemy[loop]->getShootState())			//確認填彈狀態，是否可以射擊
+					gameMap.addEnemyBullet(vecEnemy[loop], hero.getX1(), hero.getY1());
+			}
+		}
+		/*if (enemy.isShow())				//敵人狀態判定
 		{
 			enemy.SetMapXY(mapX, mapY);	//敵人位置修正
 			if (enemy.getShootState())	//確認填彈狀態，是否可以生成子彈
-			{
-				gameMap.addEnemyBullet(&enemy, hero.getX1(), hero.getY1(), gunMode);
-				if (enemy.getGunMode() != 2) enemy.SetShootState(false);
-			}
-		}
+				gameMap.addEnemyBullet(&enemy, hero.getX1(), hero.getY1());
+		}*/
 		gameMap.OnMoveBullet();			//子彈移動
 		gameMap.killBullet();			//子彈刪除
 
 #pragma endregion
 
 #pragma region 子彈&角色的碰撞判定
-		if (gameMap.isBulletHit(&enemy))
+		for (loop = 0; loop < maxEnemyNumber; loop++)
 		{
-			CAudio::Instance()->Play(AUDIO_enemyDead, false);
-			enemy.SetDead(true,hero.getDir_hor());
+			if (vecEnemy[loop]->isShow())
+			{
+				if (gameMap.isBulletHit(vecEnemy[loop]))
+				{
+					nowAliveEnemy--;
+					CAudio::Instance()->Play(AUDIO_enemyDead, false);
+					vecEnemy[loop]->SetDead(true, hero.getDir_hor());
+					vecEnemy[loop]->SetAlive(false);
+				}
+			}
 		}
 		if (gameMap.isBulletHit(&hero))
 		{
@@ -2325,15 +2365,18 @@ namespace game_framework {
 		hero.OnMove();
 
 #pragma region 敵人的移動
-		if (!gameMap.getMapBlock(enemy.getY2(), enemy.getX1())) enemy.SetOnBlock(false);
-		else enemy.SetOnBlock(true);
-		enemy.SetDirection(hero.getX1());
-		enemy.OnMove();
+		for (loop = 0; loop < maxEnemyNumber; loop++)
+		{
+			if (vecEnemy[loop]->isShow())
+			{
+				if (!gameMap.getMapBlock(vecEnemy[loop]->getY2(), vecEnemy[loop]->getX1())) vecEnemy[loop]->SetOnBlock(false);
+				else vecEnemy[loop]->SetOnBlock(true);
+			}
+			vecEnemy[loop]->SetDirection(hero.getX1());
+			vecEnemy[loop]->OnMove();
+		}
 
 #pragma endregion
-
-
-		
 
 		// 判斷擦子是否碰到球
 		//
@@ -2351,7 +2394,6 @@ namespace game_framework {
 					GotoGameState(GAME_STATE_OVER);
 				}
 			}*/
-		
 	}
 
 	void CGameStateRun::OnInit()  								// 遊戲的初值及圖形設定
@@ -2370,10 +2412,30 @@ namespace game_framework {
 		// 繼續載入其他資料
 		//
 		gameMap.LoadBitmap();
+
+#pragma region EnemyInitial
+		maxEnemyNumber = remainEnemy = 30;		//最大敵人數
+		if (vecEnemy.size() == 0)
+		{
+			for (loop = 0; loop < maxEnemyNumber; loop++)
+				vecEnemy.push_back(new CEnemy());
+		}
+		else
+		{
+			for (loop = 0; loop < maxEnemyNumber; loop++)
+			{
+				vecEnemy[loop]->SetAlive(false);
+				vecEnemy[loop]->SetDead(false);
+			}
+		}
+		for (loop = 0; loop < maxEnemyNumber; loop++)
+			vecEnemy[loop]->LoadBitmap();
+#pragma endregion
+
 		enemy.LoadBitmap();
+
 		hero.LoadBitmap();
 		
-
 		hits_left.LoadBitmap();
 		CAudio::Instance()->Load(AUDIO_heroJump, "sounds\\heroJump.mp3");		// 載入編號0的聲音ding.wav
 		CAudio::Instance()->Load(AUDIO_enemyDead, "sounds\\enemyDead.mp3");		// 載入編號1的聲音lake.mp3
@@ -2381,6 +2443,7 @@ namespace game_framework {
 		//
 		// 此OnInit動作會接到CGameStaterOver::OnInit()，所以進度還沒到100%
 		//
+		
 	}
 
 	void CGameStateRun::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -2430,7 +2493,8 @@ namespace game_framework {
 		}
 		if (nChar == KEY_Q)
 		{
-			enemy.SetAlive(true);
+			canAddEnemy = true;
+			//enemy.SetAlive(true);
 		}
 		if (nChar == KEY_R)
 		{
@@ -2519,7 +2583,9 @@ namespace game_framework {
 		//
 		//  貼上左上及右下角落的圖
 		//
-		if (enemy.isShow()) enemy.OnShow();
+		for (loop = 0; loop < maxEnemyNumber; loop++)
+			if (vecEnemy[loop]->isShow()) vecEnemy[loop]->OnShow();
+
 		hero.OnShow();
 		gameMap.OnShowBullet();
 		
