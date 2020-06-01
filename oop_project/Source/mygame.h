@@ -87,11 +87,11 @@ private:
 
 };
 
-class CShoot				//此為動作執行的class
+class CAttack				//此為動作執行的class
 {
 public:
-	CShoot();
-	~CShoot();
+	CAttack();
+	~CAttack();
 	void Initialize();
 	void LoadShootLeft(char*,char*);
 	void LoadShootRight(char*);
@@ -215,6 +215,7 @@ public:
 	void SetShooting(bool flag);
 	void SetDirection(int);
 	void SetXY(int nx, int ny);		// 設定左上角座標
+	void SetOverlap(bool);
 	bool isfinalBitmap(int);
 
 protected:
@@ -225,13 +226,14 @@ protected:
 	bool isRising;					//正在上升 
 	bool isFalling;
 	bool isShooting;				//射擊
+	bool isOverlap;					//跟敵人重疊
 	int defaultHeight;
 
 private:
 	int x, y;
 	CAnimation CmoveL;				//動畫
 	CAnimation CmoveR;
-	CShoot CMoveShoot;
+	CAttack CMoveShoot;
 	int step, ini_step;				//移動速度
 	int velocity, ini_velocity;		//速度(上升、下降)
 	int direction, dir_horizontal;	//按鍵方向、前一個水平方向
@@ -257,7 +259,7 @@ private:
 	int x, y;
 	CAnimation CStandL;
 	CAnimation CStandR;
-	CShoot CStandShoot;
+	CAttack CStandShoot;
 	int direction, dir_horizontal;
 };
 
@@ -290,7 +292,7 @@ private:
 	CAnimation CFallL;
 	CAnimation CFallR;
 	CGameMap* gameMap;
-	CShoot CJumpShoot;
+	CAttack CJumpShoot;
 	bool isRising;					//正在上升
 	bool isFalling;					//正在下降
 	bool canFall;
@@ -326,7 +328,7 @@ private:
 	CAnimation CMoveR;				//右走
 	CAnimation CStandL;				//向左蹲
 	CAnimation CStandR;				//向右蹲
-	CShoot CcrouchShoot;			//處理射擊
+	CAttack CcrouchShoot;			//處理射擊
 	bool isMovingLeft;
 	bool isMovingRight;
 	int x, y;						//座標
@@ -371,6 +373,7 @@ public:
 	void Initialize();
 	void OnShow();
 	void OnMove();
+
 #pragma region Setstate
 	void SetGameMap(CGameMap*);
 	void SetMovingDown(bool flag);	// 設定是否正在落下
@@ -381,22 +384,25 @@ public:
 	void SetRising(bool flag);
 	void SetDirection(int);			// 設定方向
 	void SetFallDownFromBlock(bool);
+	void SetOverlap(bool);
 	void ResumeDirection();			// 將方向重新調回左和右  
 	void SetXY(int, int);			//方便Demo使用
 #pragma endregion
 
 #pragma region Getstate
-	int getX1();					//取得heroLeft
+	int getX1();					//get heroLeft
 	int getY1();					//get heroTop
 	int getX2();					//get heroRight
 	int getY2();					//get heroBottom
-	int getHeartX1();
-	int getHeartY1();
-	int getHeartX2();
-	int getHeartY2();
-	int getDir();
-	int getDir_hor();
-	bool isNowRising();
+	int getHeartX1();				//get heart left
+	int getHeartY1();				//get heart top
+	int getHeartX2();				//get heart right
+	int getHeartY2();				//get heart bottom
+	int getDir();					//get now dir
+	int getDir_hor();				//get last horizontal dir
+	bool isNowRising();				//get isRising?
+	bool isOverlapEnemy(CEnemy*);		//get is Hero and Enemy overlap
+	bool getOverlap();
 #pragma endregion
 
 
@@ -420,6 +426,7 @@ private:
 	bool isMovingLeft;				//左動
 	bool isMovingRight;				//右動
 	bool isShooting;				//攻擊
+	bool isOverlap;			//跟敵人重疊
 	int direction;					//角色面向
 	int dir_horizontal;				//前一次的水平面向
 	int mapX, mapY;					//地圖的座標

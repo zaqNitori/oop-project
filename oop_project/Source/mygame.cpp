@@ -136,6 +136,7 @@ namespace game_framework {
 
 	#pragma endregion
 
+		char *fileKnifeL[] = { ".\\image\\knife\\L1.bmp" , ".\\image\\knife\\L2.bmp" , ".\\image\\knife\\L3.bmp" , ".\\image\\knife\\L4.bmp" };
 		char *fileHeart[] = { ".\\image\\heart.bmp" };
 	#pragma endregion
 
@@ -394,6 +395,14 @@ namespace game_framework {
 			y = ny;
 		}
 
+		void CHero::SetOverlap(bool flag)
+		{
+			heroMove.SetOverlap(flag);
+			heroStand.SetOverlap(flag);
+			heroJump.SetOverlap(flag);
+			heroCrouch.SetOverlap(flag);
+		}
+
 	#pragma endregion
 
 	#pragma region GetState
@@ -431,6 +440,25 @@ namespace game_framework {
 		int CHero::getDir_hor() { return dir_horizontal; }
 
 		bool CHero::isNowRising() { return isRising; }
+
+		bool CHero::isOverlapEnemy(CEnemy* enemy)
+		{
+			if (enemy->getX2() >= x && enemy->getX1() <= x + defaultW && enemy->getY2() >= y && enemy->getY1() <= y + defaultH)
+			{
+				isOverlap = true;
+				SetOverlap(true);
+				return true;
+			}
+			else
+			{
+				isOverlap = false;
+				SetOverlap(false);
+				return false;
+			}
+		}
+
+		bool CHero::getOverlap() { return isOverlapEnemy; }
+
 	#pragma endregion
 
 	//CHero
@@ -1041,7 +1069,7 @@ namespace game_framework {
 
 		for (loop = 0; loop < maxEnemyBullet && bulletNumer > 0; loop++)
 		{
-			if (!vCbltEnemy[loop]->isShow())		//子彈沒顯示
+			if (!vCbltEnemy[loop]->isShow())		//子彈沒激活
 			{
 				if (dx >= nx) tx = nx + 80;
 				else tx = nx - 40;
@@ -1099,7 +1127,6 @@ namespace game_framework {
 
 	bool CGameMap::isBulletHit(CEnemy *enemy)
 	{
-		if (!enemy->getAlive()) return false;
 		for (loop = 0; loop < maxHeroBullet; loop++)
 		{
 			if (vCblt[loop]->isShow())
@@ -1371,6 +1398,8 @@ namespace game_framework {
 		x = nx;
 		y = ny;
 	}
+
+	void CMove::SetOverlap(bool flag) { isOverlap = flag; }
 
 	void CMove::SetMovingDown(bool flag)
 	{
@@ -1861,43 +1890,43 @@ namespace game_framework {
 	//CCrouch
 #pragma endregion
 
-#pragma region CShoot
+#pragma region CAttack
 
-	CShoot::CShoot()
+	CAttack::CAttack()
 	{
 		Initialize();
 	}
 
-	CShoot::~CShoot() {}
+	CAttack::~CAttack() {}
 
-	void CShoot::Initialize()
+	void CAttack::Initialize()
 	{
 		x = y = width = 0;
 	}
 
-	void CShoot::LoadShootLeft(char *file, char *file2)
+	void CAttack::LoadShootLeft(char *file, char *file2)
 	{
 		CShootLHero.AddBitmap(file,Blue);
 		CShootLGun.AddBitmap(file2,Blue);
 	}
 
-	void CShoot::LoadShootRight(char *file)
+	void CAttack::LoadShootRight(char *file)
 	{
 		CShootR.AddBitmap(file,Blue);
 	}
 
-	void CShoot::OnMoveL()
+	void CAttack::OnMoveL()
 	{
 		CShootLHero.OnMove();
 		CShootLGun.OnMove();
 	}
 
-	void CShoot::OnMoveR()
+	void CAttack::OnMoveR()
 	{
 		CShootR.OnMove();
 	}
 
-	void CShoot::OnShowL()
+	void CAttack::OnShowL()
 	{
 		width = CShootLGun.Width();
 		CShootLHero.SetTopLeft(x, y);
@@ -1906,19 +1935,19 @@ namespace game_framework {
 		CShootLGun.OnShow();
 	}
 
-	void CShoot::OnShowR()
+	void CAttack::OnShowR()
 	{
 		CShootR.SetTopLeft(x, y);
 		CShootR.OnShow();
 	}
 
-	void CShoot::SetXY(int nx, int ny)
+	void CAttack::SetXY(int nx, int ny)
 	{
 		x = nx;
 		y = ny;
 	}
 
-	bool CShoot::isfinalBitmap(int dir)
+	bool CAttack::isfinalBitmap(int dir)
 	{
 		if (dir == 1)
 		{
@@ -2322,24 +2351,36 @@ namespace game_framework {
 
 #pragma region BulletControl
 		//子彈生成、移動、死亡控制
+
+		
+		//gameMap.addBullet(hero.getX1(), hero.getY1(), hero.getDir(), hero.getDir_hor());
 		for (loop = 0; loop < maxEnemyNumber; loop++)
 		{
 			if (vecEnemy[loop]->isShow())					//狀態判定
 			{
 				vecEnemy[loop]->SetMapXY(mapX, mapY);		//設定相關座標
-				if (vecEnemy[loop]->getShootState())			//確認填彈狀態，是否可以射擊
+				if (vecEnemy[loop]->getShootState() && vecEnemy[loop]->getAlive())			//確認填彈狀態，是否可以射擊&&存活
 					gameMap.addEnemyBullet(vecEnemy[loop], hero.getX1(), hero.getY1());
 			}
 		}
 		gameMap.OnMoveBullet();			//子彈移動
-		gameMap.killBullet();			//子彈刪除
+		gameMap.killBullet();			//子彈刪除(超出範圍)
 
 #pragma endregion
 
 #pragma region 子彈&角色的碰撞判定
-		for (loop = 0; loop < maxEnemyNumber; loop++)
+		for (loop = 0; loop < maxEnemyNumber; loop++)			//主角敵人是否重疊
 		{
-			if (vecEnemy[loop]->isShow())
+			if (vecEnemy[loop]->getAlive())
+			{
+				if (hero.isOverlapEnemy(vecEnemy[loop]))		//沒有重疊已經寫在裡面
+					break;
+			}
+		}
+
+		for (loop = 0; loop < maxEnemyNumber; loop++)			//敵人被射到死掉
+		{
+			if (vecEnemy[loop]->getAlive())
 			{
 				if (gameMap.isBulletHit(vecEnemy[loop]))
 				{
