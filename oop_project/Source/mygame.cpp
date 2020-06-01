@@ -957,7 +957,9 @@ namespace game_framework {
 #pragma region GetValue
 	int CGameMap::getMapBlock(int ny, int nx)
 	{
-		return map[ny][nx];
+		int gx = nx / size;
+		int gy = ny / size;
+		return map[gy][gx];
 	}
 
 	int CGameMap::getX()
@@ -1603,9 +1605,7 @@ namespace game_framework {
 		y = *ny;
 		mapX = gameMap->getX();
 		mapY = gameMap->getY();
-		_size = gameMap->getSize();
-		temp = isEmpty(x - mapX, y - mapY + defaultHeight);
-		if (isEmpty(x - mapX, y - mapY + defaultHeight) == 2)		//在障礙物上，是否可以往下跳
+		if (gameMap->getMapBlock(y - mapY + defaultHeight, x - mapX) == 2)		//在障礙物上，是否可以往下跳
 		{
 			if (isMovingDown)			
 			{
@@ -1655,7 +1655,7 @@ namespace game_framework {
 				else if (dir_horizontal == 2) CFallR.OnMove();
 			}
 			//因為y軸一開始就在最下面,所以要反向加才能得到正確到座標
-			if (isEmpty(x - mapX, y - mapY + defaultHeight) == 0)		//底下沒有障礙物
+			if (gameMap->getMapBlock(y - mapY + defaultHeight, x - mapX) == 0)		//底下沒有障礙物
 			{
 				y += velocity;
 				velocity += 2;
@@ -2331,12 +2331,6 @@ namespace game_framework {
 					gameMap.addEnemyBullet(vecEnemy[loop], hero.getX1(), hero.getY1());
 			}
 		}
-		/*if (enemy.isShow())				//敵人狀態判定
-		{
-			enemy.SetMapXY(mapX, mapY);	//敵人位置修正
-			if (enemy.getShootState())	//確認填彈狀態，是否可以生成子彈
-				gameMap.addEnemyBullet(&enemy, hero.getX1(), hero.getY1());
-		}*/
 		gameMap.OnMoveBullet();			//子彈移動
 		gameMap.killBullet();			//子彈刪除
 
@@ -2369,7 +2363,7 @@ namespace game_framework {
 		{
 			if (vecEnemy[loop]->isShow())
 			{
-				if (!gameMap.getMapBlock(vecEnemy[loop]->getY2(), vecEnemy[loop]->getX1())) vecEnemy[loop]->SetOnBlock(false);
+				if (gameMap.getMapBlock(vecEnemy[loop]->getY2() - mapY, vecEnemy[loop]->getX1() - mapX) == 0) vecEnemy[loop]->SetOnBlock(false);
 				else vecEnemy[loop]->SetOnBlock(true);
 			}
 			vecEnemy[loop]->SetDirection(hero.getX1());
