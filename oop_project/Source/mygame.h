@@ -604,19 +604,25 @@ private:
 	CEraser			eraser;		// 拍子
 	CInteger		hits_left;	// 剩下的撞擊數
 	
+
 	CHero hero;					//主角
 	CGameMap gameMap;			//地圖
-	CEnemy enemy;				//test敵人
 	vector<CEnemy*> vecEnemy;	//敵方軍隊
+	CInteger remainEnemy;		//剩餘敵人
 
 	bool canAddEnemy;
 	unsigned maxEnemyNumber;		//最大敵人數
-	unsigned remainEnemy;			//關卡剩餘敵人數
 	unsigned nowAliveEnemy;			//場上存活敵人數
 	unsigned loop;					//for使用
 	unsigned seed;
+	unsigned come1EnemyDelay;		//1個敵人生成時間
+	unsigned const_come1EnemyDelay;
+	unsigned come2EnemyDelay;		//2個敵人生成時間
+	unsigned const_come2EnemyDelay;
 	int mapX, mapY;
 	int gunMode;					//敵人槍枝種類
+
+	void enemyProduce(int);			//敵人生成控制
 };
 
 /////////////////////////////////////////////////////////////////////////////

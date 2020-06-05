@@ -136,7 +136,7 @@ namespace game_framework {
 
 	#pragma endregion
 
-		char *fileKnifeL[] = { ".\\image\\knife\\L1.bmp" , ".\\image\\knife\\L2.bmp" , ".\\image\\knife\\L3.bmp" , ".\\image\\knife\\L4.bmp" };
+		//char *fileKnifeL[] = { ".\\image\\knife\\L1.bmp" , ".\\image\\knife\\L2.bmp" , ".\\image\\knife\\L3.bmp" , ".\\image\\knife\\L4.bmp" };
 		char *fileHeart[] = { ".\\image\\heart.bmp" };
 	#pragma endregion
 
@@ -457,7 +457,7 @@ namespace game_framework {
 			}
 		}
 
-		bool CHero::getOverlap() { return isOverlapEnemy; }
+		bool CHero::getOverlap() { return isOverlap; }
 
 	#pragma endregion
 
@@ -1129,11 +1129,11 @@ namespace game_framework {
 	{
 		for (loop = 0; loop < maxHeroBullet; loop++)
 		{
-			if (vCblt[loop]->isShow())
+			if (vCblt[loop]->isShow())					//子彈存活
 			{
 				if (vCblt[loop]->isHit(enemy->getX1(), enemy->getY1(), enemy->getX2(), enemy->getY2()))
 				{
-					vCblt[loop]->SetLife(false);
+					vCblt[loop]->SetLife(false);		//子彈消失
 					return true;
 				}
 			}
@@ -2306,13 +2306,16 @@ namespace game_framework {
 		for (loop = 0; loop < maxEnemyNumber; loop++)
 			vecEnemy[loop]->Initialize();
 
-		//enemy.Initialize();
 		nowAliveEnemy = 0;
 		canAddEnemy = false;
 
 		seed = (unsigned)time(NULL);
 		srand(seed);
 		mapX = mapY = 0;
+
+		const_come1EnemyDelay = come1EnemyDelay = 50;
+		const_come2EnemyDelay = come2EnemyDelay = 75;
+		remainEnemy.SetInteger(maxEnemyNumber);
 	}
 
 	void CGameStateRun::OnMove()							// 移動遊戲元素
@@ -2326,27 +2329,20 @@ namespace game_framework {
 
 #pragma region addEnemyControl
 		//敵人生成控制
-
-		if (nowAliveEnemy == 0 || canAddEnemy)
+		if(nowAliveEnemy == 0 || canAddEnemy)
+			enemyProduce(1);
+		if (come1EnemyDelay != 0) come1EnemyDelay--;
+		else
 		{
-			for (loop = 0; loop < maxEnemyNumber; loop++)
-			{
-				int pos = rand() % 2;	//test用
-				if (!vecEnemy[loop]->isShow())
-				{
-					nowAliveEnemy++;						//存活人數++
-					gunMode = rand() % 4;					//0手槍 1散彈槍 2機槍 3狙擊槍 
-					vecEnemy[loop]->SetAlive(true);			//設定成存活
-					vecEnemy[loop]->SetGunMode(gunMode);	//設定槍枝種類
-					//test進入位置
-					if (pos == 0) vecEnemy[loop]->SetXY(100 + 5 * loop, 360);
-					else vecEnemy[loop]->SetXY(574 - 5 * loop, 360);
-					canAddEnemy = false;
-					break;
-				}
-			}
+			enemyProduce(1);
+			come1EnemyDelay = const_come1EnemyDelay;
 		}
-
+		if (come2EnemyDelay != 0) come2EnemyDelay--;
+		else
+		{
+			enemyProduce(2);
+			come2EnemyDelay = const_come2EnemyDelay;
+		}
 #pragma endregion
 
 #pragma region BulletControl
@@ -2378,16 +2374,17 @@ namespace game_framework {
 			}
 		}
 
-		for (loop = 0; loop < maxEnemyNumber; loop++)			//敵人被射到死掉
+		for (loop = 0; loop < maxEnemyNumber; loop++)			
 		{
 			if (vecEnemy[loop]->getAlive())
 			{
-				if (gameMap.isBulletHit(vecEnemy[loop]))
+				if (gameMap.isBulletHit(vecEnemy[loop]))					//敵人是否被射到
 				{
-					nowAliveEnemy--;
-					CAudio::Instance()->Play(AUDIO_enemyDead, false);
-					vecEnemy[loop]->SetDead(true, hero.getDir_hor());
-					vecEnemy[loop]->SetAlive(false);
+					remainEnemy.Add(-1);									//剩餘人數-1
+					nowAliveEnemy--;										//現存人數-1
+					CAudio::Instance()->Play(AUDIO_enemyDead, false);		//撥放敵人死亡聲音
+					vecEnemy[loop]->SetDead(true, hero.getDir_hor());		//設定死亡&方向
+					vecEnemy[loop]->SetAlive(false);						//設定存活
 				}
 			}
 		}
@@ -2413,6 +2410,8 @@ namespace game_framework {
 
 #pragma endregion
 
+		if (remainEnemy.GetInteger() <= 0) GotoGameState(GAME_STATE_OVER);
+
 		// 判斷擦子是否碰到球
 		//
 		/*for (i = 0; i < NUMBALLS; i++)
@@ -2429,6 +2428,32 @@ namespace game_framework {
 					GotoGameState(GAME_STATE_OVER);
 				}
 			}*/
+	}
+
+	void CGameStateRun::enemyProduce(int n)
+	{
+#pragma region addEnemyControl
+		//敵人生成控制
+
+		for (loop = 0; loop < maxEnemyNumber && n > 0; loop++)
+		{
+			int pos = rand() % 2;	//test用
+			if (!vecEnemy[loop]->isShow())
+			{
+				n--;									//生成人數--
+				nowAliveEnemy++;						//存活人數++
+				gunMode = rand() % 4;					//0手槍 1散彈槍 2機槍 3狙擊槍 
+				vecEnemy[loop]->SetAlive(true);			//設定成存活
+				vecEnemy[loop]->SetGunMode(gunMode);	//設定槍枝種類
+				//test進入位置，目前寫死
+				if (pos == 0) vecEnemy[loop]->SetXY(100 + 5 * loop, 360);
+				else vecEnemy[loop]->SetXY(574 - 5 * loop, 360);
+				canAddEnemy = false;
+				break;
+			}
+		}
+
+#pragma endregion
 	}
 
 	void CGameStateRun::OnInit()  								// 遊戲的初值及圖形設定
@@ -2449,7 +2474,8 @@ namespace game_framework {
 		gameMap.LoadBitmap();
 
 #pragma region EnemyInitial
-		maxEnemyNumber = remainEnemy = 30;		//最大敵人數
+		maxEnemyNumber = 10;				//最大敵人數
+		remainEnemy.SetInteger(maxEnemyNumber);
 		if (vecEnemy.size() == 0)
 		{
 			for (loop = 0; loop < maxEnemyNumber; loop++)
@@ -2466,8 +2492,6 @@ namespace game_framework {
 		for (loop = 0; loop < maxEnemyNumber; loop++)
 			vecEnemy[loop]->LoadBitmap();
 #pragma endregion
-
-		enemy.LoadBitmap();
 
 		hero.LoadBitmap();
 		
@@ -2528,8 +2552,7 @@ namespace game_framework {
 		}
 		if (nChar == KEY_Q)
 		{
-			canAddEnemy = true;
-			//enemy.SetAlive(true);
+			//canAddEnemy = true;
 		}
 		if (nChar == KEY_R)
 		{
