@@ -95,11 +95,19 @@ namespace game_framework {
 		char *fileDefaultStand[] = { ".\\image\\stand\\L1.bmp" };
 		char *fileDefaultCrouch[] = { ".\\image\\crouch\\L1.bmp" };
 
+		char *fileKnifeL1[] = { ".\\image\\knife\\L1-1.bmp" , ".\\image\\knife\\L2-1.bmp" , ".\\image\\knife\\L3-1.bmp" , ".\\image\\knife\\L4-1.bmp" };
+		char *fileKnifeL2[] = { ".\\image\\knife\\L1-2.bmp" , ".\\image\\knife\\L2-2.bmp" , ".\\image\\knife\\L3-2.bmp" , ".\\image\\knife\\L4-2.bmp" };
+		//char *fileKnifeR[] = { ".\\image\\knife\\R1.bmp" , ".\\image\\knife\\R2.bmp" , ".\\image\\knife\\R3.bmp" , ".\\image\\knife\\R4.bmp" };
+
+
+#pragma region fileStand
 		char *filestandL[] = { ".\\image\\stand\\L1.bmp",".\\image\\stand\\L2.bmp",".\\image\\stand\\L3.bmp" , ".\\image\\stand\\L4.bmp" };
 		char *filestandR[] = { ".\\image\\stand\\R1.bmp",".\\image\\stand\\R2.bmp",".\\image\\stand\\R3.bmp" , ".\\image\\stand\\R4.bmp" };
 		char *filestandShootL[] = { ".\\image\\stand\\shoot\\L1-1.bmp" , ".\\image\\stand\\shoot\\L2-1.bmp" , ".\\image\\stand\\shoot\\L3-1.bmp" , ".\\image\\stand\\shoot\\L4-1.bmp" };
 		char *filestandShootL2[] = { ".\\image\\stand\\shoot\\L1-2.bmp" , ".\\image\\stand\\shoot\\L2-2.bmp" , ".\\image\\stand\\shoot\\L3-2.bmp" , ".\\image\\stand\\shoot\\L4-2.bmp" };
 		char *filestandShootR[] = { ".\\image\\stand\\shoot\\R1.bmp" , ".\\image\\stand\\shoot\\R2.bmp" , ".\\image\\stand\\shoot\\R3.bmp" , ".\\image\\stand\\shoot\\R4.bmp" };
+
+#pragma endregion
 
 
 	#pragma region fileMove
@@ -136,7 +144,6 @@ namespace game_framework {
 
 	#pragma endregion
 
-		//char *fileKnifeL[] = { ".\\image\\knife\\L1.bmp" , ".\\image\\knife\\L2.bmp" , ".\\image\\knife\\L3.bmp" , ".\\image\\knife\\L4.bmp" };
 		char *fileHeart[] = { ".\\image\\heart.bmp" };
 	#pragma endregion
 
@@ -163,6 +170,16 @@ namespace game_framework {
 			heroMove.LoadBitmap_ShootR(fileMoveShootR[i]);
 			heroStand.LoadBitmap_ShootL(filestandShootL[i], filestandShootL2[i]);
 			heroStand.LoadBitmap_ShootR(filestandShootR[i]);
+
+			//knife
+			heroMove.LoadBitmap_KnifeL(fileKnifeL1[i], fileKnifeL2[i]);
+			heroMove.LoadBitmap_KnifeR(fileKnifeL1[i]);
+			heroStand.LoadBitmap_KnifeL(fileKnifeL1[i], fileKnifeL2[i]);
+			heroStand.LoadBitmap_KnifeR(fileKnifeL1[i]);
+			heroJump.LoadBitmap_KnifeL(fileKnifeL1[i], fileKnifeL2[i]);
+			heroJump.LoadBitmap_KnifeR(fileKnifeL1[i]);
+			heroCrouch.LoadBitmap_KnifeL(fileKnifeL1[i], fileKnifeL2[i]);
+			heroCrouch.LoadBitmap_KnifeR(fileKnifeL1[i]);
 		}
 		for (int i = 0; i < 5; i++)
 		{
@@ -232,6 +249,14 @@ namespace game_framework {
 		gameMap->setXY(mapX, mapY);					//設定地圖座標
 	}
 
+	void CHero::resetAnimation()
+	{
+		heroMove.resetShootAnimation();
+		heroStand.resetShootAnimation();
+		heroJump.resetShootAnimation();
+		heroCrouch.resetShootAnimation();
+	}
+
 	void CHero::ResumeShooting()
 	{
 		if (isShooting)
@@ -241,7 +266,8 @@ namespace game_framework {
 			{
 				delayCount = constDelay;
 				isShooting = false;
-				CHero::SetShooting(false);
+				SetShooting(false);
+				resetAnimation();
 			}
 		}
 	}
@@ -277,7 +303,7 @@ namespace game_framework {
 		if (isRising||isFalling)
 		{
 			if (isShooting)
-				heroJump.OnShow_Shoot();
+				heroJump.OnShow_Attack();
 			else
 			{
 				if (isRising) heroJump.OnShow_Rise();
@@ -287,7 +313,7 @@ namespace game_framework {
 		else if (isMovingDown)
 		{
 			if (isShooting)
-				heroCrouch.OnShow_Shoot();
+				heroCrouch.OnShow_Attack();
 			else
 			{
 				if (isMovingLeft || isMovingRight) heroCrouch.OnShow_Move();
@@ -297,13 +323,13 @@ namespace game_framework {
 		else if (isMovingLeft||isMovingRight)
 		{
 			if (isShooting)
-				heroMove.OnShow_Shoot();
+				heroMove.OnShow_Attack();
 			else heroMove.OnShow();
 		}
 		else if(!(isMovingDown || isMovingLeft || isMovingRight || isRising))
 		{
 			if (isShooting)
-				heroStand.OnShow_Shoot();
+				heroStand.OnShow_Attack();
 			else heroStand.OnShow_Stand();
 		}
 
@@ -477,13 +503,12 @@ namespace game_framework {
 		void CEnemy::Initialize()
 		{
 			mapX = mapY = 0;
-			/*x = 100;
-			y = 360;*/
 			x = y = 0;
 			direction = 2;
 			step = 18;
 			isOnBlock = canShoot = false;
 			isAlive = isDead = false;
+			isMovingLeft = isMovingRight = false;
 			constDelay = delayCount = 20; 
 			machineGunShootDelay = constMachineGunDelay = 12;
 		}
@@ -496,6 +521,9 @@ namespace game_framework {
 			char* fileDeadL[] = { ".\\image\\enemy\\die\\L1.bmp" , ".\\image\\enemy\\die\\L3.bmp" , ".\\image\\enemy\\die\\L5.bmp" , ".\\image\\enemy\\die\\L7.bmp" , ".\\image\\enemy\\die\\L8.bmp" , ".\\image\\enemy\\die\\L8.bmp" };
 			char* fileDeadR1[] = { ".\\image\\enemy\\die\\R1-1.bmp" , ".\\image\\enemy\\die\\R3-1.bmp" , ".\\image\\enemy\\die\\R5-1.bmp" , ".\\image\\enemy\\die\\R7-1.bmp" , ".\\image\\enemy\\die\\R8-1.bmp" , ".\\image\\enemy\\die\\R8-1.bmp" };
 			char* fileDeadR2[] = { ".\\image\\enemy\\die\\R1-2.bmp" , ".\\image\\enemy\\die\\R3-2.bmp" , ".\\image\\enemy\\die\\R5-2.bmp" , ".\\image\\enemy\\die\\R7-2.bmp" , ".\\image\\enemy\\die\\R8-2.bmp" , ".\\image\\enemy\\die\\R8-2.bmp" };
+			char* fileMoveL[] = { ".\\image\\enemy\\move\\L1.bmp" , ".\\image\\enemy\\move\\L2.bmp" , ".\\image\\enemy\\move\\L3.bmp" , ".\\image\\enemy\\move\\L4.bmp" };
+			char* fileMoveR[] = { ".\\image\\enemy\\move\\R1.bmp" , ".\\image\\enemy\\move\\R2.bmp" , ".\\image\\enemy\\move\\R3.bmp" , ".\\image\\enemy\\move\\R4.bmp" };
+
 
 			enemyStand.LoadBitmap_StandL(fileStandL[0]);
 			enemyStand.LoadBitmap_StandR(fileStandR[0]);
@@ -503,6 +531,12 @@ namespace game_framework {
 			{
 				enemyDead.LoadBitmap_L(fileDeadL[i]);
 				enemyDead.LoadBitmap_R(fileDeadR1[i], fileDeadR2[i]);
+			}
+
+			for (int i = 0; i < 4; i++)
+			{
+				enemyMove.LoadBitmap_MoveL(fileMoveL[i]);
+				enemyMove.LoadBitmap_MoveR(fileMoveR[i]);
 			}
 
 			defaultStand.LoadBitmap(fileStandL[0], Blue);
@@ -521,6 +555,8 @@ namespace game_framework {
 					isDead = false;
 			}
 			
+			if (isMovingLeft || isMovingRight) enemyMove.OnMove(&x, &y);
+
 			if (isAlive)
 			{
 				if (!canShoot)			//射擊間隔處理
@@ -556,8 +592,14 @@ namespace game_framework {
 			}
 			else if (isAlive)
 			{
-				enemyStand.SetXY(x, y);
-				enemyStand.OnShow_Stand();
+				enemyMove.SetXY(x, y);
+				if (isMovingLeft || isMovingRight)
+					enemyMove.OnShow();
+				else
+				{
+					enemyStand.SetXY(x, y);
+					enemyStand.OnShow_Stand();
+				}
 			}
 		}
 
@@ -596,16 +638,26 @@ namespace game_framework {
 
 		void CEnemy::SetMapXY(int mx, int my)
 		{
-			//x += (mx - mapX);
-			if (mx > mapX)			//主角向左走
+			isMovingLeft = isMovingRight = false;
+			if (mx > mapX)			//主角向左走，新的地圖座標會>之前的地圖座標
 			{
-				x += (mx - mapX);
-				if (x > 574) x = 574;
+				x += (mx - mapX);	//敵人要追蹤，也向左走
+				if (x > 574)
+				{
+					x = 574;
+					isMovingLeft = true;
+					enemyMove.SetDirection(1);
+				}
 			}
-			else if (mx < mapX)		//主角向右走
+			else if (mx < mapX)		//主角向右走，新的地圖座標會<之前的地圖座標
 			{
-				x += (mx - mapX);
-				if (x < 100) x = 100;
+				x += (mx - mapX);	//敵人追蹤，也向右走
+				if (x < 100)
+				{
+					x = 100;
+					isMovingRight = true;
+					enemyMove.SetDirection(2);
+				}
 			}
 			mapX = mx;
 			mapY = my;
@@ -1359,6 +1411,16 @@ namespace game_framework {
 		CMoveShoot.LoadShootRight(file);
 	}
 
+	void CMove::LoadBitmap_KnifeL(char* file, char* file2)
+	{
+		CMoveShoot.LoadKnifeLeft(file, file2);
+	}
+
+	void CMove::LoadBitmap_KnifeR(char* file)
+	{
+		CMoveShoot.LoadKnifeRight(file);
+	}
+
 	void CMove::OnMove(int* nx, int* ny)
 	{
 		step = ini_step;
@@ -1368,8 +1430,28 @@ namespace game_framework {
 		if (isMovingRight) x += step;
 		if (isShooting)
 		{
-			if (direction == 1) CMoveShoot.OnMoveL();
-			else if (direction == 2) CMoveShoot.OnMoveR();
+			if (isOverlap)
+			{
+				if (direction == 1)
+				{
+					CMoveShoot.OnMoveKnifeL();
+				}
+				else if (direction == 2)
+				{
+					CMoveShoot.OnMoveKnifeR();
+				}
+			}
+			else
+			{
+				if (direction == 1)
+				{
+					CMoveShoot.OnMoveShootL();
+				}
+				else if (direction == 2)
+				{
+					CMoveShoot.OnMoveShootR();
+				}
+			}
 		}
 		else
 		{
@@ -1399,7 +1481,12 @@ namespace game_framework {
 		y = ny;
 	}
 
-	void CMove::SetOverlap(bool flag) { isOverlap = flag; }
+	void CMove::SetOverlap(bool flag) 
+	{ 
+		if (!isShooting) isOverlap = flag;
+	}
+
+	void CMove::resetShootAnimation() { CMoveShoot.resetAnimation(); }
 
 	void CMove::SetMovingDown(bool flag)
 	{
@@ -1439,10 +1526,6 @@ namespace game_framework {
 	//SetState
 #pragma endregion
 
-	bool CMove::isfinalBitmap(int dir)
-	{
-		return CMoveShoot.isfinalBitmap(dir);
-	}
 
 	void CMove::OnShow()
 	{
@@ -1458,11 +1541,19 @@ namespace game_framework {
 		}
 	}
 
-	void CMove::OnShow_Shoot()
+	void CMove::OnShow_Attack()
 	{
 		CMoveShoot.SetXY(x, y);
-		if (direction == 1) CMoveShoot.OnShowL();
-		else if (direction == 2) CMoveShoot.OnShowR();
+		if (isOverlap)
+		{
+			if (direction == 1) CMoveShoot.OnShowKnifeL();
+			else if(direction == 2) CMoveShoot.OnShowKnifeR();
+		}
+		else
+		{
+			if (direction == 1) CMoveShoot.OnShowShootL();
+			else if (direction == 2) CMoveShoot.OnShowShootR();
+		}
 	}
 
 	//CMove
@@ -1503,6 +1594,16 @@ namespace game_framework {
 		CStandShoot.LoadShootRight(file);
 	}
 
+	void CStand::LoadBitmap_KnifeL(char* file, char* file2)
+	{
+		CStandShoot.LoadKnifeLeft(file, file2);
+	}
+
+	void CStand::LoadBitmap_KnifeR(char* file)
+	{
+		CStandShoot.LoadKnifeRight(file);
+	}
+
 #pragma endregion
 
 	void CStand::SetDirection(int dir)
@@ -1523,21 +1624,34 @@ namespace game_framework {
 		}
 		else
 		{
-			if (dir_horizontal == 1) CStandShoot.OnMoveL();
-			else if (dir_horizontal == 2) CStandShoot.OnMoveR();
+			if (isOverlap)
+			{
+				if (dir_horizontal == 1) CStandShoot.OnMoveKnifeL();
+				else if (dir_horizontal == 2) CStandShoot.OnMoveKnifeR();
+			}
+			else
+			{
+				if (dir_horizontal == 1) CStandShoot.OnMoveShootL();
+				else if (dir_horizontal == 2) CStandShoot.OnMoveShootR();
+			}
 		}
 	}
 
-	bool CStand::isfinalBitmap(int dir)
-	{
-		return CStandShoot.isfinalBitmap(dir);
-	}
+	void CStand::resetShootAnimation() { CStandShoot.resetAnimation(); }
 
-	void CStand::OnShow_Shoot()
+	void CStand::OnShow_Attack()
 	{
 		CStandShoot.SetXY(x, y);
-		if (direction == 1) CStandShoot.OnShowL();
-		else if (direction == 2) CStandShoot.OnShowR();
+		if (isOverlap)
+		{
+			if (direction == 1) CStandShoot.OnShowKnifeL();
+			else if (direction == 2) CStandShoot.OnShowKnifeR();
+		}
+		else
+		{
+			if (direction == 1) CStandShoot.OnShowShootL();
+			else if (direction == 2) CStandShoot.OnShowShootR();
+		}
 	}
 
 	void CStand::OnShow_Stand()
@@ -1567,65 +1681,78 @@ namespace game_framework {
 		isRising = isFalling = canFall = false;
 	}
 
-	#pragma region Loadpicture
+#pragma region Loadpicture
 		
-		void CJump::LoadBitmap_ShootL(char* file1, char* file2)
-		{
-			CJumpShoot.LoadShootLeft(file1, file2);
-		}
+	void CJump::LoadBitmap_KnifeL(char* file, char* file2)
+	{
+		CJumpShoot.LoadKnifeLeft(file, file2);
+	}
 
-		void CJump::LoadBitmap_ShootR(char* file)
-		{
-			CJumpShoot.LoadShootRight(file);
-		}
+	void CJump::LoadBitmap_KnifeR(char* file)
+	{
+		CJumpShoot.LoadKnifeRight(file);
+	}
 
-		void CJump::LoadBitmap_FallL(char* file)
-		{
-			CFallL.AddBitmap(file, Blue);
-		}
+	void CJump::LoadBitmap_ShootL(char* file1, char* file2)
+	{
+		CJumpShoot.LoadShootLeft(file1, file2);
+	}
 
-		void CJump::LoadBitmap_RiseL(char* file)
-		{
-			CRiseL.AddBitmap(file, Blue);
-		}
+	void CJump::LoadBitmap_ShootR(char* file)
+	{
+		CJumpShoot.LoadShootRight(file);
+	}
 
-		void CJump::LoadBitmap_FallR(char* file)
-		{
-			CFallR.AddBitmap(file, Blue);
-		}
+	void CJump::LoadBitmap_FallL(char* file)
+	{
+		CFallL.AddBitmap(file, Blue);
+	}
 
-		void CJump::LoadBitmap_RiseR(char* file)
-		{
-			CRiseR.AddBitmap(file, Blue);
-		}
+	void CJump::LoadBitmap_RiseL(char* file)
+	{
+		CRiseL.AddBitmap(file, Blue);
+	}
 
-	#pragma endregion
+	void CJump::LoadBitmap_FallR(char* file)
+	{
+		CFallR.AddBitmap(file, Blue);
+	}
 
-	#pragma region SetState
+	void CJump::LoadBitmap_RiseR(char* file)
+	{
+		CRiseR.AddBitmap(file, Blue);
+	}
 
-		void CJump::SetGameMap(CGameMap* _map)
-		{
-			gameMap = _map;
-		}
+#pragma endregion
 
-		void CJump::SetRising(bool flag)
-		{
-			isRising = flag;
-		}
+#pragma region SetState
 
-		void CJump::SetFalling(bool flag)
-		{
-			isFalling = flag;
-		}
+	void CJump::SetGameMap(CGameMap* _map)
+	{
+		gameMap = _map;
+	}
 
-		void CJump::SetDirection(int dir)
-		{
-			direction = dir;
-			if (dir < 3) dir_horizontal = dir;
-		}
+	void CJump::SetRising(bool flag)
+	{
+		isRising = flag;
+	}
 
-		void CJump::SetCanFallFromBlock(bool flag) { canFall = flag; }
-	#pragma endregion
+	void CJump::SetFalling(bool flag)
+	{
+		isFalling = flag;
+	}
+
+	void CJump::SetDirection(int dir)
+	{
+		direction = dir;
+		if (dir < 3) dir_horizontal = dir;
+	}
+
+	void CJump::SetCanFallFromBlock(bool flag) { canFall = flag; }
+
+	void CJump::resetShootAnimation() { CJumpShoot.resetAnimation(); }
+
+#pragma endregion
 
 
 	bool CJump::OnMove(int *nx, int *ny)	//回傳isFalling的狀態
@@ -1650,8 +1777,8 @@ namespace game_framework {
 		{
 			if (isShooting)
 			{
-				if (dir_horizontal == 1) CJumpShoot.OnMoveL();
-				else if (dir_horizontal == 2) CJumpShoot.OnMoveR();
+				if (dir_horizontal == 1) CJumpShoot.OnMoveShootL();
+				else if (dir_horizontal == 2) CJumpShoot.OnMoveShootR();
 			}
 			else
 			{
@@ -1675,8 +1802,8 @@ namespace game_framework {
 		{
 			if (isShooting)
 			{
-				if (dir_horizontal == 1) CJumpShoot.OnMoveL();
-				else if (dir_horizontal == 2) CJumpShoot.OnMoveR();
+				if (dir_horizontal == 1) CJumpShoot.OnMoveShootL();
+				else if (dir_horizontal == 2) CJumpShoot.OnMoveShootR();
 			}
 			else
 			{
@@ -1708,10 +1835,6 @@ namespace game_framework {
 		return gameMap->getMapBlock(gy, gx);
 	}
 
-	bool CJump::isfinalBitmap(int dir)
-	{
-		return CJumpShoot.isfinalBitmap(dir);
-	}
 
 	void CJump::OnShow_Rise()
 	{
@@ -1741,11 +1864,11 @@ namespace game_framework {
 		}
 	}
 
-	void CJump::OnShow_Shoot()
+	void CJump::OnShow_Attack()
 	{
 		CJumpShoot.SetXY(x, y);
-		if (dir_horizontal == 1) CJumpShoot.OnShowL();
-		else if (dir_horizontal == 2) CJumpShoot.OnShowR();
+		if (dir_horizontal == 1) CJumpShoot.OnShowShootL();
+		else if (dir_horizontal == 2) CJumpShoot.OnShowShootR();
 	}
 
 	//CJump
@@ -1772,14 +1895,17 @@ namespace game_framework {
 	{
 		if (isShooting)
 		{
-			if (dir_horizontal == 1)
+			if (isOverlap)
 			{
-				CcrouchShoot.OnMoveL();
+				if (dir_horizontal == 1) CcrouchShoot.OnMoveKnifeL();
+				else if (dir_horizontal == 2) CcrouchShoot.OnMoveKnifeR();
 			}
-			else if (dir_horizontal == 2)
+			else
 			{
-				CcrouchShoot.OnMoveR();
+				if (dir_horizontal == 1) CcrouchShoot.OnMoveShootL();
+				else if (dir_horizontal == 2) CcrouchShoot.OnMoveShootR();
 			}
+			
 		}
 		else
 		{
@@ -1797,6 +1923,16 @@ namespace game_framework {
 	}
 
 #pragma region LoadPicture
+
+	void CCrouch::LoadBitmap_KnifeL(char* file, char* file2)
+	{
+		CcrouchShoot.LoadKnifeLeft(file, file2);
+	}
+
+	void CCrouch::LoadBitmap_KnifeR(char* file)
+	{
+		CcrouchShoot.LoadKnifeRight(file);
+	}
 
 	void CCrouch::LoadBitmap_ShootL(char* file,char* file2)
 	{
@@ -1832,11 +1968,6 @@ namespace game_framework {
 
 #pragma region OnShow
 
-	bool CCrouch::isfinalBitmap(int dir)
-	{
-		return CcrouchShoot.isfinalBitmap(dir);
-	}
-
 	void CCrouch::OnShow_Move()
 	{
 		if (dir_horizontal == 1)
@@ -1865,19 +1996,25 @@ namespace game_framework {
 		}
 	}
 
-	void CCrouch::OnShow_Shoot()
+	void CCrouch::OnShow_Attack()
 	{
 		CcrouchShoot.SetXY(x, y);
-		if (dir_horizontal == 1)
+		if (isOverlap)
 		{
-			CcrouchShoot.OnShowL();
+			if (dir_horizontal == 1)
+				CcrouchShoot.OnShowKnifeL();
+			else if (dir_horizontal == 2)
+				CcrouchShoot.OnShowKnifeR();
 		}
-		else if (dir_horizontal == 2)
+		else
 		{
-			CcrouchShoot.OnShowR();
+			if (dir_horizontal == 1)
+				CcrouchShoot.OnShowShootL();
+			else if (dir_horizontal == 2)
+				CcrouchShoot.OnShowShootR();
 		}
 	}
-
+	//OnShow
 #pragma endregion
 
 	void CCrouch::SetDirection(int dir)
@@ -1886,6 +2023,8 @@ namespace game_framework {
 		if (dir < 3)
 			dir_horizontal = dir;
 	}
+
+	void CCrouch::resetShootAnimation() { CcrouchShoot.resetAnimation(); }
 
 	//CCrouch
 #pragma endregion
@@ -1915,18 +2054,40 @@ namespace game_framework {
 		CShootR.AddBitmap(file,Blue);
 	}
 
-	void CAttack::OnMoveL()
+	void CAttack::LoadKnifeLeft(char* file, char* file2)
+	{
+		CKnifeLHero.AddBitmap(file, Blue);
+		CKnifeLKnife.AddBitmap(file2, Blue);
+	}
+
+	void CAttack::LoadKnifeRight(char* file)
+	{
+		CKnifeR.AddBitmap(file, Blue);
+	}
+
+	void CAttack::OnMoveShootL()
 	{
 		CShootLHero.OnMove();
 		CShootLGun.OnMove();
 	}
 
-	void CAttack::OnMoveR()
+	void CAttack::OnMoveShootR()
 	{
 		CShootR.OnMove();
 	}
 
-	void CAttack::OnShowL()
+	void CAttack::OnMoveKnifeL()
+	{
+		CKnifeLHero.OnMove();
+		CKnifeLKnife.OnMove();
+	}
+
+	void CAttack::OnMoveKnifeR()
+	{
+		CKnifeR.OnMove();
+	}
+
+	void CAttack::OnShowShootL()
 	{
 		width = CShootLGun.Width();
 		CShootLHero.SetTopLeft(x, y);
@@ -1935,10 +2096,25 @@ namespace game_framework {
 		CShootLGun.OnShow();
 	}
 
-	void CAttack::OnShowR()
+	void CAttack::OnShowShootR()
 	{
 		CShootR.SetTopLeft(x, y);
 		CShootR.OnShow();
+	}
+
+	void CAttack::OnShowKnifeL()
+	{
+		width = CKnifeLKnife.Width();
+		CKnifeLHero.SetTopLeft(x, y);
+		CKnifeLHero.OnShow();
+		CKnifeLKnife.SetTopLeft(x - width, y);
+		CKnifeLKnife.OnShow();
+	}
+
+	void CAttack::OnShowKnifeR()
+	{
+		CKnifeR.SetTopLeft(x, y);
+		CKnifeR.OnShow();
 	}
 
 	void CAttack::SetXY(int nx, int ny)
@@ -1947,26 +2123,14 @@ namespace game_framework {
 		y = ny;
 	}
 
-	bool CAttack::isfinalBitmap(int dir)
+	void CAttack::resetAnimation()
 	{
-		if (dir == 1)
-		{
-			if (CShootLGun.IsFinalBitmap())
-			{
-				CShootLGun.Reset();
-				CShootLHero.Reset();
-				return false;
-			}
-		}
-		else if (dir == 2)
-		{
-			if (CShootR.IsFinalBitmap())
-			{
-				CShootR.Reset();
-				return false;
-			}
-		}
-		return false;
+		CShootLGun.Reset();
+		CShootLHero.Reset();
+		CShootR.Reset();
+		/*CKnifeLHero.Reset();
+		CKnifeLKnife.Reset();
+		CKnifeR.Reset();*/
 	}
 
 	//CShoot
@@ -2281,7 +2445,7 @@ namespace game_framework {
 #pragma region CGameStateRun
 
 	CGameStateRun::CGameStateRun(CGame *g)
-		: CGameState(g), NUMBALLS(28)
+		: CGameState(g)
 	{
 	}
 
@@ -2307,7 +2471,6 @@ namespace game_framework {
 			vecEnemy[loop]->Initialize();
 
 		nowAliveEnemy = 0;
-		canAddEnemy = false;
 
 		seed = (unsigned)time(NULL);
 		srand(seed);
@@ -2329,9 +2492,9 @@ namespace game_framework {
 
 #pragma region addEnemyControl
 		//敵人生成控制
-		if(nowAliveEnemy == 0 || canAddEnemy)
+		if(nowAliveEnemy == 0)
 			enemyProduce(1);
-		if (come1EnemyDelay != 0) come1EnemyDelay--;
+		/*if (come1EnemyDelay != 0) come1EnemyDelay--;
 		else
 		{
 			enemyProduce(1);
@@ -2342,7 +2505,7 @@ namespace game_framework {
 		{
 			enemyProduce(2);
 			come2EnemyDelay = const_come2EnemyDelay;
-		}
+		}*/
 #pragma endregion
 
 #pragma region BulletControl
@@ -2374,6 +2537,7 @@ namespace game_framework {
 			}
 		}
 
+		//敵人被子彈射到判斷
 		for (loop = 0; loop < maxEnemyNumber; loop++)			
 		{
 			if (vecEnemy[loop]->getAlive())
@@ -2388,6 +2552,8 @@ namespace game_framework {
 				}
 			}
 		}
+
+		//主角被射到判斷
 		if (gameMap.isBulletHit(&hero))
 		{
 			//GotoGameState(GAME_STATE_OVER);
@@ -2410,7 +2576,12 @@ namespace game_framework {
 
 #pragma endregion
 
-		if (remainEnemy.GetInteger() <= 0) GotoGameState(GAME_STATE_OVER);
+		if (remainEnemy.GetInteger() <= 0)
+		{
+			CAudio::Instance()->Stop(AUDIO_BGM_normal);
+			GotoGameState(GAME_STATE_OVER);
+		}
+
 
 		// 判斷擦子是否碰到球
 		//
@@ -2448,7 +2619,6 @@ namespace game_framework {
 				//test進入位置，目前寫死
 				if (pos == 0) vecEnemy[loop]->SetXY(100 + 5 * loop, 360);
 				else vecEnemy[loop]->SetXY(574 - 5 * loop, 360);
-				canAddEnemy = false;
 				break;
 			}
 		}
@@ -2474,7 +2644,8 @@ namespace game_framework {
 		gameMap.LoadBitmap();
 
 #pragma region EnemyInitial
-		maxEnemyNumber = 10;				//最大敵人數
+
+		maxEnemyNumber = 20;				//最大敵人數
 		remainEnemy.SetInteger(maxEnemyNumber);
 		if (vecEnemy.size() == 0)
 		{
@@ -2491,11 +2662,14 @@ namespace game_framework {
 		}
 		for (loop = 0; loop < maxEnemyNumber; loop++)
 			vecEnemy[loop]->LoadBitmap();
+
 #pragma endregion
 
 		hero.LoadBitmap();
 		
-		hits_left.LoadBitmap();
+		remainEnemy.LoadBitmap();
+		remainEnemy.SetTopLeft(0, 0);
+		
 		CAudio::Instance()->Load(AUDIO_heroJump, "sounds\\heroJump.mp3");		// 載入編號0的聲音ding.wav
 		CAudio::Instance()->Load(AUDIO_enemyDead, "sounds\\enemyDead.mp3");		// 載入編號1的聲音lake.mp3
 		CAudio::Instance()->Load(AUDIO_BGM_normal, "sounds\\BGM_normal.mp3");	// 載入編號2的聲音ntut.mid
@@ -2552,7 +2726,6 @@ namespace game_framework {
 		}
 		if (nChar == KEY_Q)
 		{
-			//canAddEnemy = true;
 		}
 		if (nChar == KEY_R)
 		{
@@ -2638,6 +2811,8 @@ namespace game_framework {
 		//  貼上背景圖、撞擊數、球、擦子、彈跳的球
 		//
 		gameMap.OnShow();
+
+		remainEnemy.ShowBitmap();
 		//
 		//  貼上左上及右下角落的圖
 		//

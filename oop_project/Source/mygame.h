@@ -95,17 +95,26 @@ public:
 	void Initialize();
 	void LoadShootLeft(char*,char*);
 	void LoadShootRight(char*);
-	void OnMoveL();
-	void OnMoveR();
-	void OnShowL();
-	void OnShowR();
+	void LoadKnifeLeft(char*, char*);
+	void LoadKnifeRight(char*);
+	void OnMoveShootL();
+	void OnMoveShootR();
+	void OnMoveKnifeL();
+	void OnMoveKnifeR();
+	void OnShowShootL();
+	void OnShowShootR();
+	void OnShowKnifeL();
+	void OnShowKnifeR();
 	void SetXY(int, int);
-	bool isfinalBitmap(int);
+	void resetAnimation();
 
 private:
 	CAnimation CShootLHero;
 	CAnimation CShootLGun;
 	CAnimation CShootR;
+	CAnimation CKnifeLHero;
+	CAnimation CKnifeLKnife;
+	CAnimation CKnifeR;
 	int width;
 	int x, y;		//繪製座標
 
@@ -202,9 +211,11 @@ public:
 	void LoadBitmap_MoveR(char*);
 	void LoadBitmap_ShootL(char*, char*);
 	void LoadBitmap_ShootR(char*);
+	void LoadBitmap_KnifeL(char*, char*);
+	void LoadBitmap_KnifeR(char*);
 	void OnMove(int*, int*);		// 移動
 	void OnShow();					// 將圖形貼到畫面
-	void OnShow_Shoot();
+	void OnShow_Attack();
 	void SetMovingDown(bool flag);	// 設定是否正在往下移動
 	void SetMovingLeft(bool flag);	// 設定是否正在往左移動
 	void SetMovingRight(bool flag); // 設定是否正在往右移動
@@ -216,7 +227,7 @@ public:
 	void SetDirection(int);
 	void SetXY(int nx, int ny);		// 設定左上角座標
 	void SetOverlap(bool);
-	bool isfinalBitmap(int);
+	void resetShootAnimation();
 
 protected:
 	bool isMovingDown;				//下動
@@ -227,6 +238,7 @@ protected:
 	bool isFalling;
 	bool isShooting;				//射擊
 	bool isOverlap;					//跟敵人重疊
+	bool isLock;					//控制鎖-(射擊or刀砍)
 	int defaultHeight;
 
 private:
@@ -249,11 +261,13 @@ public:
 	void LoadBitmap_StandR(char*);
 	void LoadBitmap_ShootL(char*, char*);
 	void LoadBitmap_ShootR(char*);
+	void LoadBitmap_KnifeL(char*, char*);
+	void LoadBitmap_KnifeR(char*);
 	void SetDirection(int);
 	void OnMove(int, int);
 	void OnShow_Stand();
-	void OnShow_Shoot();
-	bool isfinalBitmap(int);
+	void OnShow_Attack();
+	void resetShootAnimation();
 
 private:
 	int x, y;
@@ -275,15 +289,17 @@ public:
 	void LoadBitmap_FallR(char*);
 	void LoadBitmap_ShootL(char*, char*);
 	void LoadBitmap_ShootR(char*);
+	void LoadBitmap_KnifeL(char*, char*);
+	void LoadBitmap_KnifeR(char*);
 	void OnShow_Rise();
 	void OnShow_Fall();
-	void OnShow_Shoot();
+	void OnShow_Attack();
 	void SetRising(bool flag);
 	void SetFalling(bool flag);
 	void SetDirection(int);
 	void SetGameMap(CGameMap*);
 	void SetCanFallFromBlock(bool);
-	bool isfinalBitmap(int);
+	void resetShootAnimation();
 
 private:
 	int isEmpty(int,int);
@@ -317,11 +333,13 @@ public:
 	void LoadBitmap_StandR(char*);
 	void LoadBitmap_ShootL(char*,char*);
 	void LoadBitmap_ShootR(char*);
+	void LoadBitmap_KnifeL(char*, char*);
+	void LoadBitmap_KnifeR(char*);
 	void OnShow_Move();
 	void OnShow_Stand();
-	void OnShow_Shoot();
+	void OnShow_Attack();
 	void SetDirection(int);
-	bool isfinalBitmap(int);
+	void resetShootAnimation();
 
 private:
 	CAnimation CMoveL;				//左走
@@ -440,6 +458,7 @@ private:
 	void gravity();					//重力
 	void ResumeShooting();
 	void SetHeart();
+	void resetAnimation();
 
 };
 
@@ -476,6 +495,7 @@ public:
 
 private:
 	
+	CMove enemyMove;
 	CStand enemyStand;
 	CDead enemyDead;
 	CMovingBitmap defaultStand;
@@ -600,10 +620,6 @@ protected:
 	void OnMove();									// 移動遊戲元素
 	void OnShow();									// 顯示這個狀態的遊戲畫面
 private:
-	const int		NUMBALLS;	// 球的總數
-	CEraser			eraser;		// 拍子
-	CInteger		hits_left;	// 剩下的撞擊數
-	
 
 	CHero hero;					//主角
 	CGameMap gameMap;			//地圖
