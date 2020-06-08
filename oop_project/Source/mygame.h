@@ -628,7 +628,9 @@ private:
 	CHero hero;					//主角
 	CGameMap gameMap;			//地圖
 	vector<CEnemy*> vecEnemy;	//敵方軍隊
+	CMovingBitmap enemyImg;
 	CInteger remainEnemy;		//剩餘敵人
+	CMovingBitmap heroImg;
 	CInteger heroLife;
 
 	bool canAddEnemy;

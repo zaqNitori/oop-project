@@ -2687,10 +2687,14 @@ namespace game_framework {
 
 		hero.LoadBitmap();
 		heroLife.LoadBitmap();
-		heroLife.SetTopLeft(400, 0);
+		heroImg.LoadBitmap(".\\image\\number\\heroLife.bmp", Blue);
+		heroImg.SetTopLeft(400, 0);
+		heroLife.SetTopLeft(400 + heroImg.Width() + 10, 0);
 
-		//remainEnemy.LoadBitmap();
-		remainEnemy.SetTopLeft(0, 0);
+		remainEnemy.LoadBitmap();
+		enemyImg.LoadBitmap(".\\image\\number\\remainEnemy.bmp", Blue);
+		enemyImg.SetTopLeft(0, 0);
+		remainEnemy.SetTopLeft(enemyImg.Width() + 10, 0);
 		
 		CAudio::Instance()->Load(AUDIO_heroJump, "sounds\\heroJump.mp3");		// 載入編號0的聲音ding.wav
 		CAudio::Instance()->Load(AUDIO_enemyDead, "sounds\\enemyDead.mp3");		// 載入編號1的聲音lake.mp3
@@ -2835,7 +2839,9 @@ namespace game_framework {
 		//
 		gameMap.OnShow();
 
-		//remainEnemy.ShowBitmap();
+		enemyImg.ShowBitmap();
+		remainEnemy.ShowBitmap();
+		heroImg.ShowBitmap();
 		heroLife.ShowBitmap();
 		//
 		//  貼上左上及右下角落的圖

@@ -125,6 +125,8 @@
 #include "gamelib.h"
 #include "mygame.h"
 
+#define Blue RGB(0,0,255)
+
 namespace game_framework {
 
 /////////////////////////////////////////////////////////////////////////////
@@ -248,8 +250,6 @@ namespace game_framework {
 
 #pragma region CInteger
 
-	CMovingBitmap CInteger::digit[11];
-
 	CInteger::CInteger(int digits)
 		: NUMDIGITS(digits)
 	{
@@ -269,12 +269,15 @@ namespace game_framework {
 	void CInteger::LoadBitmap()
 	{
 		//
-		// digit[i]為class varibale，所以必須避免重複LoadBitmap
 		//
-		if (!isBmpLoaded) {
-			int d[11] = { IDB_0,IDB_1,IDB_2,IDB_3,IDB_4,IDB_5,IDB_6,IDB_7,IDB_8,IDB_9,IDB_MINUS };
+		char *fileNumber[] = { ".\\image\\number\\0.bmp" , ".\\image\\number\\1.bmp" , ".\\image\\number\\2.bmp" ,
+		".\\image\\number\\3.bmp" , ".\\image\\number\\4.bmp" , ".\\image\\number\\5.bmp" ,
+		".\\image\\number\\6.bmp" , ".\\image\\number\\7.bmp" , ".\\image\\number\\8.bmp" ,
+		".\\image\\number\\9.bmp" , ".\\image\\number\\minus.bmp" };
+		if (!isBmpLoaded)
+		{
 			for (int i = 0; i < 11; i++)
-				digit[i].LoadBitmap(d[i], RGB(255, 255, 255));
+				digit[i].LoadBitmap(fileNumber[i], Blue);
 			isBmpLoaded = true;
 		}
 	}
