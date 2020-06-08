@@ -238,7 +238,6 @@ protected:
 	bool isFalling;
 	bool isShooting;				//射擊
 	bool isOverlap;					//跟敵人重疊
-	bool isLock;					//控制鎖-(射擊or刀砍)
 	int defaultHeight;
 
 private:
@@ -405,6 +404,7 @@ public:
 	void SetOverlap(bool);
 	void ResumeDirection();			// 將方向重新調回左和右  
 	void SetXY(int, int);			//方便Demo使用
+	void SetLock(bool);
 #pragma endregion
 
 #pragma region Getstate
@@ -445,7 +445,8 @@ private:
 	bool isMovingLeft;				//左動
 	bool isMovingRight;				//右動
 	bool isShooting;				//攻擊
-	bool isOverlap;			//跟敵人重疊
+	bool isOverlap;					//跟敵人重疊
+	bool isMapLock;					//鎖住地圖卷軸，用於Boss關卡
 	int direction;					//角色面向
 	int dir_horizontal;				//前一次的水平面向
 	int mapX, mapY;					//地圖的座標
@@ -484,6 +485,7 @@ public:
 	void SetXY(int, int);
 	void SetGunMode(int);			// 0->pistol 1->shotgun 2->machineGun 3->sniper
 	void SetID(int);
+	void SetFallBack(int);
 
 	bool getShootState();
 	bool isShow();					//是否顯示
@@ -507,6 +509,7 @@ private:
 	bool isOnBlock;
 	bool canShoot;
 	bool isMovingLeft, isMovingRight;
+	bool isFallBack;
 	int direction, step;
 	int mapX, mapY;
 	int x, y;
@@ -632,10 +635,14 @@ private:
 	CInteger remainEnemy;		//剩餘敵人
 	CMovingBitmap heroImg;
 	CInteger heroLife;
+	CMovingBitmap goL;
+	CMovingBitmap goR;
 
 	bool canAddEnemy;
+	bool isFallBack;
 	unsigned maxEnemyNumber;		//最大敵人數
 	unsigned nowAliveEnemy;			//場上存活敵人數
+	unsigned nowShowEnemy;			//撤退時用
 	unsigned loop;					//for使用
 	unsigned seed;
 	unsigned come1EnemyDelay;		//1個敵人生成時間
@@ -644,6 +651,7 @@ private:
 	unsigned const_come2EnemyDelay;
 	int mapX, mapY;
 	int gunMode;					//敵人槍枝種類
+	int stage;						//0-第一關小兵、1-小boss、2-第二關小兵、3-最終boss
 
 	void enemyProduce(int);			//敵人生成控制
 };
