@@ -421,6 +421,7 @@ public:
 	bool isNowRising();				//get isRising?
 	bool isOverlapEnemy(CEnemy*);		//get is Hero and Enemy overlap
 	bool getOverlap();
+	bool getShooting();
 #pragma endregion
 
 
@@ -482,6 +483,7 @@ public:
 	void SetMapXY(int, int);
 	void SetXY(int, int);
 	void SetGunMode(int);			// 0->pistol 1->shotgun 2->machineGun 3->sniper
+	void SetID(int);
 
 	bool getShootState();
 	bool isShow();					//是否顯示
@@ -511,6 +513,8 @@ private:
 	int gunMode;						//槍枝種類
 	int constDelay, delayCount;			//子彈裝填時間
 	int machineGunShootDelay, constMachineGunDelay;		//機槍持續射擊時間
+
+	int enemyID;						//用來處理位置，讓每個敵人不要完全重疊
 
 };
 

@@ -485,6 +485,8 @@ namespace game_framework {
 
 		bool CHero::getOverlap() { return isOverlap; }
 
+		bool CHero::getShooting() { return isShooting; }
+
 	#pragma endregion
 
 	//CHero
@@ -642,9 +644,9 @@ namespace game_framework {
 			if (mx > mapX)			//主角向左走，新的地圖座標會>之前的地圖座標
 			{
 				x += (mx - mapX);	//敵人要追蹤，也向左走
-				if (x > 574)
+				if (x > 614 - 8 * enemyID)
 				{
-					x = 574;
+					x = 614 - 8 * enemyID;
 					isMovingLeft = true;
 					enemyMove.SetDirection(1);
 				}
@@ -652,9 +654,9 @@ namespace game_framework {
 			else if (mx < mapX)		//主角向右走，新的地圖座標會<之前的地圖座標
 			{
 				x += (mx - mapX);	//敵人追蹤，也向右走
-				if (x < 100)
+				if (x < 60 + 8 * enemyID)
 				{
-					x = 100;
+					x = 60 + 8 * enemyID;
 					isMovingRight = true;
 					enemyMove.SetDirection(2);
 				}
@@ -685,6 +687,8 @@ namespace game_framework {
 				break;
 			}
 		}
+
+		void CEnemy::SetID(int n) { enemyID = n; }
 
 #pragma endregion
 
@@ -2535,20 +2539,31 @@ namespace game_framework {
 #pragma endregion
 
 #pragma region 子彈&角色的碰撞判定
+
+#pragma region knifeEnemy
+		//刀砍到敵人
 		for (loop = 0; loop < maxEnemyNumber; loop++)			//主角敵人是否重疊
 		{
 			if (vecEnemy[loop]->getAlive())
 			{
 				if (hero.isOverlapEnemy(vecEnemy[loop]))		//沒有重疊已經寫在裡面
 				{
+					if (hero.getShooting())						//刀砍，所有重疊的都會死
+					{
+						remainEnemy.Add(-1);
+						vecEnemy[loop]->SetDead(true, hero.getDir_hor());
+						vecEnemy[loop]->SetAlive(false);
+					}
 					break;
 				}
-					
+
 			}
 		}
+#pragma endregion
 
+#pragma region shootEnemy
 		//敵人被子彈射到判斷
-		for (loop = 0; loop < maxEnemyNumber; loop++)			
+		for (loop = 0; loop < maxEnemyNumber; loop++)
 		{
 			if (vecEnemy[loop]->getAlive())
 			{
@@ -2562,13 +2577,15 @@ namespace game_framework {
 				}
 			}
 		}
+#pragma endregion
 
+#pragma region shootHero
 		//主角被射到判斷
 		if (gameMap.isBulletHit(&hero))
-		{
 			heroLife.Add(-1);
-			if(heroLife.GetInteger() == 0) GotoGameState(GAME_STATE_OVER);
-		}
+
+#pragma endregion
+
 #pragma endregion
 		
 		hero.OnMove();
@@ -2587,29 +2604,20 @@ namespace game_framework {
 
 #pragma endregion
 
+#pragma region endGame
 		if (remainEnemy.GetInteger() <= 0)
 		{
 			CAudio::Instance()->Stop(AUDIO_BGM_normal);
 			GotoGameState(GAME_STATE_OVER);
 		}
+		else if (heroLife.GetInteger() <= 0)
+		{
+			CAudio::Instance()->Stop(AUDIO_BGM_normal);
+			GotoGameState(GAME_STATE_OVER);
+		}
 
+#pragma endregion
 
-		// 判斷擦子是否碰到球
-		//
-		/*for (i = 0; i < NUMBALLS; i++)
-			if (ball[i].IsAlive() && ball[i].HitEraser(&eraser)) {
-				ball[i].SetIsAlive(false);
-				CAudio::Instance()->Play(AUDIO_DING);
-				hits_left.Add(-1);
-				//
-				// 若剩餘碰撞次數為0，則跳到Game Over狀態
-				//
-				if (hits_left.GetInteger() <= 0) {
-					CAudio::Instance()->Stop(AUDIO_LAKE);	// 停止 WAVE
-					CAudio::Instance()->Stop(AUDIO_NTUT);	// 停止 MIDI
-					GotoGameState(GAME_STATE_OVER);
-				}
-			}*/
 	}
 
 	void CGameStateRun::enemyProduce(int n)
@@ -2627,9 +2635,10 @@ namespace game_framework {
 				gunMode = rand() % 4;					//0手槍 1散彈槍 2機槍 3狙擊槍 
 				vecEnemy[loop]->SetAlive(true);			//設定成存活
 				vecEnemy[loop]->SetGunMode(gunMode);	//設定槍枝種類
+				vecEnemy[loop]->SetID(loop);			//設定探員ID，用來處理位置
 				//test進入位置，目前寫死
-				if (pos == 0) vecEnemy[loop]->SetXY(100 + 5 * loop, 360);
-				else vecEnemy[loop]->SetXY(574 - 5 * loop, 360);
+				if (pos == 0) vecEnemy[loop]->SetXY(60 + 8 * loop, 360);
+				else vecEnemy[loop]->SetXY(614 - 8 * loop, 360);
 				break;
 			}
 		}
