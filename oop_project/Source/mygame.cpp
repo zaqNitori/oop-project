@@ -97,7 +97,7 @@ namespace game_framework {
 
 		char *fileKnifeL1[] = { ".\\image\\knife\\L1-1.bmp" , ".\\image\\knife\\L2-1.bmp" , ".\\image\\knife\\L3-1.bmp" , ".\\image\\knife\\L4-1.bmp" };
 		char *fileKnifeL2[] = { ".\\image\\knife\\L1-2.bmp" , ".\\image\\knife\\L2-2.bmp" , ".\\image\\knife\\L3-2.bmp" , ".\\image\\knife\\L4-2.bmp" };
-		//char *fileKnifeR[] = { ".\\image\\knife\\R1.bmp" , ".\\image\\knife\\R2.bmp" , ".\\image\\knife\\R3.bmp" , ".\\image\\knife\\R4.bmp" };
+		char *fileKnifeR[] = { ".\\image\\knife\\R1.bmp" , ".\\image\\knife\\R2.bmp" , ".\\image\\knife\\R3.bmp" , ".\\image\\knife\\R4.bmp" };
 
 
 #pragma region fileStand
@@ -173,13 +173,13 @@ namespace game_framework {
 
 			//knife
 			heroMove.LoadBitmap_KnifeL(fileKnifeL1[i], fileKnifeL2[i]);
-			heroMove.LoadBitmap_KnifeR(fileKnifeL1[i]);
+			heroMove.LoadBitmap_KnifeR(fileKnifeR[i]);
 			heroStand.LoadBitmap_KnifeL(fileKnifeL1[i], fileKnifeL2[i]);
-			heroStand.LoadBitmap_KnifeR(fileKnifeL1[i]);
+			heroStand.LoadBitmap_KnifeR(fileKnifeR[i]);
 			heroJump.LoadBitmap_KnifeL(fileKnifeL1[i], fileKnifeL2[i]);
-			heroJump.LoadBitmap_KnifeR(fileKnifeL1[i]);
+			heroJump.LoadBitmap_KnifeR(fileKnifeR[i]);
 			heroCrouch.LoadBitmap_KnifeL(fileKnifeL1[i], fileKnifeL2[i]);
-			heroCrouch.LoadBitmap_KnifeR(fileKnifeL1[i]);
+			heroCrouch.LoadBitmap_KnifeR(fileKnifeR[i]);
 		}
 		for (int i = 0; i < 5; i++)
 		{
@@ -2463,9 +2463,17 @@ namespace game_framework {
 
 		gameMap.Initialize();
 		gameMap.InitialBullet();
-
-		hero.Initialize();
 		hero.SetGameMap(&gameMap);
+
+#pragma region heroStateReset
+		hero.SetMovingDown(false);
+		hero.SetMovingLeft(false);
+		hero.SetMovingRight(false);
+		hero.SetMovingUp(false);
+		hero.SetRising(false);
+		hero.SetShooting(false);
+		hero.SetOverlap(false);
+#pragma endregion
 
 		for (loop = 0; loop < maxEnemyNumber; loop++)
 			vecEnemy[loop]->Initialize();
@@ -2479,6 +2487,7 @@ namespace game_framework {
 		const_come1EnemyDelay = come1EnemyDelay = 50;
 		const_come2EnemyDelay = come2EnemyDelay = 75;
 		remainEnemy.SetInteger(maxEnemyNumber);
+		heroLife.SetInteger(10);
 	}
 
 	void CGameStateRun::OnMove()							// 移動遊戲元素
@@ -2494,7 +2503,7 @@ namespace game_framework {
 		//敵人生成控制
 		if(nowAliveEnemy == 0)
 			enemyProduce(1);
-		/*if (come1EnemyDelay != 0) come1EnemyDelay--;
+		if (come1EnemyDelay != 0) come1EnemyDelay--;
 		else
 		{
 			enemyProduce(1);
@@ -2505,14 +2514,12 @@ namespace game_framework {
 		{
 			enemyProduce(2);
 			come2EnemyDelay = const_come2EnemyDelay;
-		}*/
+		}
 #pragma endregion
 
 #pragma region BulletControl
 		//子彈生成、移動、死亡控制
 
-		
-		//gameMap.addBullet(hero.getX1(), hero.getY1(), hero.getDir(), hero.getDir_hor());
 		for (loop = 0; loop < maxEnemyNumber; loop++)
 		{
 			if (vecEnemy[loop]->isShow())					//狀態判定
@@ -2533,7 +2540,10 @@ namespace game_framework {
 			if (vecEnemy[loop]->getAlive())
 			{
 				if (hero.isOverlapEnemy(vecEnemy[loop]))		//沒有重疊已經寫在裡面
+				{
 					break;
+				}
+					
 			}
 		}
 
@@ -2556,7 +2566,8 @@ namespace game_framework {
 		//主角被射到判斷
 		if (gameMap.isBulletHit(&hero))
 		{
-			//GotoGameState(GAME_STATE_OVER);
+			heroLife.Add(-1);
+			if(heroLife.GetInteger() == 0) GotoGameState(GAME_STATE_OVER);
 		}
 #pragma endregion
 		
@@ -2666,8 +2677,10 @@ namespace game_framework {
 #pragma endregion
 
 		hero.LoadBitmap();
-		
-		remainEnemy.LoadBitmap();
+		heroLife.LoadBitmap();
+		heroLife.SetTopLeft(400, 0);
+
+		//remainEnemy.LoadBitmap();
 		remainEnemy.SetTopLeft(0, 0);
 		
 		CAudio::Instance()->Load(AUDIO_heroJump, "sounds\\heroJump.mp3");		// 載入編號0的聲音ding.wav
@@ -2717,7 +2730,8 @@ namespace game_framework {
 		if (nChar == KEY_A)
 		{
 			hero.SetShooting(true);
-			gameMap.addBullet(hero.getX1(), hero.getY1(), hero.getDir(), hero.getDir_hor());
+			if(!hero.getOverlap()) 
+				gameMap.addBullet(hero.getX1(), hero.getY1(), hero.getDir(), hero.getDir_hor());
 		}
 		if (nChar == KEY_S)
 		{
@@ -2812,7 +2826,8 @@ namespace game_framework {
 		//
 		gameMap.OnShow();
 
-		remainEnemy.ShowBitmap();
+		//remainEnemy.ShowBitmap();
+		heroLife.ShowBitmap();
 		//
 		//  貼上左上及右下角落的圖
 		//

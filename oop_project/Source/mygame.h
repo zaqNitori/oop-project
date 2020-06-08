@@ -625,6 +625,7 @@ private:
 	CGameMap gameMap;			//地圖
 	vector<CEnemy*> vecEnemy;	//敵方軍隊
 	CInteger remainEnemy;		//剩餘敵人
+	CInteger heroLife;
 
 	bool canAddEnemy;
 	unsigned maxEnemyNumber;		//最大敵人數
