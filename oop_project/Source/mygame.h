@@ -227,6 +227,7 @@ public:
 	void SetDirection(int);
 	void SetXY(int nx, int ny);		// 設定左上角座標
 	void SetOverlap(bool);
+	void SetFallBack(bool);
 	void resetShootAnimation();
 
 protected:
@@ -238,6 +239,7 @@ protected:
 	bool isFalling;
 	bool isShooting;				//射擊
 	bool isOverlap;					//跟敵人重疊
+	bool isFallBack;
 	int defaultHeight;
 
 private:
@@ -405,6 +407,7 @@ public:
 	void ResumeDirection();			// 將方向重新調回左和右  
 	void SetXY(int, int);			//方便Demo使用
 	void SetLock(bool);
+	void SetMapXY(int, int);
 #pragma endregion
 
 #pragma region Getstate
@@ -483,12 +486,13 @@ public:
 	void SetShootState(bool);
 	void SetMapXY(int, int);
 	void SetXY(int, int);
-	void SetGunMode(int);			// 0->pistol 1->shotgun 2->machineGun 3->sniper
+	void SetGunMode(int);				// 0->pistol 1->shotgun 2->machineGun 3->sniper
 	void SetID(int);
 	void SetFallBack(int);
+	void SetDestination(int, int, int);	//設定進入目的位置
 
 	bool getShootState();
-	bool isShow();					//是否顯示
+	bool isShow();						//是否顯示
 	bool getAlive();					
 	bool getDead();
 	int getGunMode();
@@ -499,25 +503,28 @@ public:
 
 private:
 	
-	CMove enemyMove;
-	CStand enemyStand;
-	CDead enemyDead;
-	CMovingBitmap defaultStand;
-	int defaultHeight, defaultWidth;
-	bool isAlive;
-	bool isDead;
-	bool isOnBlock;
-	bool canShoot;
-	bool isMovingLeft, isMovingRight;
-	bool isFallBack;
-	int direction, step;
-	int mapX, mapY;
-	int x, y;
+	CMove enemyMove;					//處理移動
+	CStand enemyStand;					//處理站立
+	CDead enemyDead;					//處理敵人死亡
+	CMovingBitmap defaultStand;			//站立，不顯示用來處理碰撞
+	int defaultHeight, defaultWidth;	//方便用來處理碰撞判斷
+	bool isAlive;						//是否存活(各式移動顯示、除了死亡)
+	bool isDead;						//是否死亡(死亡動畫顯示)
+	bool isOnBlock;						//站在障礙物上
+	bool canShoot;						//可否開槍
+	bool isMovingLeft, isMovingRight;	//是否移動
+	bool isFallBack;					//是否撤退
+	bool goDestination;					//進場動畫
+	int direction, step;				//方向、移動速度
+	int desX, desY;						//進場目標位置
+	int mapX, mapY;						//場景座標
+	int x, y;							//敵人座標
 	int gunMode;						//槍枝種類
 	int constDelay, delayCount;			//子彈裝填時間
 	int machineGunShootDelay, constMachineGunDelay;		//機槍持續射擊時間
 
 	int enemyID;						//用來處理位置，讓每個敵人不要完全重疊
+	int enemyPos;						//進場位置
 
 };
 

@@ -86,7 +86,7 @@ namespace game_framework {
 		constDelay = 9;
 		delayCount = constDelay;
 		direction = dir_horizontal = 1;				//預設向左
-		isFalling = isRising = isMovingDown = isMovingLeft = isMovingRight = isMovingUp = isShooting = false;
+		isFalling = isRising = isMovingDown = isMovingLeft = isMovingRight = isMovingUp = isShooting = isMapLock = false;
 	}
 
 	void CHero::LoadBitmap()
@@ -423,8 +423,15 @@ namespace game_framework {
 			y = ny;
 		}
 
+		void CHero::SetMapXY(int mx, int my)
+		{
+			mapX = mx;
+			mapY = my;
+		}
+
 		void CHero::SetOverlap(bool flag)
 		{
+			isOverlap = flag;
 			heroMove.SetOverlap(flag);
 			heroStand.SetOverlap(flag);
 			heroJump.SetOverlap(flag);
@@ -513,7 +520,7 @@ namespace game_framework {
 			direction = 2;
 			step = 18;
 			isOnBlock = canShoot = false;
-			isAlive = isDead = false;
+			isAlive = isDead = goDestination = false;
 			isMovingLeft = isMovingRight = isFallBack = false;
 			constDelay = delayCount = 20; 
 			machineGunShootDelay = constMachineGunDelay = 12;
@@ -552,7 +559,7 @@ namespace game_framework {
 
 		void CEnemy::OnMove()
 		{
-			if (!isOnBlock) y += step;					//gravity
+			//if (!isOnBlock) y += step;					//gravity
 			if (isAlive) enemyStand.OnMove(x, y);		//站立動作
 			else if (isDead)
 			{
@@ -560,18 +567,30 @@ namespace game_framework {
 				if (enemyDead.isfinalBitmap())			//解除死亡狀態
 					isDead = false;
 			}
+
 			
-			if (isMovingLeft || isMovingRight)
+			enemyMove.OnMove(&x, &y);
+			if (goDestination)
 			{
-				enemyMove.OnMove(&x, &y);
-				if (isFallBack)
+				if ((enemyPos == 0 && x >= desX) || (enemyPos == 1 && x <= desX))
 				{
-					if (isMovingLeft) x -= 15;
-					else if (isMovingRight) x += 15;
-					if (x > 800 || x < 0 - defaultWidth)
-						isMovingLeft = isMovingRight = isFallBack = isAlive = false;
+					isMovingLeft = isMovingRight = false;
+					enemyMove.SetMovingLeft(false);
+					enemyMove.SetMovingRight(false);
+					goDestination = false;
 				}
 			}
+			else if (isFallBack)
+			{
+				if (x > 800 || x < 0 - defaultWidth)
+				{
+					isMovingLeft = isMovingRight = isFallBack = isAlive = false;
+					enemyMove.SetMovingLeft(false);
+					enemyMove.SetMovingRight(false);
+					enemyMove.SetFallBack(false);
+				}
+			}
+
 			if (!isFallBack)
 			{
 				if (isAlive)
@@ -606,17 +625,21 @@ namespace game_framework {
 		{
 			if (isDead)
 			{
-				enemyDead.OnShow();	
+				enemyDead.OnShow();
 			}
 			else if (isAlive)
 			{
 				enemyMove.SetXY(x, y);
-				if (isMovingLeft || isMovingRight)
-					enemyMove.OnShow();
+				if (goDestination) enemyMove.OnShow();
 				else
 				{
-					enemyStand.SetXY(x, y);
-					enemyStand.OnShow_Stand();
+					if (isMovingLeft || isMovingRight)
+						enemyMove.OnShow();
+					else
+					{
+						enemyStand.SetXY(x, y);
+						enemyStand.OnShow_Stand();
+					}
 				}
 			}
 		}
@@ -637,12 +660,10 @@ namespace game_framework {
 
 		void CEnemy::SetDirection(int heroX)
 		{ 
-			if (!isFallBack)
-			{
-				if (heroX > x) direction = 2;
-				else direction = 1;
-				enemyStand.SetDirection(direction);
-			}
+			if (isFallBack || goDestination) return;
+			if (heroX > x) direction = 2;			//站著不動的時候方向朝著主角
+			else direction = 1;
+			enemyStand.SetDirection(direction);
 		}
 
 		void CEnemy::SetOnBlock(bool flag) { isOnBlock = flag; }
@@ -657,9 +678,37 @@ namespace game_framework {
 			y = ny;
 		}
 
+		void CEnemy::SetDestination(int dx, int dy,int pos)
+		{
+			desX = dx;
+			desY = y = dy;
+			enemyPos = pos;
+			if (pos == 0)
+			{
+				x = 0 - defaultWidth;
+				enemyMove.SetDirection(2);
+				enemyMove.SetMovingRight(true);
+				desX += 5 * enemyID;
+			}
+			else
+			{
+				x = 800;
+				enemyMove.SetDirection(1);
+				enemyMove.SetMovingLeft(true);
+				desX -= 5 * enemyID;
+			}
+			goDestination = true;
+		}
+
 		void CEnemy::SetMapXY(int mx, int my)
 		{
 			if (isFallBack) return;
+			else if (goDestination)
+			{
+				mapX = mx;
+				mapY = my;
+				return;
+			}
 			isMovingLeft = isMovingRight = false;
 			if (mx > mapX)			//主角向左走，新的地圖座標會>之前的地圖座標
 			{
@@ -713,14 +762,17 @@ namespace game_framework {
 		void CEnemy::SetFallBack(int heroX)
 		{
 			isFallBack = true;
+			enemyMove.SetFallBack(true);
 			if (x >= heroX)
 			{
 				isMovingRight = true;
+				enemyMove.SetMovingRight(true);
 				enemyMove.SetDirection(2);
 			}
 			else
 			{
 				isMovingLeft = true;
+				enemyMove.SetMovingLeft(true);
 				enemyMove.SetDirection(1);
 			}
 		}
@@ -1427,7 +1479,7 @@ namespace game_framework {
 		y = y_pos;
 		step = ini_step = 15;			//預設移動速度
 		direction = dir_horizontal = 1;	//預設方向向左
-		isShooting = isRising = isMovingDown = isMovingLeft = isMovingRight = isMovingUp = false;
+		isFallBack = isShooting = isRising = isMovingDown = isMovingLeft = isMovingRight = isMovingUp = false;
 	}
 
 	void CMove::LoadBitmap_MoveL(char *file)
@@ -1468,12 +1520,12 @@ namespace game_framework {
 		if (isMovingLeft)
 		{
 			x -= step;
-			if (x < 0) x = 0;
+			if (x < 0 && !isFallBack) x = 0;
 		}
 		if (isMovingRight)
 		{
 			x += step;
-			if (x + CmoveL.Width() > 800) x = 800 - CmoveL.Width();
+			if (x + CmoveL.Width() > 800 && !isFallBack) x = 800 - CmoveL.Width();
 		}
 		if (isShooting)
 		{
@@ -1532,6 +1584,8 @@ namespace game_framework {
 	{ 
 		if (!isShooting) isOverlap = flag;
 	}
+
+	void CMove::SetFallBack(bool flag) { isFallBack = flag; }
 
 	void CMove::resetShootAnimation() { CMoveShoot.resetAnimation(); }
 
@@ -2520,6 +2574,7 @@ namespace game_framework {
 		hero.SetRising(false);
 		hero.SetShooting(false);
 		hero.SetOverlap(false);
+		hero.SetLock(false);
 #pragma endregion
 
 		for (loop = 0; loop < maxEnemyNumber; loop++)
@@ -2537,6 +2592,8 @@ namespace game_framework {
 		heroLife.SetInteger(10);
 		stage = 0;
 		isFallBack = false;
+		hero.SetMapXY(0, SIZE_Y - 721);
+		gameMap.setXY(0, 0);
 	}
 
 	void CGameStateRun::OnMove()							// 移動遊戲元素
@@ -2562,6 +2619,8 @@ namespace game_framework {
 		}
 
 
+		if (nowAliveEnemy <= 0) hero.SetOverlap(false);
+
 		if (stage == 0 || stage == 2)		//0、2皆為小兵關卡
 		{
 			if (!isFallBack)				//撤退不生成敵人、子彈、仍會對場上物件做判定
@@ -2571,13 +2630,13 @@ namespace game_framework {
 				//敵人生成控制
 				if (nowAliveEnemy == 0)
 					enemyProduce(1);
-				if (come1EnemyDelay != 0) come1EnemyDelay--;
+				if (come1EnemyDelay > 0) come1EnemyDelay--;
 				else
 				{
 					enemyProduce(1);
 					come1EnemyDelay = const_come1EnemyDelay;
 				}
-				if (come2EnemyDelay != 0) come2EnemyDelay--;
+				if (come2EnemyDelay > 0) come2EnemyDelay--;
 				else
 				{
 					enemyProduce(2);
@@ -2602,6 +2661,7 @@ namespace game_framework {
 			}
 
 			else nowShowEnemy = 0;
+
 #pragma region 敵人和主角攻擊碰撞判定
 
 #pragma region knifeEnemy
@@ -2615,6 +2675,7 @@ namespace game_framework {
 						if (hero.getShooting())						//刀砍，所有重疊的都會死
 						{
 							remainEnemy.Add(-1);
+							nowAliveEnemy--;
 							vecEnemy[loop]->SetDead(true, hero.getDir_hor());
 							vecEnemy[loop]->SetAlive(false);
 						}
@@ -2683,13 +2744,17 @@ namespace game_framework {
 			}
 			else
 			{
-				if (nowShowEnemy == 0) stage++;
+				if (nowShowEnemy == 0)
+				{
+					stage++;							//關卡數++，進入Boss戰
+					remainEnemy.SetInteger(0);			//Boss戰，敵人人數調成0
+				}
 			}
 		}
 
 #pragma endregion
 
-		}
+		}		//stage 0、2
 
 		gameMap.OnMoveBullet();			//雙方子彈移動
 		gameMap.killBullet();			//雙方子彈刪除(超出範圍)
@@ -2722,9 +2787,9 @@ namespace game_framework {
 				vecEnemy[loop]->SetAlive(true);			//設定成存活
 				vecEnemy[loop]->SetGunMode(gunMode);	//設定槍枝種類
 				vecEnemy[loop]->SetID(loop);			//設定探員ID，用來處理位置
-				//test進入位置，目前寫死
-				if (pos == 0) vecEnemy[loop]->SetXY(60 + 8 * loop, 360);
-				else vecEnemy[loop]->SetXY(614 - 8 * loop, 360);
+				//尚有BUG待修改
+				if (pos == 0) vecEnemy[loop]->SetDestination(60 + 5 * loop, 360, pos);
+				else vecEnemy[loop]->SetDestination(614 - 5 * loop, 360, pos);
 				break;
 			}
 		}
