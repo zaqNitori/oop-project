@@ -216,6 +216,7 @@ public:
 	void OnMove(int*, int*);		// 移動
 	void OnShow();					// 將圖形貼到畫面
 	void OnShow_Attack();
+	void SetStep(int);				//Set Speed
 	void SetMovingDown(bool flag);	// 設定是否正在往下移動
 	void SetMovingLeft(bool flag);	// 設定是否正在往左移動
 	void SetMovingRight(bool flag); // 設定是否正在往右移動
@@ -228,6 +229,7 @@ public:
 	void SetXY(int nx, int ny);		// 設定左上角座標
 	void SetOverlap(bool);
 	void SetFallBack(bool);
+	void SetLock(bool);
 	void resetShootAnimation();
 
 protected:
@@ -240,6 +242,7 @@ protected:
 	bool isShooting;				//射擊
 	bool isOverlap;					//跟敵人重疊
 	bool isFallBack;
+	bool isLock;
 	int defaultHeight;
 
 private:
@@ -488,7 +491,7 @@ public:
 	void SetXY(int, int);
 	void SetGunMode(int);				// 0->pistol 1->shotgun 2->machineGun 3->sniper
 	void SetID(int);
-	void SetFallBack(int);
+	void SetFallBack(bool, int);
 	void SetDestination(int, int, int);	//設定進入目的位置
 
 	bool getShootState();
@@ -528,6 +531,39 @@ private:
 
 };
 
+class CBoss
+{
+public:
+	CBoss();
+	~CBoss();
+	void Initialize();
+	void LoadBitmap();
+	void OnMove();
+	void OnShow();
+
+	void AddLife(int);			//deal with boss Life
+
+	int getLife();				//get current boss life
+	bool getShow();				//if boss can show? (isDead||isAlive)
+	bool getDead();				//is boss dead
+	bool getAlive();			//is boss alive
+
+private:
+
+	CMove bossMove;
+	CStand bossStand;
+	CMovingBitmap bossDefault;
+
+	int defaultWidth, defaultHeight;
+	int x, y;				//Boss position
+	int bossLife;			//Boss life
+	int step;				//Boss movement speed
+	bool isMovingLeft;		//Boss Move Left
+	bool isMovingRight;		//Boss Move Right
+	bool isDead;			//Boss dead
+	bool isAlive;			//Boss Alive
+
+};
 
 /////////////////////////////////////////////////////////////////////////////
 // 這個class提供繞圈圈的球
@@ -638,10 +674,14 @@ private:
 	CHero hero;					//主角
 	CGameMap gameMap;			//地圖
 	vector<CEnemy*> vecEnemy;	//敵方軍隊
-	CMovingBitmap enemyImg;
+	CBoss midBoss;
+
+	CMovingBitmap enemyImg;		//敵人ICON
 	CInteger remainEnemy;		//剩餘敵人
-	CMovingBitmap heroImg;
-	CInteger heroLife;
+	CMovingBitmap heroImg;		//主角ICON
+	CInteger heroLife;			//主角剩餘血量
+
+
 	CMovingBitmap goL;
 	CMovingBitmap goR;
 

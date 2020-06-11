@@ -438,7 +438,11 @@ namespace game_framework {
 			heroCrouch.SetOverlap(flag);
 		}
 
-		void CHero::SetLock(bool flag) { isMapLock = flag; }
+		void CHero::SetLock(bool flag) 
+		{ 
+			isMapLock = flag; 
+			heroMove.SetLock(flag);
+		}
 
 	#pragma endregion
 
@@ -759,10 +763,11 @@ namespace game_framework {
 
 		void CEnemy::SetID(int n) { enemyID = n; }
 
-		void CEnemy::SetFallBack(int heroX)
+		void CEnemy::SetFallBack(bool flag, int heroX)
 		{
-			isFallBack = true;
-			enemyMove.SetFallBack(true);
+			isFallBack = flag;
+			enemyMove.SetFallBack(flag);
+			if (!isFallBack) return;
 			if (x >= heroX)
 			{
 				isMovingRight = true;
@@ -801,6 +806,95 @@ namespace game_framework {
 
 	//CEnemy
 #pragma endregion
+
+#pragma region CBoss
+
+		CBoss::CBoss()
+		{
+			Initialize();
+		}
+
+		CBoss::~CBoss() { ; }
+
+		void CBoss::Initialize()
+		{
+			isDead = isAlive = false;
+			x = y = 0;
+			bossLife = 10;
+			step = 20;
+			bossMove.SetStep(step);
+		}
+
+		void CBoss::LoadBitmap()
+		{
+			char *fileStandL[] = { ".\\image\\midBoss\\stand\\L1.bmp" };
+			char *fileStandR[] = { ".\\image\\midBoss\\stand\\R1.bmp" };
+			char *fileRunL[] = { ".\\image\\midBoss\\run\\L1.bmp" , ".\\image\\midBoss\\run\\L2.bmp" 
+				, ".\\image\\midBoss\\run\\L3.bmp" , ".\\image\\midBoss\\run\\L4.bmp" };
+			char *fileRunR[] = { ".\\image\\midBoss\\run\\R1.bmp" , ".\\image\\midBoss\\run\\R2.bmp"
+				, ".\\image\\midBoss\\run\\R3.bmp" , ".\\image\\midBoss\\run\\R4.bmp" };
+			bossDefault.LoadBitmap(fileStandL[0]);
+			bossStand.LoadBitmap_StandL(fileStandL[0]);
+			bossStand.LoadBitmap_StandR(fileStandR[0]);
+			for (int i = 0; i < 4; i++)
+			{
+				bossMove.LoadBitmap_MoveL(fileRunL[i]);
+				bossMove.LoadBitmap_MoveR(fileRunR[i]);
+			}
+			defaultWidth = bossDefault.Width();
+			defaultHeight = bossDefault.Height();
+		}
+
+		void CBoss::OnMove()
+		{
+			bossMove.OnMove(&x, &y);
+			if (x <= 0) 
+			{
+				/*isMovingRight = true;
+				isMovingLeft = false;*/
+				bossMove.SetMovingLeft(false);
+				bossMove.SetMovingRight(true);
+				bossMove.SetDirection(2);
+			}
+			else if (x >= 800 - defaultWidth)
+			{
+				/*isMovingLeft = true;
+				isMovingRight = false;*/
+				bossMove.SetMovingLeft(true);
+				bossMove.SetMovingRight(false);
+				bossMove.SetDirection(1);
+			}
+			
+		}
+
+		void CBoss::OnShow()
+		{
+			bossMove.SetXY(x, y);
+			bossMove.OnShow();
+		}
+
+		void CBoss::AddLife(int n) 
+		{
+			bossLife += n; 
+			if (bossLife <= 0) 
+			{
+				isAlive = false;
+				isDead = true;
+			}
+		}
+
+		int CBoss::getLife() { return bossLife; }
+
+		bool CBoss::getAlive() { return isAlive; }
+
+		bool CBoss::getDead() { return isDead; }
+
+		bool CBoss::getShow() { return (isDead || isAlive); }
+
+	//CBoss
+#pragma endregion
+
+
 
 
 
@@ -1479,7 +1573,7 @@ namespace game_framework {
 		y = y_pos;
 		step = ini_step = 15;			//預設移動速度
 		direction = dir_horizontal = 1;	//預設方向向左
-		isFallBack = isShooting = isRising = isMovingDown = isMovingLeft = isMovingRight = isMovingUp = false;
+		isLock = isFallBack = isShooting = isRising = isMovingDown = isMovingLeft = isMovingRight = isMovingUp = false;
 	}
 
 	void CMove::LoadBitmap_MoveL(char *file)
@@ -1514,18 +1608,17 @@ namespace game_framework {
 
 	void CMove::OnMove(int* nx, int* ny)
 	{
-		step = ini_step;
 		x = *nx;
 		y = *ny;
 		if (isMovingLeft)
 		{
 			x -= step;
-			if (x < 0 && !isFallBack) x = 0;
+			if (x < 0 && isLock) x = 0;
 		}
 		if (isMovingRight)
 		{
 			x += step;
-			if (x + CmoveL.Width() > 800 && !isFallBack) x = 800 - CmoveL.Width();
+			if (x + CmoveL.Width() > 800 && isLock) x = 800 - CmoveL.Width();
 		}
 		if (isShooting)
 		{
@@ -1563,6 +1656,8 @@ namespace game_framework {
 
 #pragma region SetState
 
+	void CMove::SetStep(int speed) { step = speed; }
+
 	void CMove::SetDefaultHeight(int _height)
 	{
 		defaultHeight = _height;
@@ -1586,6 +1681,8 @@ namespace game_framework {
 	}
 
 	void CMove::SetFallBack(bool flag) { isFallBack = flag; }
+
+	void CMove::SetLock(bool flag) { isLock = flag; }
 
 	void CMove::resetShootAnimation() { CMoveShoot.resetAnimation(); }
 
@@ -2562,10 +2659,11 @@ namespace game_framework {
 		//CAudio::Instance()->Play(AUDIO_enemyDead, false);			// 撥放 敵人死亡
 		CAudio::Instance()->Play(AUDIO_BGM_normal, true);			// 撥放 背景音樂
 
-		gameMap.Initialize();
-		gameMap.InitialBullet();
+		gameMap.Initialize();		//重製地圖
+		gameMap.InitialBullet();	//重製地圖物件
 		hero.SetGameMap(&gameMap);
 
+		//重製主角狀態
 #pragma region heroStateReset
 		hero.SetMovingDown(false);
 		hero.SetMovingLeft(false);
@@ -2575,25 +2673,25 @@ namespace game_framework {
 		hero.SetShooting(false);
 		hero.SetOverlap(false);
 		hero.SetLock(false);
+		hero.SetMapXY(0, SIZE_Y - 721);
+		heroLife.SetInteger(10);
 #pragma endregion
 
 		for (loop = 0; loop < maxEnemyNumber; loop++)
-			vecEnemy[loop]->Initialize();
+			vecEnemy[loop]->Initialize();		//重新初始化敵人
 
-		nowAliveEnemy = 0;
+		nowAliveEnemy = 0;				//清空場上敵人數
 
-		seed = (unsigned)time(NULL);
-		srand(seed);
-		mapX = mapY = 0;
+		seed = (unsigned)time(NULL);	//亂數設置
+		srand(seed);					//亂數種子設置
+		mapX = mapY = 0;				//地圖座標
 
 		const_come1EnemyDelay = come1EnemyDelay = 50;
 		const_come2EnemyDelay = come2EnemyDelay = 75;
 		remainEnemy.SetInteger(maxEnemyNumber);
-		heroLife.SetInteger(10);
-		stage = 0;
-		isFallBack = false;
-		hero.SetMapXY(0, SIZE_Y - 721);
-		gameMap.setXY(0, 0);
+		stage = 0;					//關卡設置為0
+		isFallBack = false;			//目前沒有撤退
+		gameMap.setXY(0, 0);		//地圖座標(0,0)
 	}
 
 	void CGameStateRun::OnMove()							// 移動遊戲元素
@@ -2659,8 +2757,7 @@ namespace game_framework {
 #pragma endregion
 
 			}
-
-			else nowShowEnemy = 0;
+			else nowShowEnemy = 0;		//isFallBack = true
 
 #pragma region 敵人和主角攻擊碰撞判定
 
@@ -2672,7 +2769,7 @@ namespace game_framework {
 				{
 					if (hero.isOverlapEnemy(vecEnemy[loop]))		//沒有重疊已經寫在裡面
 					{
-						if (hero.getShooting())						//刀砍，所有重疊的都會死
+						if (hero.getShooting() && hero.getOverlap())	//刀砍，所有重疊的都會死
 						{
 							remainEnemy.Add(-1);
 							nowAliveEnemy--;
@@ -2739,7 +2836,7 @@ namespace game_framework {
 				for (loop = 0; loop < maxEnemyNumber; loop++)
 				{
 					if (vecEnemy[loop]->getAlive())
-						vecEnemy[loop]->SetFallBack(hero.getX1());
+						vecEnemy[loop]->SetFallBack(true, hero.getX1());
 				}
 			}
 			else
@@ -2756,6 +2853,12 @@ namespace game_framework {
 
 		}		//stage 0、2
 
+		if (stage == 4)
+		{
+			CAudio::Instance()->Stop(AUDIO_BGM_normal);
+			GotoGameState(GAME_STATE_OVER);
+		}
+
 		gameMap.OnMoveBullet();			//雙方子彈移動
 		gameMap.killBullet();			//雙方子彈刪除(超出範圍)
 		hero.OnMove();					//主角移動
@@ -2763,13 +2866,15 @@ namespace game_framework {
 #pragma region endGame
 		if (heroLife.GetInteger() <= 0)
 		{
-			CAudio::Instance()->Stop(AUDIO_BGM_normal);
+			//CAudio::Instance()->Stop(AUDIO_BGM_normal);
 			//GotoGameState(GAME_STATE_OVER);
 		}
 
 #pragma endregion
 
-	}
+		midBoss.OnMove();
+
+	}	//OnMove
 
 	void CGameStateRun::enemyProduce(int n)
 	{
@@ -2793,9 +2898,8 @@ namespace game_framework {
 				break;
 			}
 		}
-
 #pragma endregion
-	}
+	}		//enemyProduce
 
 	void CGameStateRun::OnInit()  								// 遊戲的初值及圖形設定
 	{
@@ -2849,6 +2953,8 @@ namespace game_framework {
 		enemyImg.SetTopLeft(0, 0);
 		remainEnemy.SetTopLeft(enemyImg.Width() + 10, 0);
 		
+		midBoss.LoadBitmap();
+
 		CAudio::Instance()->Load(AUDIO_heroJump, "sounds\\heroJump.mp3");		// 載入編號0的聲音ding.wav
 		CAudio::Instance()->Load(AUDIO_enemyDead, "sounds\\enemyDead.mp3");		// 載入編號1的聲音lake.mp3
 		CAudio::Instance()->Load(AUDIO_BGM_normal, "sounds\\BGM_normal.mp3");	// 載入編號2的聲音ntut.mid
@@ -2906,6 +3012,17 @@ namespace game_framework {
 		}
 		if (nChar == KEY_Q)
 		{
+			if (stage == 1 || stage == 3)
+			{
+				stage++;
+				isFallBack = false;
+				hero.SetLock(false);
+				remainEnemy.SetInteger(maxEnemyNumber);
+				for (loop = 0; loop < maxEnemyNumber; loop++)
+				{
+					vecEnemy[loop]->Initialize();
+				}
+			}
 		}
 		if (nChar == KEY_R)
 		{
@@ -2998,6 +3115,8 @@ namespace game_framework {
 
 		for (loop = 0; loop < maxEnemyNumber; loop++)
 			if (vecEnemy[loop]->isShow()) vecEnemy[loop]->OnShow();
+
+		midBoss.OnShow();
 
 		hero.OnShow();
 		gameMap.OnShowBullet();
