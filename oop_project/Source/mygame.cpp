@@ -1327,8 +1327,8 @@ namespace game_framework {
 
 	void CMovie::Initialize()
 	{
-		nowBG = 1;
-		changeBG = false;
+		nowBG = bg1Stage = 1;
+		bg1CanGoNextStage = changeBG = false;
 		showMovie = true;
 		kidWave.SetDelayCount(3);
 		heroWake.SetDelayCount(10);
@@ -1373,20 +1373,59 @@ namespace game_framework {
 
 		if (nowBG == 1)
 		{
-			x -= 120;
-			y += 40;
-			spaceShipCrash.OnMove();
+			switch (bg1Stage)
+			{
+			case 1:
+				x -= 70;
+				y += 50;
+				spaceShipCrash.OnMove();
+				break;
+			case 2:
+				if (bg1CanGoNextStage)
+				{
+					if (delay > 0) delay--;
+					else
+					{
+						delay = const_delay;
+						bg1Stage++;
+						bg1CanGoNextStage = false;
+					}
+				}
+				else spaceShipExplode.OnMove();
+				break;
+			case 3:
+				if (delay > 0) delay--;
+				else
+				{
+					delay = const_delay;
+					bg1Stage++;
+				}
+				break;
+			case 4:
+				x += 30;
+				y += 25;
+				break;
+			default:
+				break;
+			}
+			if ((x < -(spaceShip.Width()) || y>600) && bg1Stage == 1)	//切換條件
+			{
+				bg1Stage++;
+				x = 800 - enemyShow.Width();
+				y = 600 - enemyShow.Height();
+			}
+			else if ((x > 800 || y > 600) && bg1Stage == 4) changeBG = true;
 		}
 		else if (nowBG == 2 || nowBG == 4)
 		{
 			if (nowBG == 2)
 			{
-				heroWake.OnMove();
+				if (!changeBG) heroWake.OnMove();
 				if (heroWake.IsFinalBitmap()) changeBG = true;
 			}
 			else
 			{
-				heroWake2.OnMove();
+				if (showMovie) heroWake2.OnMove();
 				if (heroWake2.IsFinalBitmap()) changeBG = true;
 			}
 			
@@ -1404,9 +1443,13 @@ namespace game_framework {
 
 	}
 
-	void CMovie::nowBGAdd()
+	void CMovie::resetAnimation()
 	{
-		nowBG++;
+		spaceShipCrash.Reset();
+		spaceShipExplode.Reset();
+		kidWave.Reset();
+		heroWake.Reset();
+		heroWake2.Reset();
 	}
 
 	bool CMovie::OnShow()
@@ -1417,9 +1460,32 @@ namespace game_framework {
 			bg1_1.SetTopLeft(800 - bg1_1.Width(), bg1.Height() - bg1_1.Height());
 			bg1.ShowBitmap();
 			bg1_1.ShowBitmap();
-			spaceShip.SetTopLeft(x, y);
-			spaceShip.ShowBitmap();
-			spaceShipCrash.OnShow();
+			switch (bg1Stage)
+			{
+			case 1:				//bg1 第一部分 UFO墜毀
+				spaceShip.SetTopLeft(x, y);
+				spaceShip.ShowBitmap();
+				spaceShipCrash.SetTopLeft(x + spaceShip.Width(), y - spaceShipCrash.Height());
+				spaceShipCrash.OnShow();
+				break;
+			case 2:				//bg1 第二部分 ufo爆炸
+				spaceShipExplode.SetTopLeft(0, 600 - spaceShipExplode.Height());
+				if (!bg1CanGoNextStage) spaceShipExplode.OnShow();
+				if (spaceShipExplode.IsFinalBitmap()) bg1CanGoNextStage = true;
+				break;
+			case 3:				//bg1 第三部分 FBI出現
+				enemyShow.SetTopLeft(x, y);
+				enemyShow.ShowBitmap();
+				break;
+			case 4:				//bg1 第四部分 FBI離開
+				enemyGone.SetTopLeft(800 - enemyShow.Width() + 50, 600 - enemyGone.Height());
+				enemyGone.ShowBitmap();
+				enemyShow.SetTopLeft(x, y);
+				enemyShow.ShowBitmap();
+				break;
+			default:
+				break;
+			}
 		}
 		else if (nowBG == 2 || nowBG == 4)
 		{
@@ -1445,18 +1511,29 @@ namespace game_framework {
 		}
 		if (changeBG)
 		{
-			changeBG = false;
-			if (nowBG == 2) heroWake.Reset();
-			else if (nowBG == 3) kidWave.Reset();
-			else if (nowBG == 4)
+			if (nowBG == 4) showMovie = false;			//結束動畫
+			else
 			{
-				heroWake2.Reset();
-				nowBG = 0;					//重製動畫片段
-				showMovie = false;			//結束動畫
+				if (delay > 0) delay--;
+				else
+				{
+					delay = const_delay;
+					changeBG = false;
+					nowBG++;
+				}
 			}
-			nowBG++;
 		}
-		return showMovie;
+		if (!showMovie)
+		{
+			if (delay > 0) delay--;
+			else
+			{
+				delay = const_delay;
+				resetAnimation();
+				return false;
+			}
+		}
+		return true;
 	}
 
 	//CMovie
@@ -2623,6 +2700,7 @@ namespace game_framework {
 
 		showMovie = true;
 		movie.Initialize();
+		movie.resetAnimation();
 	}
 
 	void CGameStateRun::OnMove()							// 移動遊戲元素
@@ -2950,7 +3028,7 @@ namespace game_framework {
 		}
 		if (nChar == KEY_Q)
 		{
-			movie.nowBGAdd();
+			if (showMovie) showMovie = false;
 			if (stage == 1 || stage == 3)
 			{
 				stage++;

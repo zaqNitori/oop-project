@@ -184,8 +184,8 @@ public:
 	~CMovie();
 	void Initialize();
 	void LoadBitmap();
-	void nowBGAdd();		//´ú¸Õ¥Î
 	void OnMove();
+	void resetAnimation();
 	bool OnShow();
 
 private:
@@ -202,11 +202,14 @@ private:
 	CAnimation heroWake;				//wake up action
 	CAnimation heroWake2;				//wake up second
 	CAnimation kidWave;					//wave hand action
+
 	bool showMovie;
 	bool changeBG;
+	bool bg1CanGoNextStage;
 	const int const_delay = 30;
 	int delay;
 	int x, y;
+	int bg1Stage;
 	int nowBG;							//toShow which background
 
 
