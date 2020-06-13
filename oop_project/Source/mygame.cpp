@@ -507,6 +507,9 @@ namespace game_framework {
 	//CHero
 #pragma endregion
 
+/////////////////////////////////////////////////////////////////////////////
+// CEnemy: Enemy class
+/////////////////////////////////////////////////////////////////////////////
 
 #pragma region CEnemy
 
@@ -807,6 +810,10 @@ namespace game_framework {
 	//CEnemy
 #pragma endregion
 
+/////////////////////////////////////////////////////////////////////////////
+// CBoss: Boss class
+/////////////////////////////////////////////////////////////////////////////
+
 #pragma region CBoss
 
 		CBoss::CBoss()
@@ -894,102 +901,9 @@ namespace game_framework {
 	//CBoss
 #pragma endregion
 
-
-
-
-
-
 /////////////////////////////////////////////////////////////////////////////
-// CBall: Ball class
+// CBullet: bullet class
 /////////////////////////////////////////////////////////////////////////////
-
-#pragma region CBall
-
-	CBall::CBall()
-	{
-		is_alive = true;
-		x = y = dx = dy = index = delay_counter = 0;
-	}
-
-	bool CBall::HitEraser(CEraser *eraser)
-	{
-		// 檢測擦子所構成的矩形是否碰到球
-		return HitRectangle(eraser->GetX1(), eraser->GetY1(),
-			eraser->GetX2(), eraser->GetY2());
-	}
-
-	bool CBall::HitRectangle(int tx1, int ty1, int tx2, int ty2)
-	{
-		int x1 = x + dx;				// 球的左上角x座標
-		int y1 = y + dy;				// 球的左上角y座標
-		int x2 = x1 + bmp.Width();	// 球的右下角x座標
-		int y2 = y1 + bmp.Height();	// 球的右下角y座標
-		//
-		// 檢測球的矩形與參數矩形是否有交集
-		//
-		return (tx2 >= x1 && tx1 <= x2 && ty2 >= y1 && ty1 <= y2);
-	}
-
-	bool CBall::IsAlive()
-	{
-		return is_alive;
-	}
-
-	void CBall::LoadBitmap()
-	{
-		bmp.LoadBitmap(IDB_BALL, RGB(0, 0, 0));			// 載入球的圖形
-		bmp_center.LoadBitmap(IDB_CENTER, RGB(0, 0, 0));	// 載入球圓心的圖形
-	}
-
-	void CBall::OnMove()
-	{
-		if (!is_alive)
-			return;
-		delay_counter--;
-		if (delay_counter < 0) {
-			delay_counter = delay;
-			//
-			// 計算球向對於圓心的位移量dx, dy
-			//
-			const int STEPS = 18;
-			static const int DIFFX[] = { 35, 32, 26, 17, 6, -6, -17, -26, -32, -34, -32, -26, -17, -6, 6, 17, 26, 32, };
-			static const int DIFFY[] = { 0, 11, 22, 30, 34, 34, 30, 22, 11, 0, -11, -22, -30, -34, -34, -30, -22, -11, };
-			index++;
-			if (index >= STEPS)
-				index = 0;
-			dx = DIFFX[index];
-			dy = DIFFY[index];
-		}
-	}
-
-	void CBall::SetDelay(int d)
-	{
-		delay = d;
-	}
-
-	void CBall::SetIsAlive(bool alive)
-	{
-		is_alive = alive;
-	}
-
-	void CBall::SetXY(int nx, int ny)
-	{
-		x = nx; y = ny;
-	}
-
-	void CBall::OnShow()
-	{
-		if (is_alive) {
-			bmp.SetTopLeft(x + dx, y + dy);
-			bmp.ShowBitmap();
-			bmp_center.SetTopLeft(x, y);
-			bmp_center.ShowBitmap();
-		}
-	}
-
-	//CBall
-#pragma endregion
-
 
 #pragma region CBullet
 	CBullet::CBullet(void) {}
@@ -1128,8 +1042,6 @@ namespace game_framework {
 
 	//CBullet
 #pragma endregion
-
-
 
 /////////////////////////////////////////////////////////////////////////////
 // CGameMap: GameMap class
@@ -1400,165 +1312,162 @@ namespace game_framework {
 	//CGameMap
 #pragma endregion
 
-
-
 /////////////////////////////////////////////////////////////////////////////
-// CBouncingBall: BouncingBall class
-/////////////////////////////////////////////////////////////////////////////
-	
-#pragma region CBouncingBall
-
-	CBouncingBall::CBouncingBall()
-	{
-		const int INITIAL_VELOCITY = 20;	// 初始上升速度
-		const int FLOOR = 400;				// 地板座標
-		floor = FLOOR;
-		x = 95; y = FLOOR - 1;				// y座標比地板高1點(站在地板上)
-		rising = true;
-		initial_velocity = INITIAL_VELOCITY;
-		velocity = initial_velocity;
-	}
-
-	void CBouncingBall::LoadBitmap()
-	{
-		char *filename[4] = { ".\\bitmaps\\ball1.bmp",".\\bitmaps\\ball2.bmp",".\\bitmaps\\ball3.bmp",".\\bitmaps\\ball4.bmp" };
-		for (int i = 0; i < 4; i++)	// 載入動畫(由4張圖形構成)
-			animation.AddBitmap(filename[i], RGB(0, 0, 0));
-	}
-
-	void CBouncingBall::OnMove()
-	{
-		if (rising) {			// 上升狀態
-			if (velocity > 0) {
-				y -= velocity;	// 當速度 > 0時，y軸上升(移動velocity個點，velocity的單位為 點/次)
-				velocity--;		// 受重力影響，下次的上升速度降低
-			}
-			else {
-				rising = false; // 當速度 <= 0，上升終止，下次改為下降
-				velocity = 1;	// 下降的初速(velocity)為1
-			}
-		}
-		else {				// 下降狀態
-			if (y < floor - 1) {  // 當y座標還沒碰到地板
-				y += velocity;	// y軸下降(移動velocity個點，velocity的單位為 點/次)
-				velocity++;		// 受重力影響，下次的下降速度增加
-			}
-			else {
-				y = floor - 1;  // 當y座標低於地板，更正為地板上
-				rising = true;	// 探底反彈，下次改為上升
-				velocity = initial_velocity; // 重設上升初始速度
-			}
-		}
-		animation.OnMove();		// 執行一次animation.OnMove()，animation才會換圖
-	}
-
-	void CBouncingBall::OnShow()
-	{
-		animation.SetTopLeft(x, y);
-		animation.OnShow();
-	}
-
-	//CbouncingBall
-#pragma endregion
-
-
-/////////////////////////////////////////////////////////////////////////////
-// CEraser: Eraser class
+// CMovie: movie class
 /////////////////////////////////////////////////////////////////////////////
 
-#pragma region CEraser
+#pragma region CMovie
 
-	CEraser::CEraser()
+	CMovie::CMovie()
 	{
 		Initialize();
 	}
 
-	int CEraser::GetX1()
+	CMovie::~CMovie() {}
+
+	void CMovie::Initialize()
 	{
-		return x;
+		nowBG = 1;
+		changeBG = false;
+		showMovie = true;
+		kidWave.SetDelayCount(3);
+		heroWake.SetDelayCount(10);
+		heroWake2.SetDelayCount(10);
+		spaceShipCrash.SetDelayCount(5);
+		spaceShipExplode.SetDelayCount(5);
+		delay = const_delay;
+		x = 800;
+		y = -50;
 	}
 
-	int CEraser::GetY1()
+	void CMovie::LoadBitmap()
 	{
-		return y;
+		bg1.LoadBitmap(".\\image\\movie\\bg1.bmp");
+		bg1_1.LoadBitmap(".\\image\\movie\\bg1-1.bmp", Black);
+		bg2.LoadBitmap(".\\image\\movie\\bg2.bmp");
+		bg3.LoadBitmap(".\\image\\movie\\bg3.bmp");
+		enemyShow.LoadBitmap(".\\image\\movie\\e1-1.bmp", Black);
+		enemyGone.LoadBitmap(".\\image\\movie\\e1-2.bmp", Black);
+		spaceShip.LoadBitmap(".\\image\\movie\\spaceship.bmp", Black);
+		char *fileCrash[] = { ".\\image\\movie\\crash1.bmp" , ".\\image\\movie\\crash2.bmp" , ".\\image\\movie\\crash3.bmp"
+			,".\\image\\movie\\crash4.bmp" , ".\\image\\movie\\crash5.bmp" , ".\\image\\movie\\crash6.bmp" };
+		char *fileExplode[] = { ".\\image\\movie\\explode1.bmp" , ".\\image\\movie\\explode2.bmp" , ".\\image\\movie\\explode3.bmp"
+			,".\\image\\movie\\explode4.bmp" , ".\\image\\movie\\explode5.bmp" , ".\\image\\movie\\explode6.bmp" };
+		char *fileWake[] = { ".\\image\\movie\\wakeup1.bmp" , ".\\image\\movie\\wakeup2.bmp" , ".\\image\\movie\\wakeup3.bmp"
+			,".\\image\\movie\\wakeup4.bmp" , ".\\image\\movie\\wakeup5.bmp" };
+		char *fileWave[] = { ".\\image\\movie\\wavehand1.bmp" , ".\\image\\movie\\wavehand2.bmp" , ".\\image\\movie\\wavehand3.bmp"
+			,".\\image\\movie\\wavehand4.bmp" , ".\\image\\movie\\wavehand5.bmp" , ".\\image\\movie\\wavehand6.bmp" };
+		for (int i = 0; i < 6; i++)
+		{
+			spaceShipCrash.AddBitmap(fileCrash[i], Black);
+			spaceShipExplode.AddBitmap(fileExplode[i], Black);
+			kidWave.AddBitmap(fileWave[i], Black);
+			if (i < 5) heroWake.AddBitmap(fileWake[i], Black);
+			if (i != 0 && i != 5) heroWake2.AddBitmap(fileWake[i], Black);
+		}
+	
 	}
 
-	int CEraser::GetX2()
+	void CMovie::OnMove()
 	{
-		return x + animation.Width();
+
+		if (nowBG == 1)
+		{
+			x -= 120;
+			y += 40;
+			spaceShipCrash.OnMove();
+		}
+		else if (nowBG == 2 || nowBG == 4)
+		{
+			if (nowBG == 2)
+			{
+				heroWake.OnMove();
+				if (heroWake.IsFinalBitmap()) changeBG = true;
+			}
+			else
+			{
+				heroWake2.OnMove();
+				if (heroWake2.IsFinalBitmap()) changeBG = true;
+			}
+			
+		}
+		else
+		{
+			kidWave.OnMove();
+			if (delay > 0) delay--;
+			else
+			{
+				changeBG = true;
+				delay = const_delay;
+			}
+		}
+
 	}
 
-	int CEraser::GetY2()
+	void CMovie::nowBGAdd()
 	{
-		return y + animation.Height();
+		nowBG++;
 	}
 
-	void CEraser::Initialize()
+	bool CMovie::OnShow()
 	{
-		const int X_POS = 280;
-		const int Y_POS = 400;
-		x = X_POS;
-		y = Y_POS;
-		isMovingLeft = isMovingRight = isMovingUp = isMovingDown = false;
+		if (nowBG == 1)
+		{
+			bg1.SetTopLeft(0, 0);
+			bg1_1.SetTopLeft(800 - bg1_1.Width(), bg1.Height() - bg1_1.Height());
+			bg1.ShowBitmap();
+			bg1_1.ShowBitmap();
+			spaceShip.SetTopLeft(x, y);
+			spaceShip.ShowBitmap();
+			spaceShipCrash.OnShow();
+		}
+		else if (nowBG == 2 || nowBG == 4)
+		{
+			bg2.SetTopLeft(0, 0);
+			bg2.ShowBitmap();
+			if (nowBG == 2)
+			{
+				heroWake.SetTopLeft(45, 150);
+				heroWake.OnShow();
+			}
+			else
+			{
+				heroWake2.SetTopLeft(45, 150);
+				heroWake2.OnShow();
+			}
+		}
+		else if (nowBG == 3)
+		{
+			bg3.SetTopLeft(0, 0);
+			bg3.ShowBitmap();
+			kidWave.SetTopLeft(380, 190);
+			kidWave.OnShow();
+		}
+		if (changeBG)
+		{
+			changeBG = false;
+			if (nowBG == 2) heroWake.Reset();
+			else if (nowBG == 3) kidWave.Reset();
+			else if (nowBG == 4)
+			{
+				heroWake2.Reset();
+				nowBG = 0;					//重製動畫片段
+				showMovie = false;			//結束動畫
+			}
+			nowBG++;
+		}
+		return showMovie;
 	}
 
-	void CEraser::LoadBitmap()
-	{
-		animation.AddBitmap(IDB_ERASER1, RGB(255, 255, 255));
-		animation.AddBitmap(IDB_ERASER2, RGB(255, 255, 255));
-		animation.AddBitmap(IDB_ERASER3, RGB(255, 255, 255));
-		animation.AddBitmap(IDB_ERASER2, RGB(255, 255, 255));
-	}
-
-	void CEraser::OnMove()
-	{
-		const int STEP_SIZE = 15;
-		animation.OnMove();
-		if (isMovingLeft)
-			x -= STEP_SIZE;
-		if (isMovingRight)
-			x += STEP_SIZE;
-		if (isMovingUp)
-			y -= STEP_SIZE;
-		if (isMovingDown)
-			y += STEP_SIZE;
-	}
-
-	void CEraser::SetMovingDown(bool flag)
-	{
-		isMovingDown = flag;
-	}
-
-	void CEraser::SetMovingLeft(bool flag)
-	{
-		isMovingLeft = flag;
-	}
-
-	void CEraser::SetMovingRight(bool flag)
-	{
-		isMovingRight = flag;
-	}
-
-	void CEraser::SetMovingUp(bool flag)
-	{
-		isMovingUp = flag;
-	}
-
-	void CEraser::SetXY(int nx, int ny)
-	{
-		x = nx; y = ny;
-	}
-
-	void CEraser::OnShow()
-	{
-		animation.SetTopLeft(x, y);
-		animation.OnShow();
-	}
-	//CEraser
+	//CMovie
 #pragma endregion
 
-#pragma region CMove
 
+/////////////////////////////////////////////////////////////////////////////
+// CMove: move class
+/////////////////////////////////////////////////////////////////////////////
+
+#pragma region CMove
 
 	CMove::CMove()
 	{
@@ -1757,6 +1666,10 @@ namespace game_framework {
 	//CMove
 #pragma endregion
 
+/////////////////////////////////////////////////////////////////////////////
+// CStand: stand class
+/////////////////////////////////////////////////////////////////////////////
+
 #pragma region CStand
 
 	CStand::CStand()
@@ -1862,6 +1775,10 @@ namespace game_framework {
 
 	//CStand
 #pragma endregion
+
+/////////////////////////////////////////////////////////////////////////////
+// CJump: jump class
+/////////////////////////////////////////////////////////////////////////////
 
 #pragma region CJump
 
@@ -2072,6 +1989,10 @@ namespace game_framework {
 	//CJump
 #pragma endregion
 
+/////////////////////////////////////////////////////////////////////////////
+// CCrouch: crouch class
+/////////////////////////////////////////////////////////////////////////////
+
 #pragma region CCrouch
 
 	CCrouch::CCrouch()
@@ -2227,6 +2148,10 @@ namespace game_framework {
 	//CCrouch
 #pragma endregion
 
+/////////////////////////////////////////////////////////////////////////////
+// CAttack: attack class
+/////////////////////////////////////////////////////////////////////////////
+
 #pragma region CAttack
 
 	CAttack::CAttack()
@@ -2334,6 +2259,10 @@ namespace game_framework {
 	//CShoot
 #pragma endregion
 
+/////////////////////////////////////////////////////////////////////////////
+// CDead: dead class
+/////////////////////////////////////////////////////////////////////////////
+
 #pragma region CDead
 
 	CDead::CDead()
@@ -2414,7 +2343,6 @@ namespace game_framework {
 
 	//CDead
 #pragma endregion
-
 
 /////////////////////////////////////////////////////////////////////////////
 // 這個class為遊戲的遊戲開頭畫面物件
@@ -2692,6 +2620,9 @@ namespace game_framework {
 		stage = 0;					//關卡設置為0
 		isFallBack = false;			//目前沒有撤退
 		gameMap.setXY(0, 0);		//地圖座標(0,0)
+
+		showMovie = true;
+		movie.Initialize();
 	}
 
 	void CGameStateRun::OnMove()							// 移動遊戲元素
@@ -2699,6 +2630,11 @@ namespace game_framework {
 		// 如果希望修改cursor的樣式，則將下面程式的commment取消即可
 		// SetCursor(AfxGetApp()->LoadCursor(IDC_GAMECURSOR));
 		
+		if (showMovie)
+		{
+			movie.OnMove();
+			return;
+		}
 
 		mapX = gameMap.getX();			//-2040、小boss
 		mapY = gameMap.getY();
@@ -2955,6 +2891,8 @@ namespace game_framework {
 		
 		midBoss.LoadBitmap();
 
+		movie.LoadBitmap();
+
 		CAudio::Instance()->Load(AUDIO_heroJump, "sounds\\heroJump.mp3");		// 載入編號0的聲音ding.wav
 		CAudio::Instance()->Load(AUDIO_enemyDead, "sounds\\enemyDead.mp3");		// 載入編號1的聲音lake.mp3
 		CAudio::Instance()->Load(AUDIO_BGM_normal, "sounds\\BGM_normal.mp3");	// 載入編號2的聲音ntut.mid
@@ -3012,6 +2950,7 @@ namespace game_framework {
 		}
 		if (nChar == KEY_Q)
 		{
+			movie.nowBGAdd();
 			if (stage == 1 || stage == 3)
 			{
 				stage++;
@@ -3099,6 +3038,13 @@ namespace game_framework {
 
 	void CGameStateRun::OnShow()
 	{
+
+		if (showMovie)
+		{
+			showMovie = movie.OnShow();
+			return;
+		}
+
 		gameMap.OnShow();
 
 #pragma region mapInstruction

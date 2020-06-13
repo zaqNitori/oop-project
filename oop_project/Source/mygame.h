@@ -87,6 +87,10 @@ private:
 
 };
 
+/////////////////////////////////////////////////////////////////////////////
+// 這個class處理攻擊動作
+/////////////////////////////////////////////////////////////////////////////
+
 class CAttack				//此為動作執行的class
 {
 public:
@@ -121,7 +125,7 @@ private:
 };
 
 /////////////////////////////////////////////////////////////////////////////
-// 這個class提供背景地圖,並不會移動(不是camera)
+// 這個class提供背景地圖
 /////////////////////////////////////////////////////////////////////////////
 
 class CGameMap
@@ -170,37 +174,47 @@ private:
 };
 
 /////////////////////////////////////////////////////////////////////////////
-// 這個class提供可以用鍵盤或滑鼠控制的擦子
-// 看懂就可以改寫成自己的程式了
+// 這個class處理開場動畫
 /////////////////////////////////////////////////////////////////////////////
 
-#pragma region CEraser
-class CEraser
+class CMovie
 {
 public:
-	CEraser();
-	int  GetX1();					// 擦子左上角 x 座標
-	int  GetY1();					// 擦子左上角 y 座標
-	int  GetX2();					// 擦子右下角 x 座標
-	int  GetY2();					// 擦子右下角 y 座標
-	void Initialize();				// 設定擦子為初始值
-	void LoadBitmap();				// 載入圖形
-	void OnMove();					// 移動擦子
-	void OnShow();					// 將擦子圖形貼到畫面
-	void SetMovingDown(bool flag);	// 設定是否正在往下移動
-	void SetMovingLeft(bool flag);	// 設定是否正在往左移動
-	void SetMovingRight(bool flag); // 設定是否正在往右移動
-	void SetMovingUp(bool flag);	// 設定是否正在往上移動
-	void SetXY(int nx, int ny);		// 設定擦子左上角座標
-protected:
-	CAnimation animation;		// 擦子的動畫
-	int x, y;					// 擦子左上角座標
-	bool isMovingDown;			// 是否正在往下移動
-	bool isMovingLeft;			// 是否正在往左移動
-	bool isMovingRight;			// 是否正在往右移動
-	bool isMovingUp;			// 是否正在往上移動
+	CMovie();
+	~CMovie();
+	void Initialize();
+	void LoadBitmap();
+	void nowBGAdd();		//測試用
+	void OnMove();
+	bool OnShow();
+
+private:
+
+	CMovingBitmap bg1;					//background1
+	CMovingBitmap bg1_1;				//combine with background1
+	CMovingBitmap enemyShow;			//enemy show
+	CMovingBitmap enemyGone;			//enemy gone
+	CMovingBitmap bg2;					//background2
+	CMovingBitmap bg3;					//background3
+	CMovingBitmap spaceShip;			//spaceship img
+	CAnimation spaceShipCrash;			//crash action
+	CAnimation spaceShipExplode;		//boom action
+	CAnimation heroWake;				//wake up action
+	CAnimation heroWake2;				//wake up second
+	CAnimation kidWave;					//wave hand action
+	bool showMovie;
+	bool changeBG;
+	const int const_delay = 30;
+	int delay;
+	int x, y;
+	int nowBG;							//toShow which background
+
+
 };
-#pragma endregion
+
+/////////////////////////////////////////////////////////////////////////////
+// 這個class處理左右移動
+/////////////////////////////////////////////////////////////////////////////
 
 class CMove
 {
@@ -256,6 +270,10 @@ private:
 
 };
 
+/////////////////////////////////////////////////////////////////////////////
+// 這個class處理站立
+/////////////////////////////////////////////////////////////////////////////
+
 class CStand : public CMove
 {
 public:
@@ -280,6 +298,10 @@ private:
 	CAttack CStandShoot;
 	int direction, dir_horizontal;
 };
+
+/////////////////////////////////////////////////////////////////////////////
+// 這個class處理跳躍落下
+/////////////////////////////////////////////////////////////////////////////
 
 class CJump : public CMove			//只處理上升下降
 {
@@ -325,6 +347,10 @@ private:
 
 };
 
+/////////////////////////////////////////////////////////////////////////////
+// 這個class處理下蹲
+/////////////////////////////////////////////////////////////////////////////
+
 class CCrouch : public CMove		//只處理下蹲相關動作
 {
 public:
@@ -360,6 +386,10 @@ private:
 
 };
 
+/////////////////////////////////////////////////////////////////////////////
+// 這個class處理死亡
+/////////////////////////////////////////////////////////////////////////////
+
 class CDead
 {
 public:
@@ -385,7 +415,6 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 // 這個class提供Hero物件
-// 
 /////////////////////////////////////////////////////////////////////////////
 class CHero
 {
@@ -470,6 +499,10 @@ private:
 
 };
 
+/////////////////////////////////////////////////////////////////////////////
+// 這個class提供敵人物件
+/////////////////////////////////////////////////////////////////////////////
+
 class CEnemy
 {
 public:
@@ -531,6 +564,10 @@ private:
 
 };
 
+/////////////////////////////////////////////////////////////////////////////
+// 這個class提供Boss
+/////////////////////////////////////////////////////////////////////////////
+
 class CBoss
 {
 public:
@@ -563,57 +600,6 @@ private:
 	bool isDead;			//Boss dead
 	bool isAlive;			//Boss Alive
 
-};
-
-/////////////////////////////////////////////////////////////////////////////
-// 這個class提供繞圈圈的球
-// 看懂就可以改寫成自己的程式了
-/////////////////////////////////////////////////////////////////////////////
-
-class CBall
-{
-public:
-	CBall();
-	bool HitEraser(CEraser *eraser);						// 是否碰到擦子
-	bool IsAlive();											// 是否活著
-	void LoadBitmap();										// 載入圖形
-	void OnMove();											// 移動
-	void OnShow();											// 將圖形貼到畫面
-	void SetXY(int nx, int ny);								// 設定圓心的座標
-	void SetIsAlive(bool alive);							// 設定是否活著
-	void SetDelay(int d);									// 設定旋轉的速度
-protected:
-	CMovingBitmap bmp;			// 球的圖
-	CMovingBitmap bmp_center;	// 圓心的圖			
-	int x, y;					// 圓心的座標
-	int dx, dy;					// 球距離圓心的位移量
-	int index;					// 球的「角度」，0-17表示0-360度
-	int delay_counter;			// 調整旋轉速度的計數器
-	int delay;					// 旋轉的速度
-	bool is_alive;				// 是否活著
-private:
-	bool HitRectangle(int tx1, int ty1, int tx2, int ty2);	// 是否碰到參數範圍的矩形
-};
-
-/////////////////////////////////////////////////////////////////////////////
-// 這個class提供會一直彈跳的球
-// 看懂就可以改寫成自己的程式了
-/////////////////////////////////////////////////////////////////////////////
-
-class CBouncingBall
-{
-public:
-	CBouncingBall();
-	void LoadBitmap();		// 載入圖形
-	void OnMove();			// 移動
-	void OnShow();			// 將圖形貼到畫面
-private:
-	int x, y;				// 圖形座標
-	int floor;				// 地板的Y座標
-	bool rising;			// true表上升、false表下降
-	int initial_velocity;	// 初始速度
-	int velocity;			// 目前的速度(點/次)
-	CAnimation animation;	// 利用動畫作圖形
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -675,18 +661,18 @@ private:
 	CGameMap gameMap;			//地圖
 	vector<CEnemy*> vecEnemy;	//敵方軍隊
 	CBoss midBoss;
+	CMovie movie;
 
 	CMovingBitmap enemyImg;		//敵人ICON
 	CInteger remainEnemy;		//剩餘敵人
 	CMovingBitmap heroImg;		//主角ICON
 	CInteger heroLife;			//主角剩餘血量
-
-
 	CMovingBitmap goL;
 	CMovingBitmap goR;
 
-	bool canAddEnemy;
-	bool isFallBack;
+	bool showMovie;					//是否顯示開場動畫
+	bool canAddEnemy;				//可否自動生成敵人
+	bool isFallBack;				//關卡切換時，讓敵人撤退
 	unsigned maxEnemyNumber;		//最大敵人數
 	unsigned nowAliveEnemy;			//場上存活敵人數
 	unsigned nowShowEnemy;			//撤退時用
