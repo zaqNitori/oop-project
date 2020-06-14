@@ -592,11 +592,11 @@ private:
 // 這個class提供Boss
 /////////////////////////////////////////////////////////////////////////////
 
-class CBoss
+class CMidBoss
 {
 public:
-	CBoss();
-	~CBoss();
+	CMidBoss();
+	~CMidBoss();
 	void Initialize();
 	void LoadBitmap();
 	void OnMove();
@@ -611,9 +611,9 @@ public:
 
 private:
 
-	CMove bossMove;
-	CStand bossStand;
-	CMovingBitmap bossDefault;
+	CMove midBossMove;
+	CStand midBossStand;
+	CMovingBitmap midBossDefault;
 
 	int defaultWidth, defaultHeight;
 	int x, y;				//Boss position
@@ -685,7 +685,7 @@ private:
 	CHero hero;					//主角
 	CGameMap gameMap;			//地圖
 	vector<CEnemy*> vecEnemy;	//敵方軍隊
-	CBoss midBoss;
+	CMidBoss midBoss;
 	CMovie movie;
 
 	CMovingBitmap enemyImg;		//敵人ICON

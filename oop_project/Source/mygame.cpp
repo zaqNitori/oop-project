@@ -825,28 +825,28 @@ namespace game_framework {
 #pragma endregion
 
 /////////////////////////////////////////////////////////////////////////////
-// CBoss: Boss class
+// CMidBoss: MidBoss class
 /////////////////////////////////////////////////////////////////////////////
 
-#pragma region CBoss
+#pragma region CMidBoss
 
-		CBoss::CBoss()
+		CMidBoss::CMidBoss()
 		{
 			Initialize();
 		}
 
-		CBoss::~CBoss() { ; }
+		CMidBoss::~CMidBoss() { ; }
 
-		void CBoss::Initialize()
+		void CMidBoss::Initialize()
 		{
 			isDead = isAlive = false;
 			x = y = 0;
 			bossLife = 10;
 			step = 20;
-			bossMove.SetStep(step);
+			midBossMove.SetStep(step);
 		}
 
-		void CBoss::LoadBitmap()
+		void CMidBoss::LoadBitmap()
 		{
 			char *fileStandL[] = { ".\\image\\midBoss\\stand\\L1.bmp" };
 			char *fileStandR[] = { ".\\image\\midBoss\\stand\\R1.bmp" };
@@ -854,47 +854,47 @@ namespace game_framework {
 				, ".\\image\\midBoss\\run\\L3.bmp" , ".\\image\\midBoss\\run\\L4.bmp" };
 			char *fileRunR[] = { ".\\image\\midBoss\\run\\R1.bmp" , ".\\image\\midBoss\\run\\R2.bmp"
 				, ".\\image\\midBoss\\run\\R3.bmp" , ".\\image\\midBoss\\run\\R4.bmp" };
-			bossDefault.LoadBitmap(fileStandL[0]);
-			bossStand.LoadBitmap_StandL(fileStandL[0]);
-			bossStand.LoadBitmap_StandR(fileStandR[0]);
+			midBossDefault.LoadBitmap(fileStandL[0]);
+			midBossStand.LoadBitmap_StandL(fileStandL[0]);
+			midBossStand.LoadBitmap_StandR(fileStandR[0]);
 			for (int i = 0; i < 4; i++)
 			{
-				bossMove.LoadBitmap_MoveL(fileRunL[i]);
-				bossMove.LoadBitmap_MoveR(fileRunR[i]);
+				midBossMove.LoadBitmap_MoveL(fileRunL[i]);
+				midBossMove.LoadBitmap_MoveR(fileRunR[i]);
 			}
-			defaultWidth = bossDefault.Width();
-			defaultHeight = bossDefault.Height();
+			defaultWidth = midBossDefault.Width();
+			defaultHeight = midBossDefault.Height();
 		}
 
-		void CBoss::OnMove()
+		void CMidBoss::OnMove()
 		{
-			bossMove.OnMove(&x, &y);
+			midBossMove.OnMove(&x, &y);
 			if (x <= 0) 
 			{
 				/*isMovingRight = true;
 				isMovingLeft = false;*/
-				bossMove.SetMovingLeft(false);
-				bossMove.SetMovingRight(true);
-				bossMove.SetDirection(2);
+				midBossMove.SetMovingLeft(false);
+				midBossMove.SetMovingRight(true);
+				midBossMove.SetDirection(2);
 			}
 			else if (x >= 800 - defaultWidth)
 			{
 				/*isMovingLeft = true;
 				isMovingRight = false;*/
-				bossMove.SetMovingLeft(true);
-				bossMove.SetMovingRight(false);
-				bossMove.SetDirection(1);
+				midBossMove.SetMovingLeft(true);
+				midBossMove.SetMovingRight(false);
+				midBossMove.SetDirection(1);
 			}
 			
 		}
 
-		void CBoss::OnShow()
+		void CMidBoss::OnShow()
 		{
-			bossMove.SetXY(x, y);
-			bossMove.OnShow();
+			midBossMove.SetXY(x, y);
+			midBossMove.OnShow();
 		}
 
-		void CBoss::AddLife(int n) 
+		void CMidBoss::AddLife(int n)
 		{
 			bossLife += n; 
 			if (bossLife <= 0) 
@@ -904,13 +904,13 @@ namespace game_framework {
 			}
 		}
 
-		int CBoss::getLife() { return bossLife; }
+		int CMidBoss::getLife() { return bossLife; }
 
-		bool CBoss::getAlive() { return isAlive; }
+		bool CMidBoss::getAlive() { return isAlive; }
 
-		bool CBoss::getDead() { return isDead; }
+		bool CMidBoss::getDead() { return isDead; }
 
-		bool CBoss::getShow() { return (isDead || isAlive); }
+		bool CMidBoss::getShow() { return (isDead || isAlive); }
 
 	//CBoss
 #pragma endregion
@@ -1364,7 +1364,7 @@ namespace game_framework {
 		bg1_1.LoadBitmap(".\\image\\movie\\bg1-1.bmp", Black);
 		bg2.LoadBitmap(".\\image\\movie\\bg2.bmp");
 		bg3.LoadBitmap(".\\image\\movie\\bg3.bmp");
-		enemyShow.LoadBitmap(".\\image\\movie\\e1-1.bmp", Black);
+		enemyShow.LoadBitmap(".\\image\\movie\\e1-1.bmp", Blue);
 		enemyGone.LoadBitmap(".\\image\\movie\\e1-2.bmp", Black);
 		spaceShip.LoadBitmap(".\\image\\movie\\spaceship.bmp", Black);
 		char *fileCrash[] = { ".\\image\\movie\\crash1.bmp" , ".\\image\\movie\\crash2.bmp" , ".\\image\\movie\\crash3.bmp"
