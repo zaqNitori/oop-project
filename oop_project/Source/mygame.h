@@ -43,9 +43,20 @@
 /////////////////////////////////////////////////////////////////////////////
 
 enum AUDIO_ID {				// 定義各種音效的編號
-	AUDIO_heroJump,					// 0
-	AUDIO_enemyDead,				// 1
-	AUDIO_BGM_normal				// 2
+	enemyScream,
+	fire,
+	Movie_moon,
+	Movie_ufoCrash,
+	Movie_ufoExplode,
+	Movie_enemyShow,
+	Movie_FBItalk,
+	Movie_enemyGone,
+	Movie_HeroBlink,
+	Movie_KidWavehand,
+	AUDIO_heroJump,					
+	AUDIO_enemyDead,				
+	AUDIO_normal_BGM,
+	bossBGM
 };
 
 namespace game_framework {
@@ -203,6 +214,15 @@ private:
 	CAnimation heroWake2;				//wake up second
 	CAnimation kidWave;					//wave hand action
 
+	bool isShowMoon;
+	bool isShowUFOCrash;
+	bool isShowUFOExplode;
+	bool isShowFire;
+	bool isShowFBItalk;
+	bool isShowEnemyShow;
+	bool isShowEnemyGone;
+	bool isShowKidWave;
+	bool isShowHeroBlink;
 	bool showMovie;
 	bool changeBG;
 	bool bg1CanGoNextStage;
@@ -635,6 +655,7 @@ private:
 	CAnimation manScream;					//尖叫特效
 	CAnimation fire1, fire2, fire3, fire4;	//火焰特效
 	bool ishoverGo, ishoverExit;
+	bool isSoundShow;
 	
 };
 
@@ -677,6 +698,8 @@ private:
 	bool showMovie;					//是否顯示開場動畫
 	bool canAddEnemy;				//可否自動生成敵人
 	bool isFallBack;				//關卡切換時，讓敵人撤退
+	bool isNormalBGMShow;			//decide to show mp3 or not
+	bool isBossBGMShow;				//show boss bgm
 	unsigned maxEnemyNumber;		//最大敵人數
 	unsigned nowAliveEnemy;			//場上存活敵人數
 	unsigned nowShowEnemy;			//撤退時用

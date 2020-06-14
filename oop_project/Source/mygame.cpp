@@ -1341,17 +1341,21 @@ namespace game_framework {
 
 	void CMovie::Initialize()
 	{
-		nowBG = bg1Stage = 1;
+		nowBG = 0;
+		bg1Stage = 1;
 		bg1CanGoNextStage = changeBG = false;
 		showMovie = true;
 		kidWave.SetDelayCount(3);
-		heroWake.SetDelayCount(10);
-		heroWake2.SetDelayCount(10);
+		heroWake.SetDelayCount(5);
+		heroWake2.SetDelayCount(5);
 		spaceShipCrash.SetDelayCount(5);
 		spaceShipExplode.SetDelayCount(5);
 		delay = const_delay;
 		x = 800;
 		y = -50;
+
+		isShowEnemyGone = isShowEnemyShow = isShowFBItalk = isShowFire = isShowHeroBlink
+			= isShowKidWave = isShowMoon = isShowUFOCrash = isShowUFOExplode = false;
 	}
 
 	void CMovie::LoadBitmap()
@@ -1384,9 +1388,22 @@ namespace game_framework {
 
 	void CMovie::OnMove()
 	{
-
-		if (nowBG == 1)
+		if (nowBG == 0)
 		{
+			if (delay > 0) delay -= 2;
+			else
+			{
+				delay = const_delay;
+				nowBG++;
+			}
+		}
+		else if (nowBG == 1)
+		{
+			if (!isShowMoon)
+			{
+				CAudio::Instance()->Play(Movie_moon, false);
+				isShowMoon = true;
+			}
 			switch (bg1Stage)
 			{
 			case 1:
@@ -1444,7 +1461,7 @@ namespace game_framework {
 			}
 			
 		}
-		else
+		else if(nowBG == 3)
 		{
 			kidWave.OnMove();
 			if (delay > 0) delay--;
@@ -1477,21 +1494,42 @@ namespace game_framework {
 			switch (bg1Stage)
 			{
 			case 1:				//bg1 第一部分 UFO墜毀
+				if (!isShowUFOCrash)
+				{
+					CAudio::Instance()->Play(Movie_ufoCrash, false);
+					isShowUFOCrash = true;
+				}
 				spaceShip.SetTopLeft(x, y);
 				spaceShip.ShowBitmap();
 				spaceShipCrash.SetTopLeft(x + spaceShip.Width(), y - spaceShipCrash.Height());
 				spaceShipCrash.OnShow();
 				break;
 			case 2:				//bg1 第二部分 ufo爆炸
+				if (!isShowUFOExplode)
+				{
+					CAudio::Instance()->Play(Movie_ufoExplode, false);
+					isShowUFOExplode = true;
+				}
 				spaceShipExplode.SetTopLeft(0, 600 - spaceShipExplode.Height());
 				if (!bg1CanGoNextStage) spaceShipExplode.OnShow();
 				if (spaceShipExplode.IsFinalBitmap()) bg1CanGoNextStage = true;
 				break;
 			case 3:				//bg1 第三部分 FBI出現
+				if (!isShowEnemyShow)
+				{
+					CAudio::Instance()->Play(Movie_enemyShow, false);
+					CAudio::Instance()->Play(Movie_FBItalk, false);
+					isShowFBItalk = isShowEnemyShow = true;
+				}
 				enemyShow.SetTopLeft(x, y);
 				enemyShow.ShowBitmap();
 				break;
 			case 4:				//bg1 第四部分 FBI離開
+				if (!isShowEnemyGone)
+				{
+					CAudio::Instance()->Play(Movie_enemyGone, false);
+					isShowEnemyGone = true;
+				}
 				enemyGone.SetTopLeft(800 - enemyShow.Width() + 50, 600 - enemyGone.Height());
 				enemyGone.ShowBitmap();
 				enemyShow.SetTopLeft(x, y);
@@ -1503,6 +1541,11 @@ namespace game_framework {
 		}
 		else if (nowBG == 2 || nowBG == 4)
 		{
+			if (!isShowHeroBlink)
+			{
+				CAudio::Instance()->Play(Movie_HeroBlink, false);
+				isShowHeroBlink = true;
+			}
 			bg2.SetTopLeft(0, 0);
 			bg2.ShowBitmap();
 			if (nowBG == 2)
@@ -1518,10 +1561,16 @@ namespace game_framework {
 		}
 		else if (nowBG == 3)
 		{
+			if (!isShowKidWave)
+			{
+				CAudio::Instance()->Play(Movie_KidWavehand, false);
+				isShowKidWave = true;
+			}
 			bg3.SetTopLeft(0, 0);
 			bg3.ShowBitmap();
 			kidWave.SetTopLeft(380, 190);
 			kidWave.OnShow();
+			isShowHeroBlink = false;
 		}
 		if (changeBG)
 		{
@@ -1532,6 +1581,7 @@ namespace game_framework {
 				else
 				{
 					delay = const_delay;
+					if (nowBG == 2) delay = const_delay * 2;
 					changeBG = false;
 					nowBG++;
 				}
@@ -2456,7 +2506,7 @@ namespace game_framework {
 		//
 		// 開始載入資料
 		//
-		ishoverGo = ishoverExit = false;
+		isSoundShow = ishoverGo = ishoverExit = false;
 		char *fileFire[] = { ".\\image\\interface\\95.bmp" , ".\\image\\interface\\96.bmp" , ".\\image\\interface\\97.bmp" , ".\\image\\interface\\98.bmp" };
 		char *fileScream[] = { ".\\image\\interface\\scream\\1.bmp" , ".\\image\\interface\\scream\\2.bmp" , ".\\image\\interface\\scream\\3.bmp" , ".\\image\\interface\\scream\\4.bmp"
 			, ".\\image\\interface\\scream\\5.bmp" , ".\\image\\interface\\scream\\6.bmp" , ".\\image\\interface\\scream\\7.bmp" , ".\\image\\interface\\scream\\8.bmp" };
@@ -2474,6 +2524,10 @@ namespace game_framework {
 		hoverEffect.LoadBitmap(".\\image\\interface\\hoverEffect.bmp", Black);
 		btnExit.LoadBitmap(".\\image\\interface\\btnExit.bmp", Black);
 		btnExitHover.LoadBitmap(".\\image\\interface\\btnExitHover.bmp", Black);
+
+		CAudio::Instance()->Load(fire, "sounds\\fire.mp3");
+		CAudio::Instance()->Load(enemyScream, "sounds\\enemyScream.mp3");
+
 		Sleep(300);				// 放慢，以便看清楚進度，實際遊戲請刪除此Sleep
 		//
 		// 此OnInit動作會接到CGameStaterRun::OnInit()，所以進度還沒到100%
@@ -2496,6 +2550,8 @@ namespace game_framework {
 	{
 		if (ishoverGo)
 		{
+			CAudio::Instance()->Stop(fire);
+			CAudio::Instance()->Stop(enemyScream);
 			GotoGameState(GAME_STATE_RUN);		// 切換至GAME_STATE_RUN
 		}
 		else if (ishoverExit)
@@ -2516,6 +2572,12 @@ namespace game_framework {
 
 	void CGameStateInit::OnMove()
 	{
+		if (!isSoundShow)
+		{
+			CAudio::Instance()->Play(fire, true);
+			CAudio::Instance()->Play(enemyScream, true);
+			isSoundShow = true;
+		}
 		fire1.OnMove();
 		fire2.OnMove();
 		fire3.OnMove();
@@ -2668,15 +2730,11 @@ namespace game_framework {
 
 	CGameStateRun::~CGameStateRun()
 	{
-		CAudio::Instance()->Stop(AUDIO_BGM_normal);
+		CAudio::Instance()->Stop(AUDIO_normal_BGM);
 	}
 
 	void CGameStateRun::OnBeginState()
 	{
-
-		//CAudio::Instance()->Play(AUDIO_heroJump, false);			// 撥放 主角跳躍
-		//CAudio::Instance()->Play(AUDIO_enemyDead, false);			// 撥放 敵人死亡
-		CAudio::Instance()->Play(AUDIO_BGM_normal, true);			// 撥放 背景音樂
 
 		gameMap.Initialize();		//重製地圖
 		gameMap.InitialBullet();	//重製地圖物件
@@ -2715,6 +2773,8 @@ namespace game_framework {
 		showMovie = true;
 		movie.Initialize();
 		movie.resetAnimation();
+
+		isNormalBGMShow = isBossBGMShow = false;
 	}
 
 	void CGameStateRun::OnMove()							// 移動遊戲元素
@@ -2722,6 +2782,12 @@ namespace game_framework {
 		// 如果希望修改cursor的樣式，則將下面程式的commment取消即可
 		// SetCursor(AfxGetApp()->LoadCursor(IDC_GAMECURSOR));
 		
+		if (!isNormalBGMShow && !showMovie)
+		{
+			CAudio::Instance()->Play(AUDIO_normal_BGM, true);
+			isNormalBGMShow = true;
+		}
+
 		if (showMovie)
 		{
 			movie.OnMove();
@@ -2733,6 +2799,12 @@ namespace game_framework {
 
 		if (stage == 1)
 		{
+			if (!isBossBGMShow)
+			{
+				CAudio::Instance()->Stop(AUDIO_normal_BGM);
+				CAudio::Instance()->Play(bossBGM, true);
+				isBossBGMShow = true;
+			}
 			if (mapX <= -2035 && mapX >= -2050)		//鎖定小Bosss場地
 			{
 				hero.SetLock(true);
@@ -2862,7 +2934,7 @@ namespace game_framework {
 			if (!isFallBack)
 			{
 				isFallBack = true;
-				CAudio::Instance()->Play(AUDIO_enemyDead, false);
+				CAudio::Instance()->Play(enemyScream, false);
 				for (loop = 0; loop < maxEnemyNumber; loop++)
 				{
 					if (vecEnemy[loop]->getAlive())
@@ -2885,7 +2957,8 @@ namespace game_framework {
 
 		if (stage == 4)
 		{
-			CAudio::Instance()->Stop(AUDIO_BGM_normal);
+			CAudio::Instance()->Stop(AUDIO_normal_BGM);
+			CAudio::Instance()->Stop(bossBGM);
 			GotoGameState(GAME_STATE_OVER);
 		}
 
@@ -2986,11 +3059,23 @@ namespace game_framework {
 		midBoss.LoadBitmap();
 
 		movie.LoadBitmap();
+#pragma region LoadMP3
 
-		CAudio::Instance()->Load(AUDIO_heroJump, "sounds\\heroJump.mp3");		// 載入編號0的聲音ding.wav
-		CAudio::Instance()->Load(AUDIO_enemyDead, "sounds\\enemyDead.mp3");		// 載入編號1的聲音lake.mp3
-		CAudio::Instance()->Load(AUDIO_BGM_normal, "sounds\\BGM_normal.mp3");	// 載入編號2的聲音ntut.mid
-		
+		CAudio::Instance()->Load(Movie_enemyGone, "sounds\\movie\\enemyGone.mp3");
+		CAudio::Instance()->Load(Movie_enemyShow, "sounds\\movie\\enemyShow.mp3");
+		CAudio::Instance()->Load(Movie_FBItalk, "sounds\\movie\\FBItalk.mp3");
+		CAudio::Instance()->Load(Movie_HeroBlink, "sounds\\movie\\heroBlink.mp3");
+		CAudio::Instance()->Load(Movie_KidWavehand, "sounds\\movie\\KidWave.mp3");
+		CAudio::Instance()->Load(Movie_ufoCrash, "sounds\\movie\\ufoCrash.mp3");
+		CAudio::Instance()->Load(Movie_ufoExplode, "sounds\\movie\\ufoExplode.mp3");
+		CAudio::Instance()->Load(AUDIO_heroJump, "sounds\\heroJump.mp3");
+		CAudio::Instance()->Load(AUDIO_enemyDead, "sounds\\enemyDead.mp3");
+		CAudio::Instance()->Load(AUDIO_normal_BGM, "sounds\\BGM_normal.mp3");
+		CAudio::Instance()->Load(bossBGM, "sounds\\bossBGM.mp3");
+		CAudio::Instance()->Load(Movie_moon, "sounds\\movie\\moon.mp3");
+
+#pragma endregion
+
 		//0-第一關小兵、1-小boss、2-第二關小兵、3-最終boss
 		stage = 0;
 		
@@ -3055,11 +3140,13 @@ namespace game_framework {
 				{
 					vecEnemy[loop]->Initialize();
 				}
+				CAudio::Instance()->Stop(bossBGM);
+				isNormalBGMShow = false;
 			}
 		}
 		if (nChar == KEY_R)
 		{
-			CAudio::Instance()->Stop(AUDIO_BGM_normal);
+			CAudio::Instance()->Stop(AUDIO_normal_BGM);
 			GotoGameState(GAME_STATE_INIT);
 		}
 	}
