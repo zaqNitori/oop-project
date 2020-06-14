@@ -491,7 +491,8 @@ private:
 	int x, y;						//角色在螢幕的座標
 	int heartX, heartY;				//心臟起始座標
 	int defaultW, defaultH;			//站立圖片寬高
-	int delayCount,constDelay;
+	int delayCount,constDelay;		//machine gun持續射擊時間
+	int mapEdge;					//地圖卷軸邊界
 #pragma endregion
 	
 	void gameMap_OnMove();			//處理地圖移動

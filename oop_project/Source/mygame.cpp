@@ -231,10 +231,11 @@ namespace game_framework {
 				{
 					mapX -= x - 200;	//取得超過左側邊界的位移量，並且反向加至地圖座標
 					if (mapX >= 0)
-						mapX = 0;		//如果在地圖最左側則可以無視移動邊界
+						mapX = 0;			//如果在地圖最左側則可以無視移動邊界
 					else x = 200;		//反之則會被卡住
 				}
 				if (x <= 0) x = 0;
+				//mapEdge = min(x, 200);
 			}
 			else if (dir_horizontal == 2)	//向右走
 			{
@@ -245,6 +246,14 @@ namespace game_framework {
 						mapX = (-4400 + defaultW);
 					else x = 600 - defaultW;			//反之則會被卡住
 				}
+				//mapEdge = max(600 - defaultW, x);
+				/*if (x > mapEdge)					//當超過右側自由移動範圍時
+				{
+					mapX -= x - (mapEdge);		//取得超過的位移量，反向加至地圖座標
+					if (mapX <= (-4400 + defaultW))		//如果地圖在最右側，則可以無視移動邊界
+						mapX = (-4400 + defaultW);
+					else x = mapEdge;			//反之則會被卡住
+				}*/
 				if (x >= 800 - defaultW) x = 800 - defaultW;
 			}
 			gameMap->setXY(mapX, mapY);					//設定地圖座標
@@ -286,15 +295,15 @@ namespace game_framework {
 
 	void CHero::OnMove()
 	{
-		gameMap_OnMove();
-		heroStand.OnMove(x, y);
-		heroMove.OnMove(&x, &y);
-		gravity();
-		isFalling = heroJump.OnMove(&x, &y);
-		if (isFalling) isRising = false;
-		heroCrouch.OnMove(x, y);
-		ResumeShooting();
-		SetHeart();
+		gameMap_OnMove();						//地圖卷軸移動，根據主角的位置
+		heroStand.OnMove(x, y);					//站立
+		heroMove.OnMove(&x, &y);				//移動
+		gravity();								//重力
+		isFalling = heroJump.OnMove(&x, &y);	//跳躍落下
+		if (isFalling) isRising = false;		//狀態轉變
+		heroCrouch.OnMove(x, y);				//下蹲
+		ResumeShooting();						//射擊回復-(彈藥裝填)
+		SetHeart();								//心臟位置
 	}
 
 	void CHero::OnShow()
@@ -695,6 +704,7 @@ namespace game_framework {
 				x = 0 - defaultWidth;
 				enemyMove.SetDirection(2);
 				enemyMove.SetMovingRight(true);
+				enemyMove.SetMovingLeft(false);
 				desX += 5 * enemyID;
 			}
 			else
@@ -702,6 +712,7 @@ namespace game_framework {
 				x = 800;
 				enemyMove.SetDirection(1);
 				enemyMove.SetMovingLeft(true);
+				enemyMove.SetMovingRight(false);
 				desX -= 5 * enemyID;
 			}
 			goDestination = true;
@@ -768,6 +779,7 @@ namespace game_framework {
 
 		void CEnemy::SetFallBack(bool flag, int heroX)
 		{
+			goDestination = false;
 			isFallBack = flag;
 			enemyMove.SetFallBack(flag);
 			if (!isFallBack) return;
@@ -775,12 +787,14 @@ namespace game_framework {
 			{
 				isMovingRight = true;
 				enemyMove.SetMovingRight(true);
+				enemyMove.SetMovingLeft(false);
 				enemyMove.SetDirection(2);
 			}
 			else
 			{
 				isMovingLeft = true;
 				enemyMove.SetMovingLeft(true);
+				enemyMove.SetMovingRight(false);
 				enemyMove.SetDirection(1);
 			}
 		}
@@ -1077,21 +1091,21 @@ namespace game_framework {
 			}
 		#pragma region setBlock
 			SetBlock(1, 8, 13, 14);
-			SetBlock(9, 18, 22, 23);
-			SetBlock(12, 28, 18, 19);
-			SetBlock(30, 40, 24, 25);
-			SetBlock(42, 46, 17, 18);
-			SetBlock(50, 68, 14, 15);
-			SetBlock(57, 67, 25, 26);
-			SetBlock(75, 83, 24, 25);
-			SetBlock(85, 94, 22, 23);
-			SetBlock(95, 101, 17, 18);
-			SetBlock(104, 118, 25, 26);
-			SetBlock(134, 153, 16, 17);
-			SetBlock(162, 172, 23, 24);
-			SetBlock(190, 198, 22, 23);
-			SetBlock(42, 46, 17, 18);
-			SetBlock(50, 68, 14, 15);
+			SetBlock(8, 18, 22, 23);
+			SetBlock(19, 28, 18, 19);
+			SetBlock(28, 40, 24, 25);
+			SetBlock(40, 46, 17, 18);
+			SetBlock(48, 68, 14, 15);
+			SetBlock(55, 67, 25, 26);
+			SetBlock(73, 83, 24, 25);
+			SetBlock(83, 94, 22, 23);
+			SetBlock(93, 101, 17, 18);
+			SetBlock(102, 118, 25, 26);
+			SetBlock(132, 153, 16, 17);
+			SetBlock(160, 172, 23, 24);
+			SetBlock(188, 198, 22, 23);
+			SetBlock(40, 46, 17, 18);
+			SetBlock(48, 68, 14, 15);
 		#pragma endregion
 
 	}
@@ -2825,6 +2839,8 @@ namespace game_framework {
 #pragma endregion
 
 #pragma region 敵人的移動
+
+			nowShowEnemy = 0;
 			for (loop = 0; loop < maxEnemyNumber; loop++)
 			{
 				if (vecEnemy[loop]->isShow())
@@ -2897,7 +2913,7 @@ namespace game_framework {
 
 		for (loop = 0; loop < maxEnemyNumber && n > 0; loop++)
 		{
-			int pos = rand() % 2;	//test用
+			int pos = rand() % 2;						//用亂數去處理要從哪邊進入畫面
 			if (!vecEnemy[loop]->isShow())
 			{
 				n--;									//生成人數--
@@ -2936,7 +2952,7 @@ namespace game_framework {
 
 #pragma region EnemyInitial
 
-		maxEnemyNumber = 5;				//最大敵人數
+		maxEnemyNumber = 10;				//最大敵人數
 		remainEnemy.SetInteger(maxEnemyNumber);
 		if (vecEnemy.size() == 0)
 		{
