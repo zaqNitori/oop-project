@@ -843,7 +843,7 @@ namespace game_framework {
 			laserX = laserY = 0;
 			x = midBossAction = 0;
 			y = 525 - 237;
-			bossLife = 10;
+			bossLife = 30;
 			step = 25;
 			midBossMove.SetStep(step);
 			midBossLaserOn.SetDelayCount(5);
@@ -861,7 +861,8 @@ namespace game_framework {
 				, ".\\image\\midBoss\\run\\L3.bmp" , ".\\image\\midBoss\\run\\L4.bmp" };
 			char *fileRunR[] = { ".\\image\\midBoss\\run\\R1.bmp" , ".\\image\\midBoss\\run\\R2.bmp"
 				, ".\\image\\midBoss\\run\\R3.bmp" , ".\\image\\midBoss\\run\\R4.bmp" };
-
+			char *fileDead[] = { ".\\image\\movie\\explode1.bmp" , ".\\image\\movie\\explode2.bmp" , ".\\image\\movie\\explode3.bmp"
+			,".\\image\\movie\\explode4.bmp" , ".\\image\\movie\\explode5.bmp" , ".\\image\\movie\\explode6.bmp" };
 			caution.LoadBitmap(".\\image\\midBoss\\attack\\caution.bmp", Blue);
 			laserLightH.LoadBitmap(".\\image\\midBoss\\attack\\laserH.bmp", Black);
 			laserLightV.LoadBitmap(".\\image\\midBoss\\attack\\laserV.bmp", Black);
@@ -876,19 +877,28 @@ namespace game_framework {
 				midBossLaserOn.AddBitmap(fileLaser[i], Blue);
 				midBossLaserOff.AddBitmap(fileLaser[3 - i], Blue);
 			}
+			for (int i = 0; i < 6; i++) midBossDead.AddBitmap(fileDead[i], Black);
 			defaultWidth = midBossDefault.Width();
 			defaultHeight = midBossDefault.Height();
 		}
 
 		void CMidBoss::OnMove()
 		{
+			if (isDead)
+			{
+				midBossDead.OnMove();
+				return;
+			}
 			if (isStart)
 			{
 				x -= 25;
+				midBossMove.SetMovingLeft(true);
+				midBossMove.SetDirection(1);
 				if (x <= 800 - defaultWidth)
 				{
 					isStart = false;
 					x = 800 - defaultWidth;
+					midBossMove.SetMovingLeft(false);
 				}
 			}
 			else
@@ -941,7 +951,7 @@ namespace game_framework {
 						isStand = true;
 						midBossStand.SetDirection(2);
 						midBossMove.SetMovingLeft(false);
-						CAudio::Instance()->Play(midBoss_Stand);
+						CAudio::Instance()->Play(midBoss_Stand, false);
 					}
 					else if (x >= 800 - defaultWidth)		//最右邊，接著做攻擊
 					{
@@ -949,7 +959,6 @@ namespace game_framework {
 						isStand = true;
 						midBossStand.SetDirection(1);
 						midBossMove.SetMovingRight(false);
-						CAudio::Instance()->Play(midBoss_Stand);
 						midBossAction = 0;
 					}
 				}
@@ -958,8 +967,30 @@ namespace game_framework {
 			midBossMove.OnMove(&x, &y);
 		}
 
-		void CMidBoss::OnShow()
+		bool CMidBoss::OnShow()
 		{
+			if (isDead)
+			{
+				midBossStand.SetXY(x, y);
+				midBossStand.OnShow_Stand();
+				midBossDead.SetTopLeft(x + defaultWidth - midBossDead.Width()
+					, y + defaultHeight - midBossDead.Height());
+				midBossDead.OnShow();
+				if (midBossDead.IsFinalBitmap())
+				{
+					CAudio::Instance()->Stop(bossBGM);
+					midBossDead.Reset();
+					isDead = false;
+					return true;		//關卡切換
+				}
+				return false;
+			}
+			if (!isAlive) return false;
+			if (isStart)
+			{
+				midBossMove.SetXY(x, y);
+				midBossMove.OnShow();
+			}
 			if (isStand)
 			{
 				if (x == 0)
@@ -1008,6 +1039,7 @@ namespace game_framework {
 							laserX = x;				//雷射光座標
 							laserY = 0;
 							isAttack = true;
+							CAudio::Instance()->Play(midBoss_Laser, false);
 						}
 					}
 					else if (midBossAction == 2)		//轉回移動模式
@@ -1020,6 +1052,7 @@ namespace game_framework {
 							midBossLaserOff.Reset();
 							midBossAction++;		//先轉回站著不動
 							delay = const_delay;	//站著等
+							CAudio::Instance()->Play(midBoss_Stand, false);
 						}
 					}
 				}	//x!=0
@@ -1029,6 +1062,7 @@ namespace game_framework {
 				midBossMove.SetXY(x, y);
 				midBossMove.OnShow();
 			}
+			return false;		//不用換關卡
 		}
 
 		void CMidBoss::AddLife(int n)
@@ -1038,23 +1072,50 @@ namespace game_framework {
 			{
 				isAlive = false;
 				isDead = true;
+				CAudio::Instance()->Play(Movie_ufoExplode, false);
 			}
 		}
 
 		void CMidBoss::SetStart(bool flag) 
 		{ 
-			isStart = flag; 
+			isAlive = isStart = flag; 
 			x = 800;
 			y = 525 - defaultHeight;
 		}
 
 		int CMidBoss::getLife() { return bossLife; }
 
+		int CMidBoss::getX1() { return x; }
+
+		int CMidBoss::getX2() 
+		{
+			if(isStand) return x + defaultWidth;
+			else return x + 252;
+		}
+
+		int CMidBoss::getY1() { return y; }
+
+		int CMidBoss::getY2() { return y + defaultHeight; }
+
 		bool CMidBoss::getAlive() { return isAlive; }
 
 		bool CMidBoss::getDead() { return isDead; }
 
 		bool CMidBoss::getShow() { return (isDead || isAlive); }
+
+		bool CMidBoss::isHitHero(CHero *hero)
+		{
+			if (hero->getX1() <= getX2() && hero->getX2() >= getX1()
+				&& hero->getY1() <= getY2() && hero->getY2() >= getY1())
+				return true;
+			if (hero->getX1() <= laserX + laserLightH.Width() && hero->getX2() >= laserX
+				&& hero->getY1() <= y + defaultHeight - midBossLaserOn.Height() + 10 + laserLightH.Height() && hero->getY2() >= y + defaultHeight - midBossLaserOn.Height() + 10)
+				return true;
+			if (hero->getX1() <= randomX + 10 + laserLightV.Width() && hero->getX2() >= randomX + 10
+				&& hero->getY1() <= laserY + laserLightV.Height() && hero->getY2() >= laserY)
+				return true;
+			return false;
+		}
 
 	//CBoss
 #pragma endregion
@@ -1458,6 +1519,22 @@ namespace game_framework {
 				{
 					vCbltEnemy[loop]->SetLife(false);
 					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	bool CGameMap::isBulletHit(CMidBoss *midBoss)
+	{
+		for (loop = 0; loop < maxHeroBullet; loop++)
+		{
+			if (vCblt[loop]->isShow())					//子彈存活
+			{
+				if (vCblt[loop]->isHit(midBoss->getX1(), midBoss->getY1(), midBoss->getX2(), midBoss->getY2()))
+				{
+					vCblt[loop]->SetLife(false);		//子彈消失
+						return true;
 				}
 			}
 		}
@@ -2974,6 +3051,7 @@ namespace game_framework {
 		movie.resetAnimation();
 
 		isNormalBGMShow = isBossBGMShow = false;
+		midBoss.Initialize();
 	}
 
 	void CGameStateRun::OnMove()							// 移動遊戲元素
@@ -3000,21 +3078,15 @@ namespace game_framework {
 		{
 			if (!isBossBGMShow)
 			{
-				CAudio::Instance()->Stop(AUDIO_normal_BGM);
 				CAudio::Instance()->Play(bossBGM, true);
 				isBossBGMShow = true;
 			}
-			if (mapX <= -2035 && mapX >= -2050)		//鎖定小Bosss場地
-			{
-				hero.SetLock(true);
-			}
-			else				//沒到的話要顯示提示
-			{
-				if (mapX > -2035) goR.SetTopLeft(SIZE_X - goR.Width(), SIZE_Y / 2 - goR.Height() / 2);
-				else if (mapX < -2050) goL.SetTopLeft(0, SIZE_Y / 2 - goL.Height() / 2);
-			}
-		}
+			if (gameMap.isBulletHit(&midBoss))		//midBoss被主角攻擊
+				midBoss.AddLife(-1);
 
+			if (midBoss.isHitHero(&hero))			//主角被midBoss攻擊
+				heroLife.Add(-1);
+		}
 
 		if (nowAliveEnemy <= 0) hero.SetOverlap(false);
 
@@ -3074,6 +3146,7 @@ namespace game_framework {
 							nowAliveEnemy--;
 							vecEnemy[loop]->SetDead(true, hero.getDir_hor());
 							vecEnemy[loop]->SetAlive(false);
+							CAudio::Instance()->Play(AUDIO_enemyDead, false);
 						}
 						break;
 					}
@@ -3098,14 +3171,17 @@ namespace game_framework {
 					}
 				}
 			}
+
 #pragma endregion
 
-#pragma region shootHero
-			//主角被射到判斷
+#pragma region damageHero
+
+			//主角被小兵射到判斷
 			if (gameMap.isBulletHit(&hero))
 				heroLife.Add(-1);
 
 #pragma endregion
+
 
 #pragma endregion
 
@@ -3139,13 +3215,35 @@ namespace game_framework {
 					if (vecEnemy[loop]->getAlive())
 						vecEnemy[loop]->SetFallBack(true, hero.getX1());
 				}
+				CAudio::Instance()->Stop(AUDIO_normal_BGM);
 			}
 			else
 			{
-				if (nowShowEnemy == 0)
+				if (stage == 0)
 				{
-					stage++;							//關卡數++，進入Boss戰
-					remainEnemy.SetInteger(0);			//Boss戰，敵人人數調成0
+					if (mapX <= -2035 && mapX >= -2050)		//鎖定小Bosss場地
+					{
+						hero.SetLock(true);
+						if (nowShowEnemy == 0)
+						{
+							stage++;
+							remainEnemy.SetInteger(0);
+							midBoss.SetStart(true);
+						}
+					}
+					else				//沒到的話要顯示提示
+					{
+						if (mapX > -2035) goR.SetTopLeft(SIZE_X - goR.Width(), SIZE_Y / 2 - goR.Height() / 2);
+						else if (mapX < -2050) goL.SetTopLeft(0, SIZE_Y / 2 - goL.Height() / 2);
+					}
+				}
+				else			//stage == 2
+				{
+					if (nowShowEnemy == 0)
+					{
+						stage++;
+						remainEnemy.SetInteger(0);
+					}
 				}
 			}
 		}
@@ -3332,7 +3430,7 @@ namespace game_framework {
 		if (nChar == KEY_Q)
 		{
 			if (showMovie) showMovie = false;
-			if (stage == 1 || stage == 3)
+			if (stage == 3)
 			{
 				stage++;
 				isFallBack = false;
@@ -3432,22 +3530,43 @@ namespace game_framework {
 
 		gameMap.OnShow();
 
+		if (stage == 1)						//midBoss
+		{
+			if (midBoss.OnShow())
+			{
+				stage++;					//midBoss死亡，關卡切換
+				isFallBack = false;
+				hero.SetLock(false);
+				remainEnemy.SetInteger(maxEnemyNumber);
+				for (loop = 0; loop < maxEnemyNumber; loop++)
+				{
+					vecEnemy[loop]->Initialize();
+				}
+				CAudio::Instance()->Stop(bossBGM);
+				isNormalBGMShow = false;
+			}
+		}
+
+		for (loop = 0; loop < maxEnemyNumber; loop++)
+			if (vecEnemy[loop]->isShow()) vecEnemy[loop]->OnShow();
+
 #pragma region mapInstruction
 		enemyImg.ShowBitmap();
 		remainEnemy.ShowBitmap();
 		heroImg.ShowBitmap();
 		heroLife.ShowBitmap();
-		if (stage == 1)
-		{
-			if (mapX > -2035) goR.ShowBitmap();
-			else if (mapX < -2050) goL.ShowBitmap();
-		}
+
 #pragma endregion
+		
+		if (remainEnemy.GetInteger() <= 0)
+		{
+			if (stage == 0)
+			{
+				if (mapX > -2035) goR.ShowBitmap();
+				else if (mapX < -2050) goL.ShowBitmap();
+			}
+		}
 
-		for (loop = 0; loop < maxEnemyNumber; loop++)
-			if (vecEnemy[loop]->isShow()) vecEnemy[loop]->OnShow();
-
-		midBoss.OnShow();
 
 		hero.OnShow();
 		gameMap.OnShowBullet();

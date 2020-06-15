@@ -65,6 +65,7 @@ namespace game_framework {
 
 	class CHero;
 	class CEnemy;
+	class CMidBoss;
 /////////////////////////////////////////////////////////////////////////////
 // 這個class提供子彈
 /////////////////////////////////////////////////////////////////////////////
@@ -81,8 +82,8 @@ public:
 	bool isDead();
 	bool isShow();
 	void SetLife(bool);
-	void SetBullet(int, int, int);
-	void SetBullet(int, int, int, int, int);
+	void SetBullet(int, int, int);				//設定位置及方向(主角用)
+	void SetBullet(int, int, int, int, int);	//設定起始座標及目標座標(敵人用)
 	void SetBulletClass(CAnimation*);
 	bool isHit(int, int, int, int);
 
@@ -164,6 +165,7 @@ public:
 	void OnShowBullet();
 	bool isBulletHit(CEnemy*);		//碰撞判斷
 	bool isBulletHit(CHero*);
+	bool isBulletHit(CMidBoss*);
 #pragma endregion
 
 private:
@@ -602,15 +604,20 @@ public:
 	void Initialize();
 	void LoadBitmap();
 	void OnMove();
-	void OnShow();
+	bool OnShow();
 
 	void AddLife(int);			//deal with boss Life
 	void SetStart(bool);		
 
 	int getLife();				//get current boss life
+	int getX1();
+	int getX2();
+	int getY1();
+	int getY2();
 	bool getShow();				//if boss can show? (isDead||isAlive)
 	bool getDead();				//is boss dead
 	bool getAlive();			//is boss alive
+	bool isHitHero(CHero*);
 
 private:
 
@@ -618,6 +625,7 @@ private:
 	CStand midBossStand;
 	CAnimation midBossLaserOn;		//轉成攻擊模式
 	CAnimation midBossLaserOff;		//轉回移動模式
+	CAnimation midBossDead;			//boss dead
 	CMovingBitmap laserLightH;
 	CMovingBitmap laserLightV;
 	CMovingBitmap midBossLaserHead;
