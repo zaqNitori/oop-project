@@ -603,6 +603,7 @@ public:
 	void OnShow();
 
 	void AddLife(int);			//deal with boss Life
+	void SetStart(bool);		
 
 	int getLife();				//get current boss life
 	bool getShow();				//if boss can show? (isDead||isAlive)
@@ -613,12 +614,17 @@ private:
 
 	CMove midBossMove;
 	CStand midBossStand;
+	CAnimation midBossLazer;
+	CMovingBitmap midBossLazerHead;
 	CMovingBitmap midBossDefault;
 
+	int delay, const_delay;
 	int defaultWidth, defaultHeight;
 	int x, y;				//Boss position
 	int bossLife;			//Boss life
 	int step;				//Boss movement speed
+	bool isStand;
+	bool isStart;			//isBoss Fight start?進場動畫
 	bool isMovingLeft;		//Boss Move Left
 	bool isMovingRight;		//Boss Move Right
 	bool isDead;			//Boss dead

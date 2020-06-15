@@ -839,21 +839,28 @@ namespace game_framework {
 
 		void CMidBoss::Initialize()
 		{
-			isDead = isAlive = false;
-			x = y = 0;
+			isStart = isDead = isAlive = false;
+			x = 0;
+			y = 525 - 237;
 			bossLife = 10;
-			step = 20;
+			step = 25;
 			midBossMove.SetStep(step);
+			midBossLazer.SetDelayCount(5);
+			delay = const_delay = 30;
 		}
 
 		void CMidBoss::LoadBitmap()
 		{
+			char *fileLazer[] = { ".\\image\\midBoss\\attack\\L1.bmp" , ".\\image\\midBoss\\attack\\L2.bmp"
+			, ".\\image\\midBoss\\attack\\L3.bmp" , ".\\image\\midBoss\\attack\\L4.bmp" };
 			char *fileStandL[] = { ".\\image\\midBoss\\stand\\L1.bmp" };
 			char *fileStandR[] = { ".\\image\\midBoss\\stand\\R1.bmp" };
 			char *fileRunL[] = { ".\\image\\midBoss\\run\\L1.bmp" , ".\\image\\midBoss\\run\\L2.bmp" 
 				, ".\\image\\midBoss\\run\\L3.bmp" , ".\\image\\midBoss\\run\\L4.bmp" };
 			char *fileRunR[] = { ".\\image\\midBoss\\run\\R1.bmp" , ".\\image\\midBoss\\run\\R2.bmp"
 				, ".\\image\\midBoss\\run\\R3.bmp" , ".\\image\\midBoss\\run\\R4.bmp" };
+
+			midBossLazerHead.LoadBitmap(".\\image\\midBoss\\attack\\D1.bmp", Blue);
 			midBossDefault.LoadBitmap(fileStandL[0]);
 			midBossStand.LoadBitmap_StandL(fileStandL[0]);
 			midBossStand.LoadBitmap_StandR(fileStandR[0]);
@@ -861,6 +868,7 @@ namespace game_framework {
 			{
 				midBossMove.LoadBitmap_MoveL(fileRunL[i]);
 				midBossMove.LoadBitmap_MoveR(fileRunR[i]);
+				midBossLazer.AddBitmap(fileLazer[i], Blue);
 			}
 			defaultWidth = midBossDefault.Width();
 			defaultHeight = midBossDefault.Height();
@@ -869,29 +877,66 @@ namespace game_framework {
 		void CMidBoss::OnMove()
 		{
 			midBossMove.OnMove(&x, &y);
-			if (x <= 0) 
+			if (isStart)
 			{
-				/*isMovingRight = true;
-				isMovingLeft = false;*/
-				midBossMove.SetMovingLeft(false);
-				midBossMove.SetMovingRight(true);
-				midBossMove.SetDirection(2);
+				x -= 25;
+				if (x <= 800 - midBossDefault.Width())
+				{
+					isStart = false;
+					x = 800 - midBossDefault.Width();
+				}
+				return;
 			}
-			else if (x >= 800 - defaultWidth)
+
+			if (isStand)
 			{
-				/*isMovingLeft = true;
-				isMovingRight = false;*/
-				midBossMove.SetMovingLeft(true);
-				midBossMove.SetMovingRight(false);
-				midBossMove.SetDirection(1);
+				if (delay > 0) delay--;
+				else
+				{
+					delay = const_delay;
+					if (x = 0)
+					{
+						midBossMove.SetMovingLeft(false);
+						midBossMove.SetMovingRight(true);
+						midBossMove.SetDirection(2);
+					}
+					else
+					{
+						midBossMove.SetMovingLeft(true);
+						midBossMove.SetMovingRight(false);
+						midBossMove.SetDirection(1);
+					}
+				}
+				midBossStand.OnMove(x, y);
+			}
+
+			if (x < 0) 
+			{
+				x = 0;
+				isStand = true;
+				midBossStand.SetDirection(2);
+			}
+			else if (x > 800 - defaultWidth)
+			{
+				x = 800 - defaultWidth;
+				isStand = true;
+				midBossStand.SetDirection(1);
 			}
 			
 		}
 
 		void CMidBoss::OnShow()
 		{
-			midBossMove.SetXY(x, y);
-			midBossMove.OnShow();
+			if (isStand)
+			{
+				midBossStand.SetXY(x, y);
+				midBossStand.OnShow();
+			}
+			else
+			{
+				midBossMove.SetXY(x, y);
+				midBossMove.OnShow();
+			}
 		}
 
 		void CMidBoss::AddLife(int n)
@@ -902,6 +947,13 @@ namespace game_framework {
 				isAlive = false;
 				isDead = true;
 			}
+		}
+
+		void CMidBoss::SetStart(bool flag) 
+		{ 
+			isStart = flag; 
+			x = 800;
+			y = 525 - midBossDefault.Height();
 		}
 
 		int CMidBoss::getLife() { return bossLife; }
@@ -2562,6 +2614,8 @@ namespace game_framework {
 		{
 			if (ishoverBack)
 			{
+				CAudio::Instance()->Play(fire, true);
+				CAudio::Instance()->Play(enemyScream, true);
 				isShowAbout = false;
 				ishoverBack = false;
 			}
@@ -2576,6 +2630,8 @@ namespace game_framework {
 		else if (ishoverAbout)
 		{
 			isShowAbout = true;
+			CAudio::Instance()->Stop(fire);
+			CAudio::Instance()->Stop(enemyScream);
 		}
 		else if (ishoverExit)
 			PostMessage(AfxGetMainWnd()->m_hWnd, WM_CLOSE, 0, 0);
@@ -3198,6 +3254,8 @@ namespace game_framework {
 		if (nChar == KEY_R)
 		{
 			CAudio::Instance()->Stop(AUDIO_normal_BGM);
+			CAudio::Instance()->Play(fire, true);
+			CAudio::Instance()->Play(enemyScream, true);
 			GotoGameState(GAME_STATE_INIT);
 		}
 	}
