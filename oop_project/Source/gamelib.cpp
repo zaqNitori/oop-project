@@ -146,6 +146,11 @@ namespace game_framework {
 		x = y = bmp_counter = 0;
 	}
 
+	CAnimation::~CAnimation()
+	{
+		
+	}
+
 	void CAnimation::AddBitmap(int IDB_BITMAP, COLORREF colorkey)
 	{
 		CMovingBitmap add_bmp;

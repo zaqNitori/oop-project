@@ -634,6 +634,7 @@ private:
 class CGameStateInit : public CGameState {
 public:
 	CGameStateInit(CGame *g);
+	~CGameStateInit();
 	void OnInit();  								// 遊戲的初值及圖形設定
 	void OnBeginState();							// 設定每次重玩所需的變數
 	void OnKeyUp(UINT, UINT, UINT); 				// 處理鍵盤Up的動作
@@ -652,10 +653,16 @@ private:
 	CMovingBitmap hoverEffect;				//Hover特效
 	CMovingBitmap btnExit;					//離開按鈕
 	CMovingBitmap btnExitHover;				//離開按鈕Hover
+	CMovingBitmap btnAbout;					//about按鈕
+	CMovingBitmap btnAboutHover;			//about按鈕Hover
+	CMovingBitmap gameAbout;				//about介面
+	CMovingBitmap btnBack;
+	CMovingBitmap btnBackHover;
 	CAnimation manScream;					//尖叫特效
 	CAnimation fire1, fire2, fire3, fire4;	//火焰特效
-	bool ishoverGo, ishoverExit;
+	bool ishoverGo, ishoverExit, ishoverBack;
 	bool isSoundShow;
+	bool isShowAbout, ishoverAbout;
 	
 };
 
