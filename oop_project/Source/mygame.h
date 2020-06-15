@@ -56,7 +56,9 @@ enum AUDIO_ID {				// 定義各種音效的編號
 	AUDIO_heroJump,					
 	AUDIO_enemyDead,				
 	AUDIO_normal_BGM,
-	bossBGM
+	bossBGM,
+	midBoss_Laser,
+	midBoss_Stand
 };
 
 namespace game_framework {
@@ -614,16 +616,25 @@ private:
 
 	CMove midBossMove;
 	CStand midBossStand;
-	CAnimation midBossLazer;
-	CMovingBitmap midBossLazerHead;
+	CAnimation midBossLaserOn;		//轉成攻擊模式
+	CAnimation midBossLaserOff;		//轉回移動模式
+	CMovingBitmap laserLightH;
+	CMovingBitmap laserLightV;
+	CMovingBitmap midBossLaserHead;
 	CMovingBitmap midBossDefault;
+	CMovingBitmap caution;			//攻擊警告
 
 	int delay, const_delay;
 	int defaultWidth, defaultHeight;
 	int x, y;				//Boss position
 	int bossLife;			//Boss life
 	int step;				//Boss movement speed
-	bool isStand;
+	int midBossAction;		//boss action change
+	int laserX, laserY;
+	int randomX;			//bosss attack from top random X position
+	bool isGetRandomX;		//boss attack from top
+	bool isAttack;			//boss attack
+	bool isStand;			//bos stand
 	bool isStart;			//isBoss Fight start?進場動畫
 	bool isMovingLeft;		//Boss Move Left
 	bool isMovingRight;		//Boss Move Right

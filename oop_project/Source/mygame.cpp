@@ -839,19 +839,21 @@ namespace game_framework {
 
 		void CMidBoss::Initialize()
 		{
-			isStart = isDead = isAlive = false;
-			x = 0;
+			isGetRandomX = isAttack = isStand = isStart = isDead = isAlive = false;
+			laserX = laserY = 0;
+			x = midBossAction = 0;
 			y = 525 - 237;
 			bossLife = 10;
 			step = 25;
 			midBossMove.SetStep(step);
-			midBossLazer.SetDelayCount(5);
+			midBossLaserOn.SetDelayCount(5);
+			midBossLaserOff.SetDelayCount(5);
 			delay = const_delay = 30;
 		}
 
 		void CMidBoss::LoadBitmap()
 		{
-			char *fileLazer[] = { ".\\image\\midBoss\\attack\\L1.bmp" , ".\\image\\midBoss\\attack\\L2.bmp"
+			char *fileLaser[] = { ".\\image\\midBoss\\attack\\L1.bmp" , ".\\image\\midBoss\\attack\\L2.bmp"
 			, ".\\image\\midBoss\\attack\\L3.bmp" , ".\\image\\midBoss\\attack\\L4.bmp" };
 			char *fileStandL[] = { ".\\image\\midBoss\\stand\\L1.bmp" };
 			char *fileStandR[] = { ".\\image\\midBoss\\stand\\R1.bmp" };
@@ -860,15 +862,19 @@ namespace game_framework {
 			char *fileRunR[] = { ".\\image\\midBoss\\run\\R1.bmp" , ".\\image\\midBoss\\run\\R2.bmp"
 				, ".\\image\\midBoss\\run\\R3.bmp" , ".\\image\\midBoss\\run\\R4.bmp" };
 
-			midBossLazerHead.LoadBitmap(".\\image\\midBoss\\attack\\D1.bmp", Blue);
-			midBossDefault.LoadBitmap(fileStandL[0]);
+			caution.LoadBitmap(".\\image\\midBoss\\attack\\caution.bmp", Blue);
+			laserLightH.LoadBitmap(".\\image\\midBoss\\attack\\laserH.bmp", Black);
+			laserLightV.LoadBitmap(".\\image\\midBoss\\attack\\laserV.bmp", Black);
+			midBossLaserHead.LoadBitmap(".\\image\\midBoss\\attack\\D1.bmp", Blue);
 			midBossStand.LoadBitmap_StandL(fileStandL[0]);
 			midBossStand.LoadBitmap_StandR(fileStandR[0]);
+			midBossDefault.LoadBitmap(fileStandL[0]);
 			for (int i = 0; i < 4; i++)
 			{
 				midBossMove.LoadBitmap_MoveL(fileRunL[i]);
 				midBossMove.LoadBitmap_MoveR(fileRunR[i]);
-				midBossLazer.AddBitmap(fileLazer[i], Blue);
+				midBossLaserOn.AddBitmap(fileLaser[i], Blue);
+				midBossLaserOff.AddBitmap(fileLaser[3 - i], Blue);
 			}
 			defaultWidth = midBossDefault.Width();
 			defaultHeight = midBossDefault.Height();
@@ -876,61 +882,147 @@ namespace game_framework {
 
 		void CMidBoss::OnMove()
 		{
-			midBossMove.OnMove(&x, &y);
 			if (isStart)
 			{
 				x -= 25;
-				if (x <= 800 - midBossDefault.Width())
+				if (x <= 800 - defaultWidth)
 				{
 					isStart = false;
-					x = 800 - midBossDefault.Width();
+					x = 800 - defaultWidth;
 				}
-				return;
 			}
-
-			if (isStand)
+			else
 			{
-				if (delay > 0) delay--;
-				else
+				if (isStand)
 				{
-					delay = const_delay;
-					if (x = 0)
-					{
-						midBossMove.SetMovingLeft(false);
-						midBossMove.SetMovingRight(true);
-						midBossMove.SetDirection(2);
-					}
+					if (delay > 0) delay--;
 					else
 					{
-						midBossMove.SetMovingLeft(true);
-						midBossMove.SetMovingRight(false);
-						midBossMove.SetDirection(1);
+						if (x == 0)						//在最左邊，準備向右跑
+						{
+							isStand = false;			//取消站立，等等可移動
+							midBossMove.SetMovingRight(true);
+							midBossMove.SetDirection(2);
+							delay = const_delay;
+						}
+						else										//在最右邊，準備做攻擊，之後再向左跑
+						{
+							if (midBossAction == 0)
+								midBossAction++;
+							else if (midBossAction == 1 && !isAttack)	//變成攻擊模式
+								midBossLaserOn.OnMove();
+							else if (midBossAction == 2)				//轉回移動模式
+								midBossLaserOff.OnMove();
+							else if (midBossAction == 3)				//往左跑
+							{
+								isStand = false;
+								midBossMove.SetMovingLeft(true);
+								midBossMove.SetDirection(1);
+								delay = const_delay;
+							}
+							if (isAttack)							//攻擊中
+							{
+								laserX -= 50;
+								laserY += 50;
+								laserLightH.SetTopLeft(laserX,
+									y + defaultHeight - midBossLaserOn.Height() + 10);
+								laserLightV.SetTopLeft(randomX + 10, laserY - laserLightV.Height());
+							}
+						}
+						
 					}
 				}
-				midBossStand.OnMove(x, y);
+				else	//!isStand
+				{
+					delay = const_delay;
+					if (x <= 0)								//最左邊，接著往回跑
+					{
+						x = 0;
+						isStand = true;
+						midBossStand.SetDirection(2);
+						midBossMove.SetMovingLeft(false);
+						CAudio::Instance()->Play(midBoss_Stand);
+					}
+					else if (x >= 800 - defaultWidth)		//最右邊，接著做攻擊
+					{
+						x = 800 - defaultWidth;
+						isStand = true;
+						midBossStand.SetDirection(1);
+						midBossMove.SetMovingRight(false);
+						CAudio::Instance()->Play(midBoss_Stand);
+						midBossAction = 0;
+					}
+				}
 			}
-
-			if (x < 0) 
-			{
-				x = 0;
-				isStand = true;
-				midBossStand.SetDirection(2);
-			}
-			else if (x > 800 - defaultWidth)
-			{
-				x = 800 - defaultWidth;
-				isStand = true;
-				midBossStand.SetDirection(1);
-			}
-			
+			midBossStand.OnMove(x, y);
+			midBossMove.OnMove(&x, &y);
 		}
 
 		void CMidBoss::OnShow()
 		{
 			if (isStand)
 			{
-				midBossStand.SetXY(x, y);
-				midBossStand.OnShow();
+				if (x == 0)
+				{
+					midBossStand.SetXY(x, y);
+					midBossStand.OnShow_Stand();
+				}
+				else
+				{
+					if (isAttack)					//攻擊中，攻擊模式仍然要顯示
+					{
+						midBossLaserHead.SetTopLeft(randomX, -80);
+						laserLightH.ShowBitmap();
+						laserLightV.ShowBitmap();
+						midBossLaserHead.ShowBitmap();						
+						if (laserX + laserLightH.Width() <= 0)		//攻擊結束
+						{
+							midBossAction++;		//轉回移動模式
+							isAttack = false;
+							midBossLaserOn.Reset();
+							isGetRandomX = false;	//重新取得random
+						}
+					}
+					if (midBossAction == 0 || midBossAction == 3)
+					{
+						midBossStand.SetXY(x, y);
+						midBossStand.OnShow_Stand();
+					}
+					else if (midBossAction == 1)			//轉變成攻擊模式
+					{
+						if (!isGetRandomX)
+						{
+							randomX = rand() % 400;
+							isGetRandomX = true;
+						}
+						midBossLaserOn.SetTopLeft(x + defaultWidth - midBossLaserOn.Width()
+							, y + defaultHeight - midBossLaserOn.Height());
+						midBossLaserOn.OnShow();
+						if (!isAttack)
+						{
+							caution.SetTopLeft(randomX, 0);
+							caution.ShowBitmap();
+						}
+						if (midBossLaserOn.IsFinalBitmap() && !isAttack)
+						{
+							laserX = x;				//雷射光座標
+							laserY = 0;
+							isAttack = true;
+						}
+					}
+					else if (midBossAction == 2)		//轉回移動模式
+					{
+						midBossLaserOff.SetTopLeft(x + defaultWidth - midBossLaserOff.Width()
+							, y + defaultHeight - midBossLaserOff.Height());
+						midBossLaserOff.OnShow();
+						if (midBossLaserOff.IsFinalBitmap())	//準備往左跑
+						{
+							midBossLaserOff.Reset();
+							midBossAction++;		//先轉回站著不動
+							delay = const_delay;	//站著等
+						}
+					}
+				}	//x!=0
 			}
 			else
 			{
@@ -953,7 +1045,7 @@ namespace game_framework {
 		{ 
 			isStart = flag; 
 			x = 800;
-			y = 525 - midBossDefault.Height();
+			y = 525 - defaultHeight;
 		}
 
 		int CMidBoss::getLife() { return bossLife; }
@@ -3180,6 +3272,9 @@ namespace game_framework {
 		CAudio::Instance()->Load(AUDIO_normal_BGM, "sounds\\BGM_normal.mp3");
 		CAudio::Instance()->Load(bossBGM, "sounds\\bossBGM.mp3");
 		CAudio::Instance()->Load(Movie_moon, "sounds\\movie\\moon.mp3");
+		CAudio::Instance()->Load(midBoss_Laser, "sounds\\midBossLaser.mp3");
+		CAudio::Instance()->Load(midBoss_Stand, "sounds\\midBossStand.mp3");
+
 
 #pragma endregion
 
