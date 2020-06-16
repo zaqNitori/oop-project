@@ -2851,7 +2851,7 @@ namespace game_framework {
 		//
 		// 開始載入資料
 		//
-		ishoverBack = isShowAbout = isSoundShow = ishoverGo = ishoverExit = ishoverAbout = false;
+		isShowHow = ishoverHow = ishoverBack = isShowAbout = isSoundShow = ishoverGo = ishoverExit = ishoverAbout = false;
 		char *fileFire[] = { ".\\image\\interface\\95.bmp" , ".\\image\\interface\\96.bmp" , ".\\image\\interface\\97.bmp" , ".\\image\\interface\\98.bmp" };
 		char *fileScream[] = { ".\\image\\interface\\scream\\1.bmp" , ".\\image\\interface\\scream\\2.bmp" , ".\\image\\interface\\scream\\3.bmp" , ".\\image\\interface\\scream\\4.bmp"
 			, ".\\image\\interface\\scream\\5.bmp" , ".\\image\\interface\\scream\\6.bmp" , ".\\image\\interface\\scream\\7.bmp" , ".\\image\\interface\\scream\\8.bmp" };
@@ -2874,6 +2874,9 @@ namespace game_framework {
 		gameAbout.LoadBitmap(".\\image\\interface\\about.bmp");
 		btnBack.LoadBitmap(".\\image\\interface\\btnBack.bmp", Black);
 		btnBackHover.LoadBitmap(".\\image\\interface\\btnBackHover.bmp", Black);
+		btnHowToPlay.LoadBitmap(".\\image\\interface\\btnHowToPlay.bmp", Black);
+		btnHowToPlayHover.LoadBitmap(".\\image\\interface\\btnHowToPlayHover.bmp", Black);
+		gameHowToPlay.LoadBitmap(".\\image\\interface\\howtoplay.bmp");
 
 		CAudio::Instance()->Load(fire, "sounds\\fire.mp3");
 		CAudio::Instance()->Load(enemyScream, "sounds\\enemyScream.mp3");
@@ -2898,13 +2901,13 @@ namespace game_framework {
 
 	void CGameStateInit::OnLButtonDown(UINT nFlags, CPoint point)
 	{
-		if (isShowAbout)
+		if (isShowAbout || isShowHow)
 		{
 			if (ishoverBack)
 			{
-				CAudio::Instance()->Play(fire, true);
 				CAudio::Instance()->Play(enemyScream, true);
 				isShowAbout = false;
+				isShowHow = false;
 				ishoverBack = false;
 			}
 			return;
@@ -2918,7 +2921,11 @@ namespace game_framework {
 		else if (ishoverAbout)
 		{
 			isShowAbout = true;
-			CAudio::Instance()->Stop(fire);
+			CAudio::Instance()->Stop(enemyScream);
+		}
+		else if (ishoverHow)
+		{
+			isShowHow = true;
 			CAudio::Instance()->Stop(enemyScream);
 		}
 		else if (ishoverExit)
@@ -2927,7 +2934,7 @@ namespace game_framework {
 
 	void CGameStateInit::OnMouseMove(UINT nFlags, CPoint point)
 	{
-		if (isShowAbout)
+		if (isShowAbout || isShowHow)
 		{
 			if (point.x >= 0 && point.x <= 140 && point.y <= 600 && point.y >= 600 - 59)
 				ishoverBack = true;
@@ -2941,9 +2948,11 @@ namespace game_framework {
 			ishoverExit = true;
 		else if (point.x >= 40 && point.x <= 40 + 186 && point.y >= 40 && point.y <= 40 + 56)
 			ishoverAbout = true;
+		else if (point.x >= 40 && point.x <= 40 + 200 && point.y >= 200 && point.y <= 200 + 59)
+			ishoverHow = true;
 		else
 		{
-			ishoverGo = ishoverExit = ishoverAbout = false;
+			ishoverHow = ishoverGo = ishoverExit = ishoverAbout = false;
 		}
 	}
 
@@ -2964,11 +2973,18 @@ namespace game_framework {
 
 	void CGameStateInit::OnShow()
 	{
-
-		if (isShowAbout)
+		if (isShowAbout || isShowHow)
 		{
-			gameAbout.SetTopLeft(0, 0);
-			gameAbout.ShowBitmap();
+			if (isShowAbout)
+			{
+				gameAbout.SetTopLeft(0, 0);
+				gameAbout.ShowBitmap();
+			}
+			else if (isShowHow)
+			{
+				gameHowToPlay.SetTopLeft(0, 0);
+				gameHowToPlay.ShowBitmap();
+			}
 
 			if (ishoverBack)
 			{
@@ -2987,7 +3003,7 @@ namespace game_framework {
 			gameUI.ShowBitmap();
 
 
-			manScream.SetTopLeft(60, 230);
+			manScream.SetTopLeft(60, 300);
 			manScream.OnShow();
 
 #pragma region fireAnimation
@@ -3005,6 +3021,17 @@ namespace game_framework {
 #pragma endregion
 
 #pragma region button
+
+			if (!ishoverHow)
+			{
+				btnHowToPlay.SetTopLeft(60, 200);
+				btnHowToPlay.ShowBitmap();
+			}
+			else
+			{
+				btnHowToPlayHover.SetTopLeft(60, 200);
+				btnHowToPlayHover.ShowBitmap();
+			}
 
 			if (!ishoverAbout)
 			{

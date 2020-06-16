@@ -604,6 +604,35 @@ private:
 };
 
 /////////////////////////////////////////////////////////////////////////////
+// 這個class提供Kid
+/////////////////////////////////////////////////////////////////////////////
+
+class CKid
+{
+public:
+	CKid();
+	~CKid();
+	void Initialize();
+	void LoadBitmap();
+	void OnMove();
+	void OnShow();
+	void SetAlive(bool);
+	void SetDead(bool);
+
+	bool getShow();
+	bool getDead();
+	bool getAlive();
+
+private:
+	CAnimation kidWalk;
+	CAnimation kidDead;
+	bool isDead;
+	bool isAlive;
+	int x, y;
+
+};
+
+/////////////////////////////////////////////////////////////////////////////
 // 這個class提供Boss
 /////////////////////////////////////////////////////////////////////////////
 
@@ -698,11 +727,15 @@ private:
 	CMovingBitmap gameAbout;				//about介面
 	CMovingBitmap btnBack;
 	CMovingBitmap btnBackHover;
+	CMovingBitmap btnHowToPlay;
+	CMovingBitmap btnHowToPlayHover;
+	CMovingBitmap gameHowToPlay;			//遊玩方法介面
 	CAnimation manScream;					//尖叫特效
 	CAnimation fire1, fire2, fire3, fire4;	//火焰特效
 	bool ishoverGo, ishoverExit, ishoverBack;
 	bool isSoundShow;
 	bool isShowAbout, ishoverAbout;
+	bool isShowHow, ishoverHow;
 	
 };
 
