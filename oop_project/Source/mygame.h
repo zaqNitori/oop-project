@@ -157,10 +157,12 @@ public:
 	int getSize();
 
 #pragma region Bullet
+	void ClearMapBullet();						//主角復活，清場
 	void InitialBullet();
 	void addBullet(int,int,int,int);			//激活一個Bullet物件
 	void addEnemyBullet(CEnemy*, int, int);
 	void killBullet();							//反激活已經死亡的Bullet物件
+	void killBullet(CMidBoss*);
 	void OnMoveBullet();
 	void OnShowBullet();
 	bool isBulletHit(CEnemy*);		//碰撞判斷
@@ -467,9 +469,11 @@ public:
 	void SetXY(int, int);			//方便Demo使用
 	void SetLock(bool);
 	void SetMapXY(int, int);
+	void AddLife(int);
 #pragma endregion
 
 #pragma region Getstate
+	int getLife();
 	int getX1();					//get heroLeft
 	int getY1();					//get heroTop
 	int getX2();					//get heroRight
@@ -480,15 +484,18 @@ public:
 	int getHeartY2();				//get heart bottom
 	int getDir();					//get now dir
 	int getDir_hor();				//get last horizontal dir
+	bool getDead();					//is hero Dead Now
 	bool isNowRising();				//get isRising?
 	bool isOverlapEnemy(CEnemy*);		//get is Hero and Enemy overlap
 	bool getOverlap();
 	bool getShooting();
+	bool canDead;
 #pragma endregion
 
 
 private:
 #pragma region Class物件
+	CDead heroDead;
 	CMove heroMove;
 	CStand heroStand;
 	CJump heroJump;
@@ -500,6 +507,7 @@ private:
 #pragma endregion
 	
 #pragma region 變數宣告
+	bool isDead;
 	bool isRising;					//上升
 	bool isFalling;					//墜落
 	bool isMovingDown;				//下蹲、下看
@@ -516,12 +524,15 @@ private:
 	int heartX, heartY;				//心臟起始座標
 	int defaultW, defaultH;			//站立圖片寬高
 	int delayCount,constDelay;		//machine gun持續射擊時間
+	int deadDelay, constDeadDelay;
 	int mapEdge;					//地圖卷軸邊界
+	int heroLife;
 #pragma endregion
 	
 	void gameMap_OnMove();			//處理地圖移動
 	void gravity();					//重力
 	void ResumeShooting();
+	void ResumeDead();
 	void SetHeart();
 	void resetAnimation();
 
@@ -614,6 +625,10 @@ public:
 	int getX2();
 	int getY1();
 	int getY2();
+	int getLaserVX1();
+	int getLaserVX2();
+	int getLaserVY1();
+	int getLaserVY2();
 	bool getShow();				//if boss can show? (isDead||isAlive)
 	bool getDead();				//is boss dead
 	bool getAlive();			//is boss alive
@@ -744,6 +759,7 @@ private:
 	int mapX, mapY;
 	int gunMode;					//敵人槍枝種類
 	int stage;						//0-第一關小兵、1-小boss、2-第二關小兵、3-最終boss
+	int delay, const_delay;
 
 	void enemyProduce(int);			//敵人生成控制
 };
