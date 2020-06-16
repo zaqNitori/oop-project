@@ -840,7 +840,7 @@ namespace game_framework {
 		void CMidBoss::Initialize()
 		{
 			isGetRandomX = isAttack = isStand = isStart = isDead = isAlive = false;
-			laserX = laserY = 0;
+			laserX = laserY = 800;
 			x = midBossAction = 0;
 			y = 525 - 237;
 			bossLife = 30;
@@ -891,17 +891,20 @@ namespace game_framework {
 			}
 			if (isStart)
 			{
-				x -= 25;
-				midBossMove.SetMovingLeft(true);
-				midBossMove.SetDirection(1);
-				if (x <= 800 - defaultWidth)
+				if (x < 800 - defaultWidth)
 				{
-					isStart = false;
 					x = 800 - defaultWidth;
 					midBossMove.SetMovingLeft(false);
+					isStart = false;
+				}
+				else if (x > 800 - defaultWidth)
+				{
+					x -= 25;
+					midBossMove.SetMovingLeft(true);
+					midBossMove.SetDirection(1);
 				}
 			}
-			else
+			else		//!isStart
 			{
 				if (isStand)
 				{
@@ -936,7 +939,7 @@ namespace game_framework {
 								laserY += 50;
 								laserLightH.SetTopLeft(laserX,
 									y + defaultHeight - midBossLaserOn.Height() + 10);
-								laserLightV.SetTopLeft(randomX + 10, laserY - laserLightV.Height());
+								laserLightV.SetTopLeft(randomX + 10, laserY);
 							}
 						}
 						
@@ -988,8 +991,17 @@ namespace game_framework {
 			if (!isAlive) return false;
 			if (isStart)
 			{
-				midBossMove.SetXY(x, y);
-				midBossMove.OnShow();
+				if (x == 800 - defaultWidth)
+				{
+					midBossStand.SetXY(x, y);
+					midBossStand.OnShow_Stand();
+				}
+				else
+				{
+					midBossMove.SetXY(x, y);
+					midBossMove.OnShow();
+				}
+				return false;
 			}
 			if (isStand)
 			{
@@ -1037,7 +1049,7 @@ namespace game_framework {
 						if (midBossLaserOn.IsFinalBitmap() && !isAttack)
 						{
 							laserX = x;				//筽甮畒夹
-							laserY = 0;
+							laserY = - laserLightV.Height();
 							isAttack = true;
 							CAudio::Instance()->Play(midBoss_Laser, false);
 						}
@@ -1085,13 +1097,13 @@ namespace game_framework {
 
 		int CMidBoss::getLife() { return bossLife; }
 
-		int CMidBoss::getX1() { return x; }
-
-		int CMidBoss::getX2() 
-		{
-			if(isStand) return x + defaultWidth;
-			else return x + 252;
+		int CMidBoss::getX1() 
+		{ 
+			if(isStand) return x; 
+			else return x + 126 - defaultWidth / 2;
 		}
+
+		int CMidBoss::getX2() { return x + defaultWidth; }
 
 		int CMidBoss::getY1() { return y; }
 
@@ -1105,6 +1117,7 @@ namespace game_framework {
 
 		bool CMidBoss::isHitHero(CHero *hero)
 		{
+			if(isStart) return false;
 			if (hero->getX1() <= getX2() && hero->getX2() >= getX1()
 				&& hero->getY1() <= getY2() && hero->getY2() >= getY1())
 				return true;
@@ -3086,6 +3099,8 @@ namespace game_framework {
 
 			if (midBoss.isHitHero(&hero))			//à砆midBossю阑
 				heroLife.Add(-1);
+
+			midBoss.OnMove();
 		}
 
 		if (nowAliveEnemy <= 0) hero.SetOverlap(false);
@@ -3272,8 +3287,6 @@ namespace game_framework {
 
 #pragma endregion
 
-		midBoss.OnMove();
-
 	}	//OnMove
 
 	void CGameStateRun::enemyProduce(int n)
@@ -3322,7 +3335,7 @@ namespace game_framework {
 
 #pragma region EnemyInitial
 
-		maxEnemyNumber = 10;				//程寄计
+		maxEnemyNumber = 5;				//程寄计
 		remainEnemy.SetInteger(maxEnemyNumber);
 		if (vecEnemy.size() == 0)
 		{
