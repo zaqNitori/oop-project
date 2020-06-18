@@ -165,9 +165,10 @@ public:
 	void killBullet(CMidBoss*);
 	void OnMoveBullet();
 	void OnShowBullet();
-	bool isBulletHit(CEnemy*);		//碰撞判斷
-	bool isBulletHit(CHero*);
-	bool isBulletHit(CMidBoss*);
+	bool isBulletHit(CEnemy*);		//子彈射到敵人
+	bool isBulletHit(CHero*);		//主角被射到
+	bool isBulletHit(CMidBoss*);	//子彈射到小Boss
+	bool isBulletHit(CKid*);		//子彈射到小孩
 #pragma endregion
 
 private:
@@ -555,26 +556,26 @@ public:
 	void SetAlive(bool);			//設定生命(顯示設定)
 	void SetDead(bool);				//設定為死亡狀態
 	void SetDead(bool,int);			//設定死亡及死亡方向
-	void SetDirection(int);
+	void SetDirection(int);			//設定面向方向
 	void SetOnBlock(bool);			//設定是否站在block上，gravity使用
-	void SetShootDelay(int);
-	void SetShootState(bool);
-	void SetMapXY(int, int);
-	void SetXY(int, int);
+	void SetShootDelay(int);		//設定射擊延遲(彈藥裝填時間)
+	void SetShootState(bool);		//設定目前射擊狀態
+	void SetMapXY(int, int);		//設定地圖座標
+	void SetXY(int, int);			//設定敵人座標
 	void SetGunMode(int);				// 0->pistol 1->shotgun 2->machineGun 3->sniper
-	void SetID(int);
-	void SetFallBack(bool, int);
+	void SetID(int);					//設定敵人編號
+	void SetFallBack(bool, int);		//設定是否撤退
 	void SetDestination(int, int, int);	//設定進入目的位置
 
-	bool getShootState();
+	bool getShootState();				//取得是否可以射擊(彈藥裝填是否完成)
 	bool isShow();						//是否顯示
-	bool getAlive();					
-	bool getDead();
-	int getGunMode();
-	int getX1();
-	int getY1();
-	int getX2();
-	int getY2();
+	bool getAlive();					//取得存活狀態
+	bool getDead();						//取得死亡狀態
+	int getGunMode();					//取得槍枝種類
+	int getX1();						//取得left
+	int getY1();						//get top
+	int getX2();						//get right
+	int getY2();						//get bottom
 
 private:
 	
@@ -612,23 +613,29 @@ class CKid
 public:
 	CKid();
 	~CKid();
-	void Initialize();
-	void LoadBitmap();
-	void OnMove();
-	void OnShow();
-	void SetAlive(bool);
-	void SetDead(bool);
+	void Initialize();			//初始化
+	void LoadBitmap();			//載入圖片
+	void OnMove();				//移動
+	void OnShow();				//顯示圖片
+	void SetAlive(bool);		//設定存活
+	void SetDead(bool);			//設定死亡
 
-	bool getShow();
-	bool getDead();
-	bool getAlive();
+	int getX1();
+	int getX2();
+	int getY1();
+	int getY2();
+	bool getShow();				//取得是否顯示
+	bool getDead();				//取得死亡
+	bool getAlive();			//與德存活
 
 private:
-	CAnimation kidWalk;
-	CAnimation kidDead;
-	bool isDead;
-	bool isAlive;
-	int x, y;
+	CMovingBitmap kidDefault;	//取得長寬
+	CAnimation kidWalk;			//移動動作
+	CAnimation kidDead;			//死亡動作
+	bool isDead;				//死亡狀態
+	bool isAlive;				//存活狀態
+	int step;					//移動速度
+	int x, y;					//當前座標
 
 };
 
@@ -641,42 +648,42 @@ class CMidBoss
 public:
 	CMidBoss();
 	~CMidBoss();
-	void Initialize();
-	void LoadBitmap();
-	void OnMove();
-	bool OnShow();
+	void Initialize();			//初始化
+	void LoadBitmap();			//載入圖片
+	void OnMove();				//boss move
+	bool OnShow();				//boss show
 
 	void AddLife(int);			//deal with boss Life
-	void SetStart(bool);		
+	void SetStart(bool);		//小Boss開始動作
 
 	int getLife();				//get current boss life
-	int getX1();
-	int getX2();
-	int getY1();
-	int getY2();
-	int getLaserVX1();
-	int getLaserVX2();
-	int getLaserVY1();
-	int getLaserVY2();
+	int getX1();				//get left
+	int getX2();				//get right
+	int getY1();				//get top
+	int getY2();				//get bottom
+	int getLaserVX1();			//get laser left
+	int getLaserVX2();			//get laser right
+	int getLaserVY1();			//get laser top
+	int getLaserVY2();			//get laser bottom
 	bool getShow();				//if boss can show? (isDead||isAlive)
 	bool getDead();				//is boss dead
 	bool getAlive();			//is boss alive
-	bool isHitHero(CHero*);
+	bool isHitHero(CHero*);		//damaged hero?
 
 private:
 
-	CMove midBossMove;
-	CStand midBossStand;
+	CMove midBossMove;				//boss move
+	CStand midBossStand;			//boss stand
 	CAnimation midBossLaserOn;		//轉成攻擊模式
 	CAnimation midBossLaserOff;		//轉回移動模式
 	CAnimation midBossDead;			//boss dead
-	CMovingBitmap laserLightH;
-	CMovingBitmap laserLightV;
-	CMovingBitmap midBossLaserHead;
-	CMovingBitmap midBossDefault;
+	CMovingBitmap laserLightH;		//laser attack horizontal
+	CMovingBitmap laserLightV;		//laser attack vertical
+	CMovingBitmap midBossLaserHead;	//laser attack part
+	CMovingBitmap midBossDefault;	//更精確的處理圖片碰撞
 	CMovingBitmap caution;			//攻擊警告
 
-	int delay, const_delay;
+	int delay, const_delay;	//動作延遲
 	int defaultWidth, defaultHeight;
 	int x, y;				//Boss position
 	int bossLife;			//Boss life
@@ -765,16 +772,18 @@ private:
 	CHero hero;					//主角
 	CGameMap gameMap;			//地圖
 	vector<CEnemy*> vecEnemy;	//敵方軍隊
-	CMidBoss midBoss;
-	CMovie movie;
+	CMidBoss midBoss;			//midBoss
+	CKid kid;					//kid
+	CMovie movie;				//movie
 
 	CMovingBitmap enemyImg;		//敵人ICON
 	CInteger remainEnemy;		//剩餘敵人
 	CMovingBitmap heroImg;		//主角ICON
 	CInteger heroLife;			//主角剩餘血量
-	CMovingBitmap goL;
-	CMovingBitmap goR;
+	CMovingBitmap goL;			//顯示往左
+	CMovingBitmap goR;			//顯示往右
 
+	bool isShowKid;					//開場小孩動畫
 	bool showMovie;					//是否顯示開場動畫
 	bool canAddEnemy;				//可否自動生成敵人
 	bool isFallBack;				//關卡切換時，讓敵人撤退
@@ -784,12 +793,12 @@ private:
 	unsigned nowAliveEnemy;			//場上存活敵人數
 	unsigned nowShowEnemy;			//撤退時用
 	unsigned loop;					//for使用
-	unsigned seed;
+	unsigned seed;					//亂數種子
 	unsigned come1EnemyDelay;		//1個敵人生成時間
 	unsigned const_come1EnemyDelay;
 	unsigned come2EnemyDelay;		//2個敵人生成時間
 	unsigned const_come2EnemyDelay;
-	int mapX, mapY;
+	int mapX, mapY;					//地圖座標
 	int gunMode;					//敵人槍枝種類
 	int stage;						//0-第一關小兵、1-小boss、2-第二關小兵、3-最終boss
 	int delay, const_delay;

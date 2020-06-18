@@ -1212,6 +1212,95 @@ namespace game_framework {
 #pragma endregion
 
 /////////////////////////////////////////////////////////////////////////////
+// CKid: kid class
+/////////////////////////////////////////////////////////////////////////////
+
+#pragma region CKid
+		CKid::CKid()
+		{
+			Initialize();
+		}
+
+		CKid::~CKid() {}
+
+		void CKid::Initialize()
+		{
+			x = 600;
+			y = 525 - 155; 
+			isAlive = true;
+			isDead =  false;
+			step = 15;
+			kidWalk.SetDelayCount(5);
+			kidDead.SetDelayCount(5);
+		}
+
+		void CKid::LoadBitmap()
+		{
+			char *filewalk[] = { ".\\image\\kid\\walk\\1.bmp" , ".\\image\\kid\\walk\\2.bmp"
+			, ".\\image\\kid\\walk\\3.bmp" , ".\\image\\kid\\walk\\4.bmp" };
+			char *filedead[] = { ".\\image\\kid\\dead\\1.bmp" , ".\\image\\kid\\dead\\2.bmp" , ".\\image\\kid\\dead\\3.bmp"
+			, ".\\image\\kid\\dead\\4.bmp" , ".\\image\\kid\\dead\\5.bmp" , ".\\image\\kid\\dead\\6.bmp" };
+
+			for (int i = 0; i < 4; i++) kidWalk.AddBitmap(filewalk[i], Blue);
+			for (int i = 0; i < 6; i++) kidDead.AddBitmap(filedead[i], Blue);
+			kidDefault.LoadBitmap(".\\image\\kid\\walk\\1.bmp");
+		}
+
+		void CKid::OnMove()
+		{
+			if (isAlive)
+			{
+				x -= step;
+				kidWalk.OnMove();
+				if (x < -kidWalk.Width()) isAlive = false;
+			}
+			else if (isDead)
+			{
+				kidDead.OnMove();
+			}
+		}
+
+		void CKid::OnShow()
+		{
+			if (isAlive)
+			{
+				kidWalk.SetTopLeft(x, y);
+				kidWalk.OnShow();
+			}
+			else if (isDead)
+			{
+				kidDead.SetTopLeft(x, y);
+				kidDead.OnShow();
+				if (kidDead.IsFinalBitmap())
+				{
+					kidDead.Reset();
+					isDead = false;
+				}
+			}
+		}
+
+		void CKid::SetAlive(bool flag) { isAlive = flag; }
+
+		void CKid::SetDead(bool flag) { isDead = flag; }
+
+		int CKid::getX1() { return x;}
+		
+		int CKid::getX2() { return x + kidDefault.Width(); }
+
+		int CKid::getY1() { return y; }
+		
+		int CKid::getY2() { return y + kidDefault.Height(); }
+
+		bool CKid::getShow() { return (isAlive || isDead); }
+
+		bool CKid::getAlive() { return isAlive; }
+
+		bool CKid::getDead() { return isDead; }
+
+
+#pragma endregion
+
+/////////////////////////////////////////////////////////////////////////////
 // CBullet: bullet class
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1647,6 +1736,22 @@ namespace game_framework {
 				{
 					vCblt[loop]->SetLife(false);		//¤l¼u®ø¥¢
 						return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	bool CGameMap::isBulletHit(CKid *kid)
+	{
+		for (loop = 0; loop < maxHeroBullet; loop++)
+		{
+			if (vCblt[loop]->isShow())
+			{
+				if (vCblt[loop]->isHit(kid->getX1(), kid->getY1(), kid->getX2(), kid->getY2()))
+				{
+					vCblt[loop]->SetLife(false);
+					return true;
 				}
 			}
 		}
