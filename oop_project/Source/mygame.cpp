@@ -82,7 +82,7 @@ namespace game_framework {
 		mapX = 0;
 		mapY = SIZE_Y - 721;
 		x = 200;
-		y = 400;
+		y = 525 - 115;
 		deadDelay = constDeadDelay = 20;			//死後無敵時間
 		delayCount = constDelay = 9;
 		direction = dir_horizontal = 1;				//預設向左
@@ -256,7 +256,6 @@ namespace game_framework {
 					else x = 200;		//反之則會被卡住
 				}
 				if (x <= 0) x = 0;
-				//mapEdge = min(x, 200);
 			}
 			else if (dir_horizontal == 2)	//向右走
 			{
@@ -267,14 +266,6 @@ namespace game_framework {
 						mapX = (-4400 + defaultW);
 					else x = 600 - defaultW;			//反之則會被卡住
 				}
-				//mapEdge = max(600 - defaultW, x);
-				/*if (x > mapEdge)					//當超過右側自由移動範圍時
-				{
-					mapX -= x - (mapEdge);		//取得超過的位移量，反向加至地圖座標
-					if (mapX <= (-4400 + defaultW))		//如果地圖在最右側，則可以無視移動邊界
-						mapX = (-4400 + defaultW);
-					else x = mapEdge;			//反之則會被卡住
-				}*/
 				if (x >= 800 - defaultW) x = 800 - defaultW;
 			}
 			gameMap->setXY(mapX, mapY);					//設定地圖座標
@@ -1229,7 +1220,7 @@ namespace game_framework {
 			y = 525 - 155; 
 			isAlive = true;
 			isDead =  false;
-			step = 15;
+			step = 5;
 			kidWalk.SetDelayCount(5);
 			kidDead.SetDelayCount(5);
 		}
@@ -3265,7 +3256,7 @@ namespace game_framework {
 
 		gameMap.Initialize();		//重製地圖
 		gameMap.InitialBullet();	//重製地圖物件
-		hero.SetGameMap(&gameMap);
+		hero.SetGameMap(&gameMap);	
 
 		//重製主角狀態
 #pragma region heroStateReset
@@ -3288,23 +3279,25 @@ namespace game_framework {
 
 		seed = (unsigned)time(NULL);	//亂數設置
 		srand(seed);					//亂數種子設置
-		mapX = mapY = 0;				//地圖座標
+		mapX = mapY = 0;
 
-		const_come1EnemyDelay = come1EnemyDelay = 50;
-		const_come2EnemyDelay = come2EnemyDelay = 75;
-		remainEnemy.SetInteger(maxEnemyNumber);
+		const_come1EnemyDelay = come1EnemyDelay = 50;		//敵人生成延遲
+		const_come2EnemyDelay = come2EnemyDelay = 75;		//敵人生成延遲
+		remainEnemy.SetInteger(maxEnemyNumber);				//設定通關所需擊殺數
 		stage = 0;					//關卡設置為0
 		isFallBack = false;			//目前沒有撤退
-		gameMap.setXY(0, 0);		//地圖座標(0,0)
 
-		showMovie = true;
-		movie.Initialize();
-		movie.resetAnimation();
+		showMovie = true;			//開場動畫顯示
+		movie.Initialize();			//初始化動畫
+		movie.resetAnimation();		//reset動畫內容
 
-		isNormalBGMShow = isBossBGMShow = false;
-		midBoss.Initialize();
+		isNormalBGMShow = isBossBGMShow = false;	//判斷音樂是否播放
+		midBoss.Initialize();			//midBoss初始化
 
-		delay = const_delay = 30;
+		delay = const_delay = 30;		//轉場延遲
+
+		kid.Initialize();				//kid 初始化
+		isShowKid = true;				//開場顯示小孩
 
 	}
 
@@ -3319,133 +3312,138 @@ namespace game_framework {
 			isNormalBGMShow = true;
 		}
 
+		mapX = gameMap.getX();					//地圖偏移座標
+		mapY = gameMap.getY();
+
 		if (showMovie)
 		{
 			movie.OnMove();
 			return;
 		}
 
-		heroLife.SetInteger(hero.getLife());
-		mapX = gameMap.getX();			//-2040、小boss
-		mapY = gameMap.getY();
-
-		if (stage == 1 || stage == 3)				//midBoss
+		if (isShowKid)
 		{
-			if (!isBossBGMShow)
+			hero.SetLock(true);
+			kid.OnMove();					//小孩移動
+			if (gameMap.isBulletHit(&kid))
 			{
-				CAudio::Instance()->Play(bossBGM, true);
-				isBossBGMShow = true;
+				kid.SetAlive(false);
+				kid.SetDead(true);
 			}
-			if (gameMap.isBulletHit(&midBoss))		//midBoss被主角攻擊
-				midBoss.AddLife(-1);
-
-			if (midBoss.isHitHero(&hero))			//主角被midBoss攻擊
-				hero.AddLife(-1);
-
-			gameMap.killBullet(&midBoss);
-			midBoss.OnMove();
+			isShowKid = kid.getShow();		//取得小孩顯示狀態
+			if (!isShowKid) hero.SetLock(false);
 		}
-		/*else if (stage == 3)		//finalBoss
+		else
 		{
-			if (!isBossBGMShow)
+			heroLife.SetInteger(hero.getLife());	//取得主角生命
+
+			if (nowAliveEnemy <= 0) hero.SetOverlap(false);
+
+			if (stage == 1 || stage == 3)				//midBoss
 			{
-				CAudio::Instance()->Play(bossBGM, true);
-				isBossBGMShow = true;
+				if (!isBossBGMShow)
+				{
+					CAudio::Instance()->Play(bossBGM, true);
+					isBossBGMShow = true;
+				}
+				if (gameMap.isBulletHit(&midBoss))		//midBoss被主角攻擊
+					midBoss.AddLife(-1);
+
+				if (midBoss.isHitHero(&hero))			//主角被midBoss攻擊
+					hero.AddLife(-1);
+
+				gameMap.killBullet(&midBoss);
+				midBoss.OnMove();
 			}
-		}*/
-
-
-		if (nowAliveEnemy <= 0) hero.SetOverlap(false);
-
-		if (stage == 0 || stage == 2)		//0、2皆為小兵關卡
-		{
-			if (!isFallBack)				//撤退不生成敵人、子彈、仍會對場上物件做判定
+			else if (stage == 0 || stage == 2)		//0、2皆為小兵關卡
 			{
+				if (!isFallBack)				//撤退不生成敵人、子彈、仍會對場上物件做判定
+				{
 
 #pragma region addEnemyControl
-				//敵人生成控制
-				if (nowAliveEnemy == 0)
-					enemyProduce(1);
-				if (come1EnemyDelay > 0) come1EnemyDelay--;
-				else
-				{
-					enemyProduce(1);
-					come1EnemyDelay = const_come1EnemyDelay;
-				}
-				if (come2EnemyDelay > 0) come2EnemyDelay--;
-				else
-				{
-					enemyProduce(2);
-					come2EnemyDelay = const_come2EnemyDelay;
-				}
+					//敵人生成控制
+					if (nowAliveEnemy == 0)
+						enemyProduce(1);
+					if (come1EnemyDelay > 0) come1EnemyDelay--;
+					else
+					{
+						enemyProduce(1);
+						come1EnemyDelay = const_come1EnemyDelay;
+					}
+					if (come2EnemyDelay > 0) come2EnemyDelay--;
+					else
+					{
+						enemyProduce(2);
+						come2EnemyDelay = const_come2EnemyDelay;
+					}
 #pragma endregion
 
 #pragma region BulletControl
-				//敵人子彈生成、敵人追蹤
-				for (loop = 0; loop < maxEnemyNumber; loop++)
-				{
-					if (vecEnemy[loop]->isShow())					//狀態判定
+					//敵人子彈生成、敵人追蹤
+					for (loop = 0; loop < maxEnemyNumber; loop++)
 					{
-						vecEnemy[loop]->SetMapXY(mapX, mapY);		//追蹤設定
-						if (vecEnemy[loop]->getShootState() && vecEnemy[loop]->getAlive())			//確認填彈狀態，是否可以射擊&&存活
-							gameMap.addEnemyBullet(vecEnemy[loop], hero.getX1(), hero.getY1());
+						if (vecEnemy[loop]->isShow())					//狀態判定
+						{
+							vecEnemy[loop]->SetMapXY(mapX, mapY);		//追蹤設定
+							if (vecEnemy[loop]->getShootState() && vecEnemy[loop]->getAlive())			//確認填彈狀態，是否可以射擊&&存活
+								gameMap.addEnemyBullet(vecEnemy[loop], hero.getX1(), hero.getY1());
+						}
 					}
-				}
 
 #pragma endregion
 
-			}
-			else nowShowEnemy = 0;		//isFallBack = true
+				}
+				else nowShowEnemy = 0;		//isFallBack = true
 
 #pragma region 敵人和主角攻擊碰撞判定
 
 #pragma region knifeEnemy
 			//刀砍到敵人
-			for (loop = 0; loop < maxEnemyNumber; loop++)			//主角敵人是否重疊
-			{
-				if (vecEnemy[loop]->getAlive())
+				for (loop = 0; loop < maxEnemyNumber; loop++)			//主角敵人是否重疊
 				{
-					if (hero.isOverlapEnemy(vecEnemy[loop]))		//沒有重疊已經寫在裡面
+					if (vecEnemy[loop]->getAlive())
 					{
-						if (hero.getShooting() && hero.getOverlap())	//刀砍，所有重疊的都會死
+						if (hero.isOverlapEnemy(vecEnemy[loop]))		//沒有重疊已經寫在裡面
 						{
-							remainEnemy.Add(-1);
-							nowAliveEnemy--;
-							vecEnemy[loop]->SetDead(true, hero.getDir_hor());
-							vecEnemy[loop]->SetAlive(false);
-							CAudio::Instance()->Play(AUDIO_enemyDead, false);
+							if (hero.getShooting() && hero.getOverlap())	//刀砍，所有重疊的都會死
+							{
+								remainEnemy.Add(-1);
+								nowAliveEnemy--;
+								vecEnemy[loop]->SetDead(true, hero.getDir_hor());
+								vecEnemy[loop]->SetAlive(false);
+								CAudio::Instance()->Play(AUDIO_enemyDead, false);
+							}
+							break;
 						}
-						break;
-					}
 
+					}
 				}
-			}
 #pragma endregion
 
 #pragma region shootEnemy
-			//敵人被子彈射到判斷
-			for (loop = 0; loop < maxEnemyNumber; loop++)
-			{
-				if (vecEnemy[loop]->getAlive())
+				//敵人被子彈射到判斷
+				for (loop = 0; loop < maxEnemyNumber; loop++)
 				{
-					if (gameMap.isBulletHit(vecEnemy[loop]))					//敵人是否被射到
+					if (vecEnemy[loop]->getAlive())
 					{
-						remainEnemy.Add(-1);									//剩餘人數-1
-						nowAliveEnemy--;										//現存人數-1
-						CAudio::Instance()->Play(AUDIO_enemyDead, false);		//撥放敵人死亡聲音
-						vecEnemy[loop]->SetDead(true, hero.getDir_hor());		//設定死亡&方向
-						vecEnemy[loop]->SetAlive(false);						//設定存活
+						if (gameMap.isBulletHit(vecEnemy[loop]))					//敵人是否被射到
+						{
+							remainEnemy.Add(-1);									//剩餘人數-1
+							nowAliveEnemy--;										//現存人數-1
+							CAudio::Instance()->Play(AUDIO_enemyDead, false);		//撥放敵人死亡聲音
+							vecEnemy[loop]->SetDead(true, hero.getDir_hor());		//設定死亡&方向
+							vecEnemy[loop]->SetAlive(false);						//設定存活
+						}
 					}
 				}
-			}
 
 #pragma endregion
 
 #pragma region damageHero
 
-			//主角被小兵射到判斷
-			if (gameMap.isBulletHit(&hero))
-				hero.AddLife(-1);
+				//主角被小兵射到判斷
+				if (gameMap.isBulletHit(&hero))
+					hero.AddLife(-1);
 
 #pragma endregion
 
@@ -3454,98 +3452,98 @@ namespace game_framework {
 
 #pragma region 敵人的移動
 
-			nowShowEnemy = 0;
-			for (loop = 0; loop < maxEnemyNumber; loop++)
-			{
-				if (vecEnemy[loop]->isShow())
+				nowShowEnemy = 0;
+				for (loop = 0; loop < maxEnemyNumber; loop++)
 				{
-					nowShowEnemy++;
-					if (gameMap.getMapBlock(vecEnemy[loop]->getY2() - mapY, vecEnemy[loop]->getX1() - mapX) == 0) vecEnemy[loop]->SetOnBlock(false);
-					else vecEnemy[loop]->SetOnBlock(true);
+					if (vecEnemy[loop]->isShow())
+					{
+						nowShowEnemy++;
+						if (gameMap.getMapBlock(vecEnemy[loop]->getY2() - mapY, vecEnemy[loop]->getX1() - mapX) == 0) vecEnemy[loop]->SetOnBlock(false);
+						else vecEnemy[loop]->SetOnBlock(true);
+					}
+					vecEnemy[loop]->SetDirection(hero.getX1());
+					vecEnemy[loop]->OnMove();
 				}
-				vecEnemy[loop]->SetDirection(hero.getX1());
-				vecEnemy[loop]->OnMove();
-			}
 
 #pragma endregion
 
 #pragma region changeStage
-		if (remainEnemy.GetInteger() <= 0)
-		{	
-			//敵人撤退
-			if (!isFallBack)
-			{
-				isFallBack = true;
-				CAudio::Instance()->Play(enemyScream, false);
-				for (loop = 0; loop < maxEnemyNumber; loop++)
+				if (remainEnemy.GetInteger() <= 0)
 				{
-					if (vecEnemy[loop]->getAlive())
-						vecEnemy[loop]->SetFallBack(true, hero.getX1());
-				}
-				CAudio::Instance()->Stop(AUDIO_normal_BGM);
-			}
-			else
-			{
-				if (stage == 0)
-				{
-					if (mapX <= -2035 && mapX >= -2050)		//鎖定小Bosss場地
+					//敵人撤退
+					if (!isFallBack)
 					{
-						hero.SetLock(true);
-						if (nowShowEnemy == 0)
+						isFallBack = true;
+						CAudio::Instance()->Play(enemyScream, false);
+						for (loop = 0; loop < maxEnemyNumber; loop++)
 						{
-							if (delay > 0) delay--;
-							else
+							if (vecEnemy[loop]->getAlive())
+								vecEnemy[loop]->SetFallBack(true, hero.getX1());
+						}
+						CAudio::Instance()->Stop(AUDIO_normal_BGM);
+					}
+					else
+					{
+						if (stage == 0)
+						{
+							if (mapX <= -2035 && mapX >= -2050)		//鎖定小Bosss場地
 							{
-								delay = const_delay;
-								stage++;
-								remainEnemy.SetInteger(0);
-								midBoss.SetStart(true);
+								hero.SetLock(true);
+								if (nowShowEnemy == 0)
+								{
+									if (delay > 0) delay--;
+									else
+									{
+										delay = const_delay;
+										stage++;
+										remainEnemy.SetInteger(0);
+										midBoss.SetStart(true);
+									}
+								}
+							}
+							else									//沒到的話要顯示提示
+							{
+								if (mapX > -2035) goR.SetTopLeft(SIZE_X - goR.Width(), SIZE_Y / 2 - goR.Height() / 2);
+								else if (mapX < -2050) goL.SetTopLeft(0, SIZE_Y / 2 - goL.Height() / 2);
+							}
+						}
+						else if (stage == 2)							//stage == 2
+						{
+							if (mapX <= -4300 && mapX >= -4315)		//鎖定FinalBosss場地
+							{
+								hero.SetLock(true);
+								if (nowShowEnemy == 0)
+								{
+									if (delay > 0) delay--;
+									else
+									{
+										delay = const_delay;
+										stage++;
+										remainEnemy.SetInteger(0);
+										midBoss.Initialize();
+										midBoss.SetStart(true);
+									}
+								}
+							}
+							else				//沒到的話要顯示提示
+							{
+								if (mapX > -4300) goR.SetTopLeft(SIZE_X - goR.Width(), SIZE_Y / 2 - goR.Height() / 2);
 							}
 						}
 					}
-					else									//沒到的話要顯示提示
-					{
-						if (mapX > -2035) goR.SetTopLeft(SIZE_X - goR.Width(), SIZE_Y / 2 - goR.Height() / 2);
-						else if (mapX < -2050) goL.SetTopLeft(0, SIZE_Y / 2 - goL.Height() / 2);
-					}
 				}
-				else if(stage == 2)							//stage == 2
-				{
-					if (mapX <= -4300 && mapX >= -4315)		//鎖定FinalBosss場地
-					{
-						hero.SetLock(true);
-						if (nowShowEnemy == 0)
-						{
-							if (delay > 0) delay--;
-							else
-							{
-								delay = const_delay;
-								stage++;
-								remainEnemy.SetInteger(0);
-								midBoss.Initialize();
-								midBoss.SetStart(true);
-							}
-						}
-					}
-					else				//沒到的話要顯示提示
-					{
-						if (mapX > -4300) goR.SetTopLeft(SIZE_X - goR.Width(), SIZE_Y / 2 - goR.Height() / 2);
-					}
-				}
-			}
-		}
 
 #pragma endregion
 
-		}		//stage 0、2
+			}		//stage 0、2
 
-		if (stage == 4)
-		{
-			CAudio::Instance()->Stop(AUDIO_normal_BGM);
-			CAudio::Instance()->Stop(bossBGM);
-			GotoGameState(GAME_STATE_OVER);
-		}
-
+			if (stage == 4)
+			{
+				CAudio::Instance()->Stop(AUDIO_normal_BGM);
+				CAudio::Instance()->Stop(bossBGM);
+				GotoGameState(GAME_STATE_OVER);
+			}
+		}		//!isShowKid
 		gameMap.OnMoveBullet();			//雙方子彈移動
 		gameMap.killBullet();			//雙方子彈刪除(超出範圍)
 		hero.OnMove();					//主角移動
@@ -3553,8 +3551,8 @@ namespace game_framework {
 #pragma region endGame
 		if (hero.getLife() <= 0)
 		{
-			//CAudio::Instance()->Stop(AUDIO_BGM_normal);
-			//GotoGameState(GAME_STATE_OVER);
+			CAudio::Instance()->Stop(AUDIO_normal_BGM);
+			GotoGameState(GAME_STATE_OVER);
 		}
 
 #pragma endregion
@@ -3639,8 +3637,9 @@ namespace game_framework {
 		remainEnemy.SetTopLeft(enemyImg.Width() + 10, 0);
 		
 		midBoss.LoadBitmap();
-
 		movie.LoadBitmap();
+		kid.LoadBitmap();
+
 #pragma region LoadMP3
 
 		CAudio::Instance()->Load(Movie_enemyGone, "sounds\\movie\\enemyGone.mp3");
@@ -3690,8 +3689,6 @@ namespace game_framework {
 		}
 		if (nChar == KEY_UP)
 		{
-			//hero.SetMovingUp(true);
-			//hero.SetDirection(3);
 		}
 		if (nChar == KEY_DOWN)
 		{
@@ -3715,19 +3712,6 @@ namespace game_framework {
 		if (nChar == KEY_Q)
 		{
 			if (showMovie) showMovie = false;
-			if (stage == 3)
-			{
-				stage++;
-				isFallBack = false;
-				hero.SetLock(false);
-				remainEnemy.SetInteger(maxEnemyNumber);
-				for (loop = 0; loop < maxEnemyNumber; loop++)
-				{
-					vecEnemy[loop]->Initialize();
-				}
-				CAudio::Instance()->Stop(bossBGM);
-				isNormalBGMShow = false;
-			}
 		}
 		if (nChar == KEY_R)
 		{
@@ -3807,60 +3791,65 @@ namespace game_framework {
 	void CGameStateRun::OnShow()
 	{
 
-		if (showMovie)
+		if (showMovie)						
 		{
-			showMovie = movie.OnShow();
+			showMovie = movie.OnShow();		//開場動畫顯示
 			return;
 		}
 
-		gameMap.OnShow();
+		gameMap.OnShow();					//背景顯示
 
-		if (stage == 1 || stage == 3)		//midBoss
+		if (isShowKid)
 		{
-			if (midBoss.OnShow())
-			{
-				stage++;					//midBoss死亡，關卡切換
-				isFallBack = false;
-				hero.SetLock(false);
-				remainEnemy.SetInteger(maxEnemyNumber);
-				for (loop = 0; loop < maxEnemyNumber; loop++)
-				{
-					vecEnemy[loop]->Initialize();
-				}
-				CAudio::Instance()->Stop(bossBGM);
-				isBossBGMShow = isNormalBGMShow = false;
-			}
+			kid.OnShow();
 		}
+		else
+		{
+			if (stage == 1 || stage == 3)		//midBoss
+			{
+				if (midBoss.OnShow())			//顯示midBoss
+				{
+					stage++;					//midBoss死亡，關卡切換
+					isFallBack = false;			//關閉撤退
+					hero.SetLock(false);		//取消地圖鎖定
+					remainEnemy.SetInteger(maxEnemyNumber);		//重新設定所需擊殺數
+					for (loop = 0; loop < maxEnemyNumber; loop++)
+						vecEnemy[loop]->Initialize();			//敵人重新初始化
+					CAudio::Instance()->Stop(bossBGM);			//關閉boss戰音效
+					isBossBGMShow = isNormalBGMShow = false;	//重製音效顯示狀態
+				}
+			}
 
-		for (loop = 0; loop < maxEnemyNumber; loop++)
-			if (vecEnemy[loop]->isShow()) vecEnemy[loop]->OnShow();
+			for (loop = 0; loop < maxEnemyNumber; loop++)		//敵人顯示
+				if (vecEnemy[loop]->isShow()) vecEnemy[loop]->OnShow();
 
 #pragma region mapInstruction
-		enemyImg.ShowBitmap();
-		remainEnemy.ShowBitmap();
-		heroImg.ShowBitmap();
-		heroLife.ShowBitmap();
+			enemyImg.ShowBitmap();			//敵人小圖顯示
+			remainEnemy.ShowBitmap();		//剩餘敵人數顯示
+			heroImg.ShowBitmap();			//主角小圖顯示
+			heroLife.ShowBitmap();			//主角血量顯示
 
 #pragma endregion
-		
-		if (remainEnemy.GetInteger() <= 0)
-		{
-			if (stage == 0)
-			{
-				if (mapX > -2035) goR.ShowBitmap();
-				else if (mapX < -2050) goL.ShowBitmap();
-			}
-			else if (stage == 2)
-			{
-				if (mapX > -4300) goR.ShowBitmap();
-			}
-		}
 
+			if (remainEnemy.GetInteger() <= 0)			//指示顯示
+			{
+				if (stage == 0)
+				{
+					if (mapX > -2035) goR.ShowBitmap();
+					else if (mapX < -2050) goL.ShowBitmap();
+				}
+				else if (stage == 2)
+				{
+					if (mapX > -4300) goR.ShowBitmap();
+				}
+			}
+		}	//!isShowkid
 
-		hero.OnShow();
-		gameMap.OnShowBullet();
+		hero.OnShow();				//主角顯示
+		gameMap.OnShowBullet();		//子彈顯示
 		
-	}
+	}	//OnShow
+
 	//CGameStateRun
 #pragma endregion
 
