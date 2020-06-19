@@ -86,8 +86,18 @@ namespace game_framework {
 		deadDelay = constDeadDelay = 20;			//死後無敵時間
 		delayCount = constDelay = 9;
 		direction = dir_horizontal = 1;				//預設向左
-		isDead = isFalling = isRising = isMovingDown 
-			= isMovingLeft = isMovingRight = isMovingUp = isShooting = isMapLock = false;
+		isDead = isFalling = false;
+#pragma region heroStateReset
+		SetMovingDown(false);
+		SetMovingLeft(false);
+		SetMovingRight(false);
+		SetMovingUp(false);
+		SetRising(false);
+		SetShooting(false);
+		SetOverlap(false);
+		SetLock(false);
+		SetMapXY(0, SIZE_Y - 721);
+#pragma endregion
 		canDead = true;
 		heroLife = 10;
 	}
@@ -1288,8 +1298,85 @@ namespace game_framework {
 
 		bool CKid::getDead() { return isDead; }
 
-
+		//CKid
 #pragma endregion
+
+/////////////////////////////////////////////////////////////////////////////
+// CFinalBoss: finalBoss class
+/////////////////////////////////////////////////////////////////////////////
+
+#pragma region CFinalBoss
+
+		CFinalBoss::CFinalBoss()
+		{
+			Initialize();
+		}
+
+		CFinalBoss::~CFinalBoss() {}
+
+		void CFinalBoss::Initialize()
+		{
+			x = y = 0;
+			bossLife = 50;
+		}
+
+		void CFinalBoss::LoadBitmap()
+		{
+			char *fileFoot[] = { ".\\image\\finalBoss\\foot1.bmp" , ".\\image\\finalBoss\\foot2.bmp" };
+			char *fileHand[] = { ".\\image\\finalBoss\\hand1.bmp" , ".\\image\\finalBoss\\hand2.bmp" , ".\\image\\finalBoss\\hand3.bmp" };
+			char *fileBullet[] = { ".\\image\\finalBoss\\bullet\\b1.bmp" , ".\\image\\finalBoss\\bullet\\b2.bmp" , ".\\image\\finalBoss\\bullet\\b3.bmp" };
+			char *fileBulletExplode[] = { ".\\image\\finalBoss\\bullet\\h1.bmp" , ".\\image\\finalBoss\\bullet\\h2.bmp" 
+				, ".\\image\\finalBoss\\bullet\\h3.bmp" , ".\\image\\finalBoss\\bullet\\h4.bmp" };
+			for (int i = 0; i < 4; i++)
+			{
+				if (i < 2) bossFoot.AddBitmap(fileFoot[i], Black);
+				else if (i < 3)
+				{
+					bossHand.AddBitmap(fileHand[i], Black);
+					gunBullet.AddBitmap(fileBullet[i], Black);
+				}
+				gunBulletExplode.AddBitmap(fileBulletExplode[i], Black);
+			}
+			bossGun.LoadBitmap(".\\image\\finalBoss\\gun.bmp", Black);
+			bossBody.LoadBitmap(".\\image\\finalBoss\\body.bmp", Black);
+			bossHead.LoadBitmap(".\\image\\finalBoss\\head1.bmp", Black);
+			bossHead2.LoadBitmap(".\\image\\finalBoss\\head2.bmp", Black);
+			handBullet.LoadBitmap(".\\image\\finalBoss\\bullet\\hand.bmp", Black);
+		}
+
+		void CFinalBoss::OnMove()
+		{
+			gunBullet.OnMove();
+			gunBulletExplode.OnMove();
+			bossHand.OnMove();
+			bossFoot.OnMove();
+		}
+
+		void CFinalBoss::OnShow()
+		{
+			bossHead.SetTopLeft(800 - bossHead.Width() - bossBody.Width() / 2, 0);
+			bossBody.SetTopLeft(800 - bossBody.Width(), 600 - bossFoot.Height() - bossBody.Height() + 50);
+			bossFoot.SetTopLeft(800 - bossFoot.Width(), 600 - bossFoot.Height());
+			bossGun.SetTopLeft(800 - bossBody.Width() - bossGun.Width()
+				, 600 - bossFoot.Height() - bossBody.Height() + 150);
+			bossHand.SetTopLeft(800 - bossHand.Width() / 2, 0);
+			gunBullet.SetTopLeft(0, 0);
+			gunBulletExplode.SetTopLeft(gunBullet.Width(), 0);
+			handBullet.SetTopLeft(0, gunBullet.Height());
+			
+			gunBullet.OnShow();
+			gunBulletExplode.OnShow();
+			handBullet.ShowBitmap();
+			bossGun.ShowBitmap();
+			bossFoot.OnShow();
+			bossBody.ShowBitmap();
+			bossHead.ShowBitmap();
+			bossHand.OnShow();
+		}
+
+		//CFinalBoss
+#pragma endregion
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CBullet: bullet class
@@ -3257,20 +3344,7 @@ namespace game_framework {
 		gameMap.Initialize();		//重製地圖
 		gameMap.InitialBullet();	//重製地圖物件
 		hero.SetGameMap(&gameMap);	
-
-		//重製主角狀態
-#pragma region heroStateReset
-		hero.SetMovingDown(false);
-		hero.SetMovingLeft(false);
-		hero.SetMovingRight(false);
-		hero.SetMovingUp(false);
-		hero.SetRising(false);
-		hero.SetShooting(false);
-		hero.SetOverlap(false);
-		hero.SetLock(false);
-		hero.SetMapXY(0, SIZE_Y - 721);
-		heroLife.SetInteger(10);
-#pragma endregion
+		hero.Initialize();
 
 		for (loop = 0; loop < maxEnemyNumber; loop++)
 			vecEnemy[loop]->Initialize();		//重新初始化敵人
@@ -3298,6 +3372,7 @@ namespace game_framework {
 
 		kid.Initialize();				//kid 初始化
 		isShowKid = true;				//開場顯示小孩
+		finalBoss.Initialize();
 
 	}
 
@@ -3306,6 +3381,13 @@ namespace game_framework {
 		// 如果希望修改cursor的樣式，則將下面程式的commment取消即可
 		// SetCursor(AfxGetApp()->LoadCursor(IDC_GAMECURSOR));
 		
+		if (test)
+		{
+			finalBoss.OnMove();
+			hero.OnMove();
+			return;
+		}
+
 		if (!isNormalBGMShow && !showMovie)
 		{
 			CAudio::Instance()->Play(AUDIO_normal_BGM, true);
@@ -3639,6 +3721,7 @@ namespace game_framework {
 		midBoss.LoadBitmap();
 		movie.LoadBitmap();
 		kid.LoadBitmap();
+		finalBoss.LoadBitmap();
 
 #pragma region LoadMP3
 
@@ -3676,6 +3759,7 @@ namespace game_framework {
 		const char KEY_Q = 0x51;
 		const char KEY_R = 0x52;
 
+		if (hero.getDead()) return;
 		//左1 右2 上3 下4
 		if (nChar == KEY_LEFT)
 		{
@@ -3790,6 +3874,13 @@ namespace game_framework {
 
 	void CGameStateRun::OnShow()
 	{
+
+		if (test)
+		{
+			finalBoss.OnShow();
+			hero.OnShow();
+			return;
+		}
 
 		if (showMovie)						
 		{

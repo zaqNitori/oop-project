@@ -641,7 +641,7 @@ private:
 };
 
 /////////////////////////////////////////////////////////////////////////////
-// 這個class提供Boss
+// 這個class提供小Boss
 /////////////////////////////////////////////////////////////////////////////
 
 class CMidBoss
@@ -700,6 +700,45 @@ private:
 	bool isMovingRight;		//Boss Move Right
 	bool isDead;			//Boss dead
 	bool isAlive;			//Boss Alive
+
+};
+
+/////////////////////////////////////////////////////////////////////////////
+// 這個class提供Boss
+/////////////////////////////////////////////////////////////////////////////
+
+class CFinalBoss
+{
+public:
+	CFinalBoss();
+	~CFinalBoss();
+	void Initialize();			//初始化Boss
+	void LoadBitmap();			//load picture
+	void OnMove();				//boss move
+	void OnShow();				//boss show
+
+private:
+
+#pragma region bodyPart
+	CAnimation bossFoot;			//boss foot
+	CAnimation bossHand;			//boss hand
+	CMovingBitmap bossGun;			//boss Gun
+	CMovingBitmap bossBody;
+	CMovingBitmap bossHead;			//boss head when life >= 1/2
+	CMovingBitmap bossHead2;		//boss head when life < 1/2  
+#pragma endregion
+
+#pragma region bullet
+	CAnimation gunBullet;			//bullet for gun
+	CAnimation gunBulletExplode;	//when bullet hit hero
+	CMovingBitmap handBullet;		//bullet for hand
+#pragma endregion
+
+
+	int bossLife;
+	int x, y;
+
+
 
 };
 
@@ -776,6 +815,7 @@ private:
 	CMidBoss midBoss;			//midBoss
 	CKid kid;					//kid
 	CMovie movie;				//movie
+	CFinalBoss finalBoss;		//finalBoss
 
 	CMovingBitmap enemyImg;		//敵人ICON
 	CInteger remainEnemy;		//剩餘敵人
@@ -805,6 +845,9 @@ private:
 	int delay, const_delay;
 
 	void enemyProduce(int);			//敵人生成控制
+
+
+	const bool test = true;			//測試用
 };
 
 /////////////////////////////////////////////////////////////////////////////
