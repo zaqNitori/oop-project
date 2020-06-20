@@ -1946,7 +1946,7 @@ namespace game_framework {
 
 	void CGameMap::LoadBitmap()
 	{
-		mapBmp.AddBitmap(IDB_GameMap);
+		mapBmp.AddBitmap(".\\image\\263.bmp");
 		char *fileBullet[] = { ".\\image\\bullet\\1.bmp" , ".\\image\\bullet\\2.bmp" , ".\\image\\bullet\\3.bmp" };
 		char *fileBulletEnemy[] = { ".\\image\\bullet\\enemy\\1.bmp" , ".\\image\\bullet\\enemy\\2.bmp" , ".\\image\\bullet\\enemy\\3.bmp" };
 
