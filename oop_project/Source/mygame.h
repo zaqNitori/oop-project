@@ -716,6 +716,10 @@ public:
 	void LoadBitmap();			//load picture
 	void OnMove();				//boss move
 	void OnShow();				//boss show
+	void SetStart(bool);		//start boss
+
+	bool isHitHero(CHero*);		//damaged Hero?
+
 
 private:
 
@@ -726,17 +730,27 @@ private:
 	CMovingBitmap bossBody;
 	CMovingBitmap bossHead;			//boss head when life >= 1/2
 	CMovingBitmap bossHead2;		//boss head when life < 1/2  
+	CMovingBitmap bossHandV;
 #pragma endregion
 
 #pragma region bullet
 	CAnimation gunBullet;			//bullet for gun
 	CAnimation gunBulletExplode;	//when bullet hit hero
 	CMovingBitmap handBullet;		//bullet for hand
+	CMovingBitmap caution;
 #pragma endregion
 
-
-	int bossLife;
-	int x, y;
+	bool isStart;						//show movie
+	bool isHandHitGround;				//true->取消碰撞
+	bool showGunExplode;				//show gunExplode animation
+	int bossLife, gunLife, handLife;	//part life
+	int bulletX, bulletY;				//bullet position
+	int bulletStep;						//bullet move speed
+	int handX, handY;					//hand position
+	int handStepX, handStepY;			//hand move speed
+	int handVX, handVY;					//handV position
+	int handVStep;						//handV speed
+	int x, y;							//boss位置偏移量
 
 
 

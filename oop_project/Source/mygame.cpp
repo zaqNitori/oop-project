@@ -1316,62 +1316,127 @@ namespace game_framework {
 
 		void CFinalBoss::Initialize()
 		{
-			x = y = 0;
+			y = 0;
+			x = 236;
+			bulletX = bulletY = -100;
+			bulletStep = 20;
 			bossLife = 50;
+			gunBullet.SetDelayCount(4);
+			gunBulletExplode.SetDelayCount(4);
+			showGunExplode = isHandHitGround = false;
+			isStart = true;
 		}
 
 		void CFinalBoss::LoadBitmap()
 		{
 			char *fileFoot[] = { ".\\image\\finalBoss\\foot1.bmp" , ".\\image\\finalBoss\\foot2.bmp" };
-			char *fileHand[] = { ".\\image\\finalBoss\\hand1.bmp" , ".\\image\\finalBoss\\hand2.bmp" , ".\\image\\finalBoss\\hand3.bmp" };
+			char *fileHand[] = { ".\\image\\finalBoss\\hand1.bmp" , ".\\image\\finalBoss\\hand2.bmp" };
 			char *fileBullet[] = { ".\\image\\finalBoss\\bullet\\b1.bmp" , ".\\image\\finalBoss\\bullet\\b2.bmp" , ".\\image\\finalBoss\\bullet\\b3.bmp" };
 			char *fileBulletExplode[] = { ".\\image\\finalBoss\\bullet\\h1.bmp" , ".\\image\\finalBoss\\bullet\\h2.bmp" 
 				, ".\\image\\finalBoss\\bullet\\h3.bmp" , ".\\image\\finalBoss\\bullet\\h4.bmp" };
 			for (int i = 0; i < 4; i++)
 			{
-				if (i < 2) bossFoot.AddBitmap(fileFoot[i], Black);
-				else if (i < 3)
+				if (i < 2)
 				{
-					bossHand.AddBitmap(fileHand[i], Black);
+					bossFoot.AddBitmap(fileFoot[i], Blue);
+					bossHand.AddBitmap(fileHand[i], Blue);
+				}
+				if (i < 3)
+				{
 					gunBullet.AddBitmap(fileBullet[i], Black);
 				}
 				gunBulletExplode.AddBitmap(fileBulletExplode[i], Black);
 			}
-			bossGun.LoadBitmap(".\\image\\finalBoss\\gun.bmp", Black);
-			bossBody.LoadBitmap(".\\image\\finalBoss\\body.bmp", Black);
-			bossHead.LoadBitmap(".\\image\\finalBoss\\head1.bmp", Black);
-			bossHead2.LoadBitmap(".\\image\\finalBoss\\head2.bmp", Black);
-			handBullet.LoadBitmap(".\\image\\finalBoss\\bullet\\hand.bmp", Black);
+			bossGun.LoadBitmap(".\\image\\finalBoss\\gun.bmp", Blue);
+			bossBody.LoadBitmap(".\\image\\finalBoss\\body.bmp", Blue);
+			bossHead.LoadBitmap(".\\image\\finalBoss\\head1.bmp", Blue);
+			bossHead2.LoadBitmap(".\\image\\finalBoss\\head2.bmp", Blue);
+			bossHandV.LoadBitmap(".\\image\\finalBoss\\handV.bmp", Blue);
+			handBullet.LoadBitmap(".\\image\\finalBoss\\bullet\\hand.bmp", Blue);
+			caution.LoadBitmap(".\\image\\finalBoss\\caution.bmp", Blue);
 		}
 
 		void CFinalBoss::OnMove()
 		{
-			gunBullet.OnMove();
-			gunBulletExplode.OnMove();
+			if (isStart)				//開場動畫
+			{
+				x -= 3;
+				if (x <= 50)			//控制偏移量
+				{
+					isStart = false;
+					x = 50;
+				}
+				bossFoot.OnMove();		//齒輪轉動
+				return;
+			}
+
+			if (showGunExplode) gunBulletExplode.OnMove();
+			else
+			{
+				gunBullet.OnMove();
+				if (bulletX <= -(2 * gunBullet.Width()))
+				{
+					bulletX = x + 800 - bossBody.Width() - bossGun.Width() + gunBullet.Width();
+					bulletY = 600 - bossFoot.Height() - bossBody.Height() / 2 + gunBullet.Height();
+				}
+				else bulletX -= bulletStep;
+			}
+			
 			bossHand.OnMove();
 			bossFoot.OnMove();
 		}
-
+		
 		void CFinalBoss::OnShow()
 		{
-			bossHead.SetTopLeft(800 - bossHead.Width() - bossBody.Width() / 2, 0);
-			bossBody.SetTopLeft(800 - bossBody.Width(), 600 - bossFoot.Height() - bossBody.Height() + 50);
-			bossFoot.SetTopLeft(800 - bossFoot.Width(), 600 - bossFoot.Height());
-			bossGun.SetTopLeft(800 - bossBody.Width() - bossGun.Width()
-				, 600 - bossFoot.Height() - bossBody.Height() + 150);
-			bossHand.SetTopLeft(800 - bossHand.Width() / 2, 0);
-			gunBullet.SetTopLeft(0, 0);
-			gunBulletExplode.SetTopLeft(gunBullet.Width(), 0);
+			bossHead.SetTopLeft(x + 800 + bossHead.Width() - bossBody.Width(), 0);
+			bossBody.SetTopLeft(x + 800 - bossBody.Width() + 100, 600 - bossFoot.Height() - bossBody.Height() + 50);
+			bossFoot.SetTopLeft(x + 800 - bossFoot.Width() + 100, 600 - bossFoot.Height());
+			bossGun.SetTopLeft(x + 800 - bossBody.Width() - bossGun.Width() + 130
+				, 600 - bossFoot.Height() - bossBody.Height() / 2 + 60);
+			bossHand.SetTopLeft(x + 800 - bossHand.Width() / 2, 50);
+			bossHandV.SetTopLeft(x + 800 + bossHandV.Width() - bossBody.Width(), 50);
+
+
+			if (showGunExplode)					//顯示子彈爆炸動畫
+			{
+				gunBulletExplode.SetTopLeft(bulletX, bulletY);
+				gunBulletExplode.OnShow();
+				if (gunBulletExplode.IsFinalBitmap())	//動畫結束
+				{
+					gunBulletExplode.Reset();			//重製
+					showGunExplode = false;				//關閉鎖定
+					bulletX = -50;						//將子彈位置設置在地圖外繼續判斷
+				}
+			}
+			else								//顯示子彈
+			{
+				gunBullet.SetTopLeft(bulletX, bulletY);
+				gunBullet.OnShow();
+			}
+
 			handBullet.SetTopLeft(0, gunBullet.Height());
 			
-			gunBullet.OnShow();
-			gunBulletExplode.OnShow();
 			handBullet.ShowBitmap();
 			bossGun.ShowBitmap();
 			bossFoot.OnShow();
+			bossHandV.ShowBitmap();
 			bossBody.ShowBitmap();
 			bossHead.ShowBitmap();
 			bossHand.OnShow();
+		}
+
+		void CFinalBoss::SetStart(bool flag) { isStart = flag; }
+
+		bool CFinalBoss::isHitHero(CHero *hero)
+		{
+			if (hero->getDead()) return false;
+			if (hero->getX1() <= bulletX + gunBullet.Width() && hero->getX2() >= bulletX
+				&& hero->getY1() <= bulletY + gunBullet.Height() && hero->getY2() >= bulletY)
+			{
+				showGunExplode = true;
+				return true;
+			}
+			return false;
 		}
 
 		//CFinalBoss
@@ -3384,6 +3449,8 @@ namespace game_framework {
 		if (test)
 		{
 			finalBoss.OnMove();
+			if (finalBoss.isHitHero(&hero))
+				hero.AddLife(-1);
 			hero.OnMove();
 			return;
 		}
@@ -3877,6 +3944,7 @@ namespace game_framework {
 
 		if (test)
 		{
+			gameMap.OnShow();
 			finalBoss.OnShow();
 			hero.OnShow();
 			return;
