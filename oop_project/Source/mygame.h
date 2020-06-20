@@ -67,6 +67,7 @@ namespace game_framework {
 	class CEnemy;
 	class CMidBoss;
 	class CKid;
+	class CFinalBoss;
 /////////////////////////////////////////////////////////////////////////////
 // 這個class提供子彈
 /////////////////////////////////////////////////////////////////////////////
@@ -170,6 +171,7 @@ public:
 	bool isBulletHit(CHero*);		//主角被射到
 	bool isBulletHit(CMidBoss*);	//子彈射到小Boss
 	bool isBulletHit(CKid*);		//子彈射到小孩
+	int isBulletHit(CFinalBoss*);	//子彈射中finalBoss，回傳值為射中的部位
 #pragma endregion
 
 private:
@@ -712,25 +714,52 @@ class CFinalBoss
 public:
 	CFinalBoss();
 	~CFinalBoss();
-	void Initialize();			//初始化Boss
-	void LoadBitmap();			//load picture
-	void OnMove();				//boss move
-	void OnShow();				//boss show
-	void SetStart(bool);		//start boss
+	void Initialize();				//初始化Boss
+	void LoadBitmap();				//load picture
+	void OnMove();					//boss move
+	bool OnShow();					//boss show
+	void SetStart(bool);			//start boss
+	void SetDestination(int, int);	//handAttack target position
+	void AddLife(int, int);			//part and life
 
-	bool isHitHero(CHero*);		//damaged Hero?
+	bool getGunState();				//取得槍枝狀態，是否死亡
+	bool getHandState();			//取得是否死亡
+	bool getHandVState();			//取得是否死亡
+	bool getHandOnground();			//hand是否可被攻擊
+	bool getHandVOnground();		//handV是否可被攻擊
+	bool getDead();					//finalBoss死亡
+	bool isHitHero(CHero*);			//damaged Hero?
 
+	int getGunX1();
+	int getGunX2();
+	int getGunY1();
+	int getGunY2();
+	int getHandX1();
+	int getHandX2();
+	int getHandY1();
+	int getHandY2();
+	int getHandVX1();
+	int getHandVX2();
+	int getHandVY1();
+	int getHandVY2();
+	int getBodyX1();
+	int getBodyX2();
+	int getBodyY1();
+	int getBodyY2();
 
 private:
 
+	CAnimation explode;
 #pragma region bodyPart
 	CAnimation bossFoot;			//boss foot
 	CAnimation bossHand;			//boss hand
 	CMovingBitmap bossGun;			//boss Gun
-	CMovingBitmap bossBody;
+	CMovingBitmap bossBody;			//boss body
 	CMovingBitmap bossHead;			//boss head when life >= 1/2
 	CMovingBitmap bossHead2;		//boss head when life < 1/2  
 	CMovingBitmap bossHandV;
+	CMovingBitmap handFist;			//用來作更精確的碰撞判定
+	CMovingBitmap handWrist;		//用來作更精確的碰撞判定
 #pragma endregion
 
 #pragma region bullet
@@ -738,22 +767,34 @@ private:
 	CAnimation gunBulletExplode;	//when bullet hit hero
 	CMovingBitmap handBullet;		//bullet for hand
 	CMovingBitmap caution;
+	CMovingBitmap caution2;
 #pragma endregion
 
 	bool isStart;						//show movie
 	bool isHandHitGround;				//true->取消碰撞
+	bool handOnground;					//處理hero子彈是否可以擊中目標
+	bool isHandVHitGround;
+	bool handVOnground;
+	bool canCaution;					//hand攻擊警告
+	bool canCaution2;					//handV攻擊警告
 	bool showGunExplode;				//show gunExplode animation
-	int bossLife, gunLife, handLife;	//part life
+	int bossLife, gunLife
+		, handLife, handVLife;			//part life
 	int bulletX, bulletY;				//bullet position
 	int bulletStep;						//bullet move speed
-	int handX, handY;					//hand position
-	int handStepX, handStepY;			//hand move speed
-	int handVX, handVY;					//handV position
-	int handVStep;						//handV speed
+	int handX, handY;					//bosshand position
+	int handStepX, handStepY;			//bosshand move speed
+	int handVX, handVY;					//handBulletV position
+	int handVStep;						//handBulletV speed
 	int x, y;							//boss位置偏移量
+	int heroX, heroY;					//hero座標，需要丟給handAttack做追蹤
 
+	bool canHandAttack;
+	int handDelay, const_handDelay;
 
-
+	bool canHandVAttack;
+	bool handVgetX;
+	int handVDelay, const_handVDelay;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -857,11 +898,12 @@ private:
 	int gunMode;					//敵人槍枝種類
 	int stage;						//0-第一關小兵、1-小boss、2-第二關小兵、3-最終boss
 	int delay, const_delay;
+	int bossPart;
 
 	void enemyProduce(int);			//敵人生成控制
 
 
-	const bool test = true;			//測試用
+	const bool test = false;			//測試用
 };
 
 /////////////////////////////////////////////////////////////////////////////

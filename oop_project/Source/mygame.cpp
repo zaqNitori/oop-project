@@ -1318,12 +1318,18 @@ namespace game_framework {
 		{
 			y = 0;
 			x = 236;
+			handX = handY = 800;
 			bulletX = bulletY = -100;
 			bulletStep = 20;
-			bossLife = 50;
+			bossLife = 10;
+			gunLife = handVLife = handLife = 5;
+			handDelay = const_handDelay = 150;
+			handVDelay = const_handVDelay = 30;
 			gunBullet.SetDelayCount(4);
 			gunBulletExplode.SetDelayCount(4);
-			showGunExplode = isHandHitGround = false;
+			explode.SetDelayCount(5);
+			canHandAttack = canHandVAttack = handOnground = handVOnground = canCaution =
+				canCaution2 = showGunExplode = isHandHitGround = isHandVHitGround = false;
 			isStart = true;
 		}
 
@@ -1334,6 +1340,9 @@ namespace game_framework {
 			char *fileBullet[] = { ".\\image\\finalBoss\\bullet\\b1.bmp" , ".\\image\\finalBoss\\bullet\\b2.bmp" , ".\\image\\finalBoss\\bullet\\b3.bmp" };
 			char *fileBulletExplode[] = { ".\\image\\finalBoss\\bullet\\h1.bmp" , ".\\image\\finalBoss\\bullet\\h2.bmp" 
 				, ".\\image\\finalBoss\\bullet\\h3.bmp" , ".\\image\\finalBoss\\bullet\\h4.bmp" };
+			char *fileExplode[] = { ".\\image\\finalBoss\\explode\\explode1.bmp" , ".\\image\\finalBoss\\explode\\explode2.bmp" , ".\\image\\finalBoss\\explode\\explode3.bmp"
+			,".\\image\\finalBoss\\explode\\explode4.bmp" , ".\\image\\finalBoss\\explode\\explode5.bmp" , ".\\image\\finalBoss\\explode\\explode6.bmp" };
+			
 			for (int i = 0; i < 4; i++)
 			{
 				if (i < 2)
@@ -1347,6 +1356,8 @@ namespace game_framework {
 				}
 				gunBulletExplode.AddBitmap(fileBulletExplode[i], Black);
 			}
+			for (int i = 0; i < 6; i++)
+				explode.AddBitmap(fileExplode[i], Black);
 			bossGun.LoadBitmap(".\\image\\finalBoss\\gun.bmp", Blue);
 			bossBody.LoadBitmap(".\\image\\finalBoss\\body.bmp", Blue);
 			bossHead.LoadBitmap(".\\image\\finalBoss\\head1.bmp", Blue);
@@ -1354,48 +1365,174 @@ namespace game_framework {
 			bossHandV.LoadBitmap(".\\image\\finalBoss\\handV.bmp", Blue);
 			handBullet.LoadBitmap(".\\image\\finalBoss\\bullet\\hand.bmp", Blue);
 			caution.LoadBitmap(".\\image\\finalBoss\\caution.bmp", Blue);
+			caution2.LoadBitmap(".\\image\\finalBoss\\caution2.bmp", Blue);
+			handFist.LoadBitmap(".\\image\\finalBoss\\handFist.bmp");
+			handWrist.LoadBitmap(".\\image\\finalBoss\\handWrist.bmp");
 		}
 
 		void CFinalBoss::OnMove()
 		{
 			if (isStart)				//開場動畫
 			{
+				handX = x + 800 - bossHand.Width() / 2;
+				handY = 50;
+				handVX = 800;
+				handVY = 600;
 				x -= 3;
 				if (x <= 50)			//控制偏移量
 				{
 					isStart = false;
 					x = 50;
 				}
-				bossFoot.OnMove();		//齒輪轉動
+				bossHand.OnMove();
+				bossFoot.OnMove();		//foot齒輪轉動
 				return;
 			}
 
-			if (showGunExplode) gunBulletExplode.OnMove();
-			else
+#pragma region gunAttack
+			if (gunLife > 0)
 			{
-				gunBullet.OnMove();
-				if (bulletX <= -(2 * gunBullet.Width()))
+				if (showGunExplode) gunBulletExplode.OnMove();
+				else
 				{
-					bulletX = x + 800 - bossBody.Width() - bossGun.Width() + gunBullet.Width();
-					bulletY = 600 - bossFoot.Height() - bossBody.Height() / 2 + gunBullet.Height();
+					gunBullet.OnMove();
+					if (bulletX <= -(2 * gunBullet.Width()))
+					{
+						bulletX = x + 800 - bossBody.Width() - gunBullet.Width();
+						bulletY = 600 - bossFoot.Height() - bossBody.Height() / 2 + 15 + gunBullet.Height();
+					}
+					else bulletX -= bulletStep;
 				}
-				else bulletX -= bulletStep;
 			}
-			
+			//gunAttack
+#pragma endregion
+
+#pragma region handAttack
+			if (handLife > 0)
+			{
+				if (!canHandAttack)
+				{
+					if (handDelay > 0)
+					{
+						handDelay--;
+						if (handDelay <= 40)		//攻擊警告
+							canCaution = true;
+					}
+					else
+					{
+						canCaution = false;
+						canHandAttack = true;
+						handDelay = 30;
+						handStepX = abs(heroX - handX) / 20;			//飛行速度
+						handStepY = max(abs(heroY - handY) / 25, 5);	//飛行速度
+					}
+				}
+				else		//canHandAttack
+				{
+					if (!isHandHitGround)		//是否打到地板
+					{
+						handX -= handStepX;
+						handY += handStepY;
+						if (handY >= 600 - bossHand.Height())
+						{
+							isHandHitGround = true;
+							handOnground = true;
+						}
+					}
+					else						//是，做回收拳頭的動作
+					{
+						if (handDelay > 0) handDelay--;
+						else
+						{
+							handOnground = false;
+							handX += handStepX;
+							handY -= handStepY;
+							if (handY <= 50)
+							{
+								handY = 50;
+								handDelay = const_handDelay;
+								isHandHitGround = false;
+								canHandAttack = false;
+							}
+						}
+					}		//ishandhitground
+				}		//canhandAttack
+			}
+		//handAttack
+#pragma endregion
+
+#pragma region handVAttack
+			if (handVLife > 0 && gunLife <= 0)
+			{
+				if (!canHandVAttack)
+				{
+					if (!handVgetX)				//position setting
+					{
+						handVX = rand() % 400;
+						handVY = -handBullet.Height();
+						handVgetX = true;
+					}
+					if (handVDelay > 0)			//attackDelay
+					{
+						handVDelay--;
+						if (handVDelay < 10)			//攻擊警告
+							canCaution2 = true;
+					}
+					else
+					{
+						handVDelay = const_handVDelay;
+						handVStep = 25;
+						canCaution2 = false;
+						canHandVAttack = true;
+					}
+				}		//!canHandVAttack
+				else		//canHandVAttack
+				{
+					if (!isHandVHitGround)		//擊中地板
+					{
+						handVY += handVStep;
+						if (handVY >= 600 - handBullet.Height())
+						{
+							isHandVHitGround = true;
+							handVOnground = true;
+						}
+					}
+					else						//是，做回收拳頭的動作
+					{
+						if (handVDelay > 0) handVDelay--;
+						else
+						{
+							handVOnground = false;
+							handVY -= handVStep;
+							if (handVY <= -handBullet.Height())
+							{
+								handVDelay = const_handVDelay;
+								isHandVHitGround = false;
+								canHandVAttack = false;
+								handVgetX = false;
+							}
+						}
+					}		//isHandVhitground
+				}		//canHandVAttack
+			}		//handVLife
+
+		//handVAttack
+#pragma endregion
+
+			if (gunLife == 0 || handLife == 0 || handVLife == 0 || bossLife == 0) explode.OnMove();
+
 			bossHand.OnMove();
 			bossFoot.OnMove();
 		}
 		
-		void CFinalBoss::OnShow()
+		bool CFinalBoss::OnShow()
 		{
 			bossHead.SetTopLeft(x + 800 + bossHead.Width() - bossBody.Width(), 0);
 			bossBody.SetTopLeft(x + 800 - bossBody.Width() + 100, 600 - bossFoot.Height() - bossBody.Height() + 50);
 			bossFoot.SetTopLeft(x + 800 - bossFoot.Width() + 100, 600 - bossFoot.Height());
-			bossGun.SetTopLeft(x + 800 - bossBody.Width() - bossGun.Width() + 130
-				, 600 - bossFoot.Height() - bossBody.Height() / 2 + 60);
-			bossHand.SetTopLeft(x + 800 - bossHand.Width() / 2, 50);
-			bossHandV.SetTopLeft(x + 800 + bossHandV.Width() - bossBody.Width(), 50);
-
+			bossGun.SetTopLeft(x + 800 - bossBody.Width()
+				, 600 - bossFoot.Height() - bossBody.Height() / 2 + 30);
+			bossHand.SetTopLeft(handX, handY);
 
 			if (showGunExplode)					//顯示子彈爆炸動畫
 			{
@@ -1410,34 +1547,203 @@ namespace game_framework {
 			}
 			else								//顯示子彈
 			{
-				gunBullet.SetTopLeft(bulletX, bulletY);
-				gunBullet.OnShow();
+				if (gunLife > 0)
+				{
+					gunBullet.SetTopLeft(bulletX, bulletY);
+					gunBullet.OnShow();
+				}
 			}
 
-			handBullet.SetTopLeft(0, gunBullet.Height());
-			
-			handBullet.ShowBitmap();
-			bossGun.ShowBitmap();
+			if (canHandVAttack)
+			{
+				handBullet.SetTopLeft(handVX, handVY);
+				if (handVLife > 0) handBullet.ShowBitmap();
+			}
+
+			if(gunLife > 0) bossGun.ShowBitmap();
 			bossFoot.OnShow();
-			bossHandV.ShowBitmap();
 			bossBody.ShowBitmap();
 			bossHead.ShowBitmap();
-			bossHand.OnShow();
+			if(handLife > 0) bossHand.OnShow();
+			
+			if (canCaution)
+			{
+				caution.SetTopLeft(handX + 30, handY + 50);
+				caution.ShowBitmap();
+			}
+			if (canCaution2)
+			{
+				caution2.SetTopLeft(handVX, 0);
+				caution2.ShowBitmap();
+			}
+
+			if (gunLife == 0)
+			{
+				explode.SetTopLeft(x + 800 - bossBody.Width() + bossGun.Width() - explode.Width()
+					, 600 - bossFoot.Height() - bossBody.Height() / 2 + 30 + bossGun.Height() - explode.Height());
+				explode.OnShow();
+				if (explode.IsFinalBitmap())
+				{
+					explode.Reset();
+					gunLife = -10;
+				}
+			}
+			else if (handLife == 0)
+			{
+				explode.SetTopLeft(handX + bossHand.Width() - explode.Width()
+					, handY + bossHand.Height() - explode.Height());
+				explode.OnShow();
+				if (explode.IsFinalBitmap())
+				{
+					explode.Reset();
+					handLife = -10;
+				}
+			}
+			else if (handVLife == 0)
+			{
+				explode.SetTopLeft(handVX
+					, handVY + handBullet.Height() - explode.Height());
+				explode.OnShow();
+				if (explode.IsFinalBitmap())
+				{
+					explode.Reset();
+					handVLife = -10;
+				}
+			}
+			else if (bossLife == 0)
+			{
+				explode.SetTopLeft(x + 800 - explode.Width()
+					, 600 - bossFoot.Height() + 50 - explode.Height());
+				explode.OnShow();
+				if (explode.IsFinalBitmap())
+				{
+					explode.Reset();
+					bossLife = -10;
+					return true;
+				}
+			}
+			return false;
 		}
 
 		void CFinalBoss::SetStart(bool flag) { isStart = flag; }
 
+		void CFinalBoss::SetDestination(int dx, int dy)
+		{
+			heroX = dx - 50;		//更精確的瞄準
+			heroY = dy - 50;		
+		}
+
+		void CFinalBoss::AddLife(int part,int n)
+		{
+			switch (part)
+			{
+			case 1:
+				gunLife += n;
+				break;
+			case 2:
+				handLife += n;
+				break;
+			case 3:
+				handVLife += n;
+				break;
+			case 4:
+				bossLife += n;
+				break;
+			default:
+				break;
+			}
+		}
+
+		bool CFinalBoss::getGunState() { return gunLife > 0; }
+
+		bool CFinalBoss::getHandState() { return handLife > 0; }
+
+		bool CFinalBoss::getHandVState() { return handVLife > 0; }
+
+		bool CFinalBoss::getHandOnground() { return handOnground; }
+
+		bool CFinalBoss::getHandVOnground() { return handVOnground; }
+
+		bool CFinalBoss::getDead() { return bossLife <= 0; }
+
 		bool CFinalBoss::isHitHero(CHero *hero)
 		{
 			if (hero->getDead()) return false;
-			if (hero->getX1() <= bulletX + gunBullet.Width() && hero->getX2() >= bulletX
-				&& hero->getY1() <= bulletY + gunBullet.Height() && hero->getY2() >= bulletY)
+			if (gunLife > 0)				//槍壞掉了就不用判定
 			{
-				showGunExplode = true;
+				if (hero->getX1() <= bulletX + gunBullet.Width() && hero->getX2() >= bulletX
+					&& hero->getY1() <= bulletY + gunBullet.Height() && hero->getY2() >= bulletY)
+				{
+					showGunExplode = true;
+					return true;
+				}
+			}
+			if (!isHandHitGround)			//拳頭還在空中飛行
+			{
+				//兩段式碰撞判定，由於圖片過大，所以需要分成Fist跟Wrist
+				if (hero->getX1() <= handX + handFist.Width() && hero->getX2() >= handX &&
+					hero->getY1() <= handY + bossHand.Height() && hero->getY2() >= handY + bossHand.Height() - handFist.Height())
+				{
+					return true;
+				}
+				else if (hero->getX1() <= handX + bossHand.Width() && hero->getX2() >= handX + bossHand.Width() - handWrist.Width() &&
+					hero->getY1() <= handY + handWrist.Height() && hero->getY2() >= handY)
+				{
+					return true;
+				}
+			}
+			if (!isHandVHitGround)			//拳頭在空中飛行
+			{
+				if (hero->getX1() <= handVX + handBullet.Width() && hero->getX2() >= handVX
+					&& hero->getY1() <= handVY + handBullet.Height() && hero->getY2() >= handVY)
+				{
+					return true;
+				}
+			}
+			//撞到boss身體
+			if (hero->getX1() <= 800 && hero->getX2() >= x + 800 - bossFoot.Width() + 100
+				&& hero->getY1() <= 600 && hero->getY2() >= 0)
+			{
 				return true;
 			}
 			return false;
 		}
+
+#pragma region getXY
+
+		int CFinalBoss::getGunX1() { return x + 800 - bossBody.Width(); }
+
+		int CFinalBoss::getGunX2() { return x + 800 - bossBody.Width() + bossGun.Width(); }
+
+		int CFinalBoss::getGunY1() { return 600 - bossFoot.Height() - bossBody.Height() / 2 + 30; }
+
+		int CFinalBoss::getGunY2() { return 600 - bossFoot.Height() - bossBody.Height() / 2 + 30 + bossGun.Height(); }
+
+		int CFinalBoss::getHandX1() { return handX; }
+
+		int CFinalBoss::getHandX2() { return handX + bossHand.Width(); }
+
+		int CFinalBoss::getHandY1() { return handY; }
+
+		int CFinalBoss::getHandY2() { return handY + bossHand.Height(); }
+
+		int CFinalBoss::getHandVX1() { return handVX; }
+
+		int CFinalBoss::getHandVX2() { return handVX + handBullet.Width(); }
+
+		int CFinalBoss::getHandVY1() { return handVY; }
+
+		int CFinalBoss::getHandVY2() { return handVY + handBullet.Height(); }
+
+		int CFinalBoss::getBodyX1() { return x + 800 - bossBody.Width() + 100; }
+
+		int CFinalBoss::getBodyX2() { return x + 800 + 100; }
+
+		int CFinalBoss::getBodyY1() { return 600 - bossFoot.Height() - bossBody.Height() + 50; }
+
+		int CFinalBoss::getBodyY2() { return 600 - bossFoot.Height() - bossBody.Height() / 2 + 50; }
+#pragma endregion
+
 
 		//CFinalBoss
 #pragma endregion
@@ -1899,6 +2205,49 @@ namespace game_framework {
 			}
 		}
 		return false;
+	}
+
+	int CGameMap::isBulletHit(CFinalBoss *boss)
+	{
+		for (loop = 0; loop < maxHeroBullet; loop++)
+		{
+			if (vCblt[loop]->isShow())
+			{
+				if (boss->getGunState())
+				{	//射中槍
+					if (vCblt[loop]->isHit(boss->getGunX1(), boss->getGunY1(), boss->getGunX2(), boss->getGunY2()))
+					{
+						vCblt[loop]->SetLife(false);
+						return 1;
+					}
+				}
+				else if (boss->getHandOnground() && boss->getHandState())
+				{	//射中手
+					if (vCblt[loop]->isHit(boss->getHandX1(), boss->getHandY1(), boss->getHandX2(), boss->getHandY2()))
+					{
+						vCblt[loop]->SetLife(false);
+						return 2;
+					}
+				}
+				else if (boss->getHandVOnground() && boss->getHandVState())
+				{	//射中手V
+					if (vCblt[loop]->isHit(boss->getHandVX1(), boss->getHandVY1(), boss->getHandVX2(), boss->getHandVY2()))
+					{
+						vCblt[loop]->SetLife(false);
+						return 3;
+					}
+				}
+				else if(!boss->getDead())
+		    	{	//射中身體
+					if (vCblt[loop]->isHit(boss->getBodyX1(), boss->getBodyY1(), boss->getBodyX2(), boss->getBodyY2()))
+					{
+						vCblt[loop]->SetLife(false);
+						return 4;
+					}
+				}
+			}	//isShow
+		}
+		return 0;
 	}
 
 #pragma endregion
@@ -3448,10 +3797,6 @@ namespace game_framework {
 		
 		if (test)
 		{
-			finalBoss.OnMove();
-			if (finalBoss.isHitHero(&hero))
-				hero.AddLife(-1);
-			hero.OnMove();
 			return;
 		}
 
@@ -3495,14 +3840,26 @@ namespace game_framework {
 					CAudio::Instance()->Play(bossBGM, true);
 					isBossBGMShow = true;
 				}
-				if (gameMap.isBulletHit(&midBoss))		//midBoss被主角攻擊
-					midBoss.AddLife(-1);
+				if (stage == 1)
+				{
+					if (gameMap.isBulletHit(&midBoss))		//midBoss被主角攻擊
+						midBoss.AddLife(-1);
 
-				if (midBoss.isHitHero(&hero))			//主角被midBoss攻擊
-					hero.AddLife(-1);
+					if (midBoss.isHitHero(&hero))			//主角被midBoss攻擊
+						hero.AddLife(-1);
 
-				gameMap.killBullet(&midBoss);
-				midBoss.OnMove();
+					gameMap.killBullet(&midBoss);
+					midBoss.OnMove();
+				}
+				else if (stage == 3)
+				{
+					finalBoss.OnMove();
+					finalBoss.SetDestination(hero.getX1(), hero.getY1());
+					if (finalBoss.isHitHero(&hero))
+						hero.AddLife(-1);
+					bossPart = gameMap.isBulletHit(&finalBoss);
+					finalBoss.AddLife(bossPart, -1);
+				}
 			}
 			else if (stage == 0 || stage == 2)		//0、2皆為小兵關卡
 			{
@@ -3944,9 +4301,6 @@ namespace game_framework {
 
 		if (test)
 		{
-			gameMap.OnShow();
-			finalBoss.OnShow();
-			hero.OnShow();
 			return;
 		}
 
@@ -3964,7 +4318,7 @@ namespace game_framework {
 		}
 		else
 		{
-			if (stage == 1 || stage == 3)		//midBoss
+			if (stage == 1)		//midBoss
 			{
 				if (midBoss.OnShow())			//顯示midBoss
 				{
@@ -3978,7 +4332,14 @@ namespace game_framework {
 					isBossBGMShow = isNormalBGMShow = false;	//重製音效顯示狀態
 				}
 			}
-
+			else if (stage == 3)
+			{
+				if (finalBoss.OnShow())
+				{
+					stage++;
+					CAudio::Instance()->Stop(bossBGM);
+				}
+			}
 			for (loop = 0; loop < maxEnemyNumber; loop++)		//敵人顯示
 				if (vecEnemy[loop]->isShow()) vecEnemy[loop]->OnShow();
 
