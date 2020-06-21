@@ -1726,6 +1726,7 @@ namespace game_framework {
 			default:
 				break;
 			}
+			if (bossLife <= 0) isStart = false;
 		}
 
 		bool CFinalBoss::getGunState() { return gunLife > 0; }
