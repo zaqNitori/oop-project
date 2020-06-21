@@ -480,13 +480,15 @@ public:
 	void SetOverlap(bool);
 	void ResumeDirection();			// 將方向重新調回左和右  
 	void SetXY(int, int);			//方便Demo使用
-	void SetLock(bool);
-	void SetMapXY(int, int);
-	void SetCheat();
-	void AddLife(int);
+	void SetLock(bool);				//地圖鎖定
+	void SetMapXY(int, int);		//座標設定
+	void SetCheat();				//外掛開啟
+	void SetDead();					//設定死亡(快捷鍵用)
+	void AddLife(int);				//處理血量
 #pragma endregion
 
 #pragma region Getstate
+	bool getCheat();
 	int getLife();
 	int getX1();					//get heroLeft
 	int getY1();					//get heroTop
@@ -671,6 +673,7 @@ public:
 
 	void AddLife(int);			//deal with boss Life
 	void SetStart(bool);		//小Boss開始動作
+	void SetDead();				//快捷鍵讓boss直接死亡
 
 	int getLife();				//get current boss life
 	int getX1();				//get left
@@ -895,6 +898,7 @@ private:
 	CMovingBitmap goR;			//顯示往右
 	CMovingBitmap gameDefeat;	//遊戲失敗
 	CMovingBitmap gameVictory;	//遊戲獲勝
+	CInteger gameScore;
 
 	bool isDefeat, isVictory;
 	bool isShowKid;					//開場小孩動畫
@@ -919,6 +923,7 @@ private:
 	int stage;						//0-第一關小兵、1-小boss、2-第二關小兵、3-最終boss
 	int delay, const_delay;
 	int bossPart;
+	int countKnifeAtSameTime;		//計算一刀殺了幾人，分數運算
 
 	void enemyProduce(int);			//敵人生成控制
 
@@ -944,11 +949,12 @@ protected:
 	void OnShow();									// 顯示這個狀態的遊戲畫面
 private:
 
-	CMovingBitmap gameOverInterface;
+	CInteger finalScore;
+	CMovingBitmap gameWin;
+	CMovingBitmap gameLose;
 	CMovingBitmap btnBack;
 	CMovingBitmap btnBackHover;
 	bool isHoverBack;
-	int counter;	// 倒數之計數器
 };
 
 }

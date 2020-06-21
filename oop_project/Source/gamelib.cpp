@@ -266,6 +266,8 @@ namespace game_framework {
 		n += x;
 	}
 
+	void CInteger::SetDigit(int n) { NUMDIGITS = n; }
+
 	int CInteger::GetInteger()
 	{
 		return n;

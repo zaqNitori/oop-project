@@ -63,6 +63,12 @@
 
 #define Blue RGB(0,0,255)
 #define Black RGB(0,0,0)
+#define enemyScore 100
+#define midBossScore 5000
+#define finalBossScore 20000
+int score = 0;			//遊戲分數
+int ending;				//結局-(勝利或失敗) 0-win 1-lose
+bool cheat;				//是否開掛 ， 分數判定
 
 namespace game_framework {
 
@@ -86,6 +92,7 @@ namespace game_framework {
 		deadDelay = constDeadDelay = 20;			//死後無敵時間
 		delayCount = constDelay = 9;
 		direction = dir_horizontal = 1;				//預設向左
+		SetDirection(1);
 		canEnd = whosyourdaddy = isRising = isDead = isFalling = false;
 #pragma region heroStateReset
 		SetMovingDown(false);
@@ -501,6 +508,12 @@ namespace game_framework {
 
 		void CHero::SetCheat() { whosyourdaddy = !whosyourdaddy; }
 
+		void CHero::SetDead()
+		{ 
+			isDead = true;
+			heroLife = 0;
+		}
+
 		void CHero::SetOverlap(bool flag)
 		{
 			isOverlap = flag;
@@ -530,6 +543,8 @@ namespace game_framework {
 
 	#pragma region GetState
 		
+		bool CHero::getCheat() { return whosyourdaddy; }
+
 		int CHero::getLife() { return heroLife; }
 
 		int CHero::getX1() { return x; }
@@ -1158,12 +1173,21 @@ namespace game_framework {
 		void CMidBoss::AddLife(int n)
 		{
 			bossLife += n; 
+			if (isDead) return;
 			if (bossLife <= 0) 
 			{
 				isAlive = false;
 				isDead = true;
 				CAudio::Instance()->Play(Movie_ufoExplode, false);
 			}
+		}
+
+		void CMidBoss::SetDead()
+		{
+			bossLife = 0;
+			isAlive = false;
+			isDead = true;
+			CAudio::Instance()->Play(Movie_ufoExplode, false);
 		}
 
 		void CMidBoss::SetStart(bool flag) 
@@ -1328,8 +1352,8 @@ namespace game_framework {
 			handX = handY = 800;
 			bulletX = bulletY = -100;
 			bulletStep = 20;
-			bossLife = 50;
-			gunLife = handVLife = handLife = 50;
+			gunLife = 30;
+			bossLife = handVLife = handLife = 50;
 			handDelay = const_handDelay = 150;
 			handVDelay = const_handVDelay = 30;
 			gunBullet.SetDelayCount(4);
@@ -1614,7 +1638,7 @@ namespace game_framework {
 				if (explode.IsFinalBitmap())
 				{
 					explode.Reset();
-					gunLife = -10;
+					gunLife = -50;
 					explodeSound = false;
 				}
 			}
@@ -1631,7 +1655,7 @@ namespace game_framework {
 				if (explode.IsFinalBitmap())
 				{
 					explode.Reset();
-					handLife = -10;
+					handLife = -50;
 					explodeSound = false;
 				}
 			}
@@ -1648,11 +1672,11 @@ namespace game_framework {
 				if (explode.IsFinalBitmap())
 				{
 					explode.Reset();
-					handVLife = -10;
+					handVLife = -50;
 					explodeSound = false;
 				}
 			}
-			else if (bossLife == 0)
+			else if (bossLife <= 0)
 			{
 				if (!explodeSound)
 				{
@@ -1665,7 +1689,7 @@ namespace game_framework {
 				if (explode.IsFinalBitmap())
 				{
 					explode.Reset();
-					bossLife = -10;
+					bossLife = -999;
 					explodeSound = false;
 					CAudio::Instance()->Stop(finalBossGunShoot);
 					CAudio::Instance()->Stop(finalBossHandAttack);
@@ -3494,14 +3518,7 @@ namespace game_framework {
 
 	void CGameStateInit::OnInit()
 	{
-		//
-		// 當圖很多時，OnInit載入所有的圖要花很多時間。為避免玩遊戲的人
-		//     等的不耐煩，遊戲會出現「Loading ...」，顯示Loading的進度。
-		//
 		ShowInitProgress(0);	// 一開始的loading進度為0%
-		//
-		// 開始載入資料
-		//
 		isShowHow = ishoverHow = ishoverBack = isShowAbout = isSoundShow = ishoverGo = ishoverExit = ishoverAbout = false;
 		char *fileFire[] = { ".\\image\\interface\\95.bmp" , ".\\image\\interface\\96.bmp" , ".\\image\\interface\\97.bmp" , ".\\image\\interface\\98.bmp" };
 		char *fileScream[] = { ".\\image\\interface\\scream\\1.bmp" , ".\\image\\interface\\scream\\2.bmp" , ".\\image\\interface\\scream\\3.bmp" , ".\\image\\interface\\scream\\4.bmp"
@@ -3532,10 +3549,6 @@ namespace game_framework {
 		CAudio::Instance()->Load(fire, "sounds\\fire.mp3");
 		CAudio::Instance()->Load(enemyScream, "sounds\\enemyScream.mp3");
 
-		Sleep(300);				// 放慢，以便看清楚進度，實際遊戲請刪除此Sleep
-		//
-		// 此OnInit動作會接到CGameStaterRun::OnInit()，所以進度還沒到100%
-		//
 	}
 
 	void CGameStateInit::OnBeginState()
@@ -3744,40 +3757,32 @@ namespace game_framework {
 
 	void CGameStateOver::OnMove()
 	{
-		counter--;
-		if (counter < 0)
-			GotoGameState(GAME_STATE_INIT);
+		if (cheat) finalScore.SetInteger(0);
+		else finalScore.SetInteger(score);
 	}
 
 	void CGameStateOver::OnBeginState()
 	{
 		isHoverBack = false;
-		counter = 30 * 5; // 5 seconds
 	}
 
 	void CGameStateOver::OnInit()
 	{
-		//
-		// 當圖很多時，OnInit載入所有的圖要花很多時間。為避免玩遊戲的人
-		//     等的不耐煩，遊戲會出現「Loading ...」，顯示Loading的進度。
-		//
 		ShowInitProgress(66);	// 接個前一個狀態的進度，此處進度視為66%
-		//
-		// 開始載入資料
-		//
-		Sleep(300);				// 放慢，以便看清楚進度，實際遊戲請刪除此Sleep
-		//
-		// 最終進度為100%
-		//
+
 		ShowInitProgress(100);
-		gameOverInterface.LoadBitmap(".\\image\\interface\\gameEnd.bmp");
+		gameWin.LoadBitmap(".\\image\\interface\\gameEndWin.bmp");
+		gameLose.LoadBitmap(".\\image\\interface\\gameEndLose.bmp");
 		btnBack.LoadBitmap(".\\image\\interface\\btnBack.bmp", Black);
 		btnBackHover.LoadBitmap(".\\image\\interface\\btnBackHover.bmp", Black);
+		finalScore.LoadBitmap();
+		finalScore.SetDigit(5);
+
 	}
 
 	void CGameStateOver::OnMouseMove(UINT nFlags, CPoint point)
 	{
-		if (point.x >= 50 && point.x <= 50 + 140 && point.y >= 600 - 59 - 50 && point.y <= 600 - 59 )
+		if (point.x >= 800 - btnBack.Width() - 50 && point.x <= 800 - 50 && point.y >= 600 - 59 - 50 && point.y <= 600 - 59 )
 			isHoverBack = true;
 		else
 			isHoverBack = false;
@@ -3791,20 +3796,30 @@ namespace game_framework {
 
 	void CGameStateOver::OnShow()
 	{
-		gameOverInterface.SetTopLeft(0, 0);
-		gameOverInterface.ShowBitmap();
-
-		if (!isHoverBack)
+		if (ending == 0)		//win
 		{
-			btnBackHover.SetTopLeft(50, 600 - btnBackHover.Height() - 50);
+			gameWin.SetTopLeft(0, 0);
+			gameWin.ShowBitmap();
+		}
+		else if (ending == 1)	//lose
+		{
+			gameLose.SetTopLeft(0, 0);
+			gameLose.ShowBitmap();
+		}
+
+		if (isHoverBack)
+		{
+			btnBackHover.SetTopLeft(800 - 50 - btnBackHover.Width(), 600 - btnBackHover.Height() - 50);
 			btnBackHover.ShowBitmap();
 		}
 		else
 		{
-			btnBack.SetTopLeft(50, 600 - btnBackHover.Height() - 50);
+			btnBack.SetTopLeft(800 - btnBackHover.Width() -50, 600 - btnBackHover.Height() - 50);
 			btnBack.ShowBitmap();
 		}
 
+		finalScore.SetTopLeft(400, 350);
+		finalScore.ShowBitmap();
 	}
 	//CGameStateOver
 #pragma endregion
@@ -3865,22 +3880,17 @@ namespace game_framework {
 		isShowKid = true;				//開場顯示小孩
 		finalBoss.Initialize();
 		isDefeat = isVictory = false;
+		score = 0;
 
 	}
 
 	void CGameStateRun::OnMove()							// 移動遊戲元素
 	{
-		// 如果希望修改cursor的樣式，則將下面程式的commment取消即可
-		// SetCursor(AfxGetApp()->LoadCursor(IDC_GAMECURSOR));
-		
-		if (test)
-		{
-			return;
-		}
 
 #pragma region endGame
 		if (hero.canEndGame())
 		{
+			ending = 1;			//bad end you lose
 			if (!isDefeat)
 			{
 				CAudio::Instance()->Stop(AUDIO_normal_BGM);
@@ -3901,6 +3911,7 @@ namespace game_framework {
 
 		mapX = gameMap.getX();					//地圖偏移座標
 		mapY = gameMap.getY();
+		gameScore.SetInteger(score);			//分數
 
 		if (showMovie)
 		{
@@ -4009,6 +4020,7 @@ namespace game_framework {
 
 #pragma region knifeEnemy
 			//刀砍到敵人
+				countKnifeAtSameTime = 0;			//重製
 				for (loop = 0; loop < maxEnemyNumber; loop++)			//主角敵人是否重疊
 				{
 					if (vecEnemy[loop]->getAlive())
@@ -4017,6 +4029,7 @@ namespace game_framework {
 						{
 							if (hero.getShooting() && hero.getOverlap())	//刀砍，所有重疊的都會死
 							{
+								countKnifeAtSameTime++;
 								remainEnemy.Add(-1);
 								nowAliveEnemy--;
 								vecEnemy[loop]->SetDead(true, hero.getDir_hor());
@@ -4025,9 +4038,10 @@ namespace game_framework {
 							}
 							break;
 						}
-
 					}
 				}
+				score += (int)(sqrt(countKnifeAtSameTime) * sqrt(heroLife.GetInteger())
+					* enemyScore * 1.5);			//根據一次砍了幾人和剩餘血量做加分，砍人比較多分
 #pragma endregion
 
 #pragma region shootEnemy
@@ -4043,6 +4057,7 @@ namespace game_framework {
 							CAudio::Instance()->Play(AUDIO_enemyDead, false);		//撥放敵人死亡聲音
 							vecEnemy[loop]->SetDead(true, hero.getDir_hor());		//設定死亡&方向
 							vecEnemy[loop]->SetAlive(false);						//設定存活
+							score += (int)(sqrt(heroLife.GetInteger()) * enemyScore);		//根據剩餘血量加分
 						}
 					}
 				}
@@ -4175,6 +4190,7 @@ namespace game_framework {
 			{
 				CAudio::Instance()->Stop(AUDIO_normal_BGM);
 				CAudio::Instance()->Stop(bossBGM);
+				ending = 0;		//good end you win
 				GotoGameState(GAME_STATE_OVER);
 			}
 		}		//!isShowKid
@@ -4211,19 +4227,8 @@ namespace game_framework {
 
 	void CGameStateRun::OnInit()  								// 遊戲的初值及圖形設定
 	{
-		
-		//
-		// 當圖很多時，OnInit載入所有的圖要花很多時間。為避免玩遊戲的人
-		//     等的不耐煩，遊戲會出現「Loading ...」，顯示Loading的進度。
-		//
 		ShowInitProgress(33);	// 接個前一個狀態的進度，此處進度視為33%
-		//
-		// 開始載入資料
-		// 完成部分Loading動作，提高進度
 		ShowInitProgress(50);
-		//
-		// 繼續載入其他資料
-		//
 		gameMap.LoadBitmap();
 		goL.LoadBitmap(".\\image\\number\\goL.bmp", Blue);
 		goR.LoadBitmap(".\\image\\number\\goR.bmp", Blue);
@@ -4255,8 +4260,8 @@ namespace game_framework {
 		hero.LoadBitmap();
 		heroLife.LoadBitmap();
 		heroImg.LoadBitmap(".\\image\\number\\heroLife.bmp", Blue);
-		heroImg.SetTopLeft(400, 0);
-		heroLife.SetTopLeft(400 + heroImg.Width() + 10, 0);
+		heroImg.SetTopLeft(300, 0);
+		heroLife.SetTopLeft(300 + heroImg.Width() + 10, 0);
 
 		remainEnemy.LoadBitmap();
 		enemyImg.LoadBitmap(".\\image\\number\\remainEnemy.bmp", Blue);
@@ -4267,6 +4272,9 @@ namespace game_framework {
 		movie.LoadBitmap();
 		kid.LoadBitmap();
 		finalBoss.LoadBitmap();
+		gameScore.LoadBitmap();
+		gameScore.SetDigit(6);
+		gameScore.SetTopLeft(550, 0);
 
 #pragma region LoadMP3
 
@@ -4309,10 +4317,11 @@ namespace game_framework {
 		const char KEY_DOWN = 0x28;		// keyboard下箭頭
 		const char KEY_A = 0x41;		// keyboard a
 		const char KEY_S = 0x53;		// keyboard s
-		const char KEY_Q = 0x51;
-		const char KEY_R = 0x52;
-		const char KEY_M = 0x4d;
-		const char KEY_K = 0x4b;
+		const char KEY_Q = 0x51;		//跳過動畫
+		const char KEY_R = 0x52;		//回開頭
+		const char KEY_M = 0x4d;		//無敵
+		const char KEY_J = 0x4a;		//快速通關
+		const char KEY_K = 0x4b;		//自殺
 
 		if (nChar == KEY_Q)
 		{
@@ -4354,14 +4363,28 @@ namespace game_framework {
 		if (nChar == KEY_R)
 		{
 			CAudio::Instance()->Stop(AUDIO_normal_BGM);
+			CAudio::Instance()->Stop(kidWalk);
 			CAudio::Instance()->Play(fire, true);
 			CAudio::Instance()->Play(enemyScream, true);
 			GotoGameState(GAME_STATE_INIT);
 		}
 		if (nChar == KEY_M)
+		{
 			hero.SetCheat();
+			cheat = true;
+		}
 		if (nChar == KEY_K)
-			hero.AddLife(-10);
+			hero.SetDead();
+		if (nChar == KEY_J)
+		{
+			cheat = true;
+			if (stage == 0 || stage == 2)
+				remainEnemy.SetInteger(0);
+			else if (stage == 1)
+				midBoss.SetDead();
+			else if (stage == 3)
+				finalBoss.AddLife(4, -50);
+		}
 	}
 
 	void CGameStateRun::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -4424,11 +4447,6 @@ namespace game_framework {
 	void CGameStateRun::OnShow()
 	{
 
-		if (test)
-		{
-			return;
-		}
-
 		if (showMovie)						
 		{
 			showMovie = movie.OnShow();		//開場動畫顯示
@@ -4456,7 +4474,7 @@ namespace game_framework {
 		{
 			if (stage == 1)		//midBoss
 			{
-				if (midBoss.OnShow())			//顯示midBoss
+				if (midBoss.OnShow())			//顯示midBoss，回傳是否死亡
 				{
 					stage++;					//midBoss死亡，關卡切換
 					isFallBack = false;			//關閉撤退
@@ -4466,14 +4484,16 @@ namespace game_framework {
 						vecEnemy[loop]->Initialize();			//敵人重新初始化
 					CAudio::Instance()->Stop(bossBGM);			//關閉boss戰音效
 					isBossBGMShow = isNormalBGMShow = false;	//重製音效顯示狀態
+					score +=(int)(sqrt(heroLife.GetInteger()) * midBossScore);		//加分
 				}
 			}
 			else if (stage == 3)
 			{
-				if (finalBoss.OnShow())
+				if (finalBoss.OnShow())			//顯示finalBoss，會回傳是否死亡
 				{
 					stage++;
 					CAudio::Instance()->Stop(bossBGM);
+					score += (int)(sqrt(heroLife.GetInteger()) * finalBossScore);	//加分
 				}
 			}
 			for (loop = 0; loop < maxEnemyNumber; loop++)		//敵人顯示
@@ -4484,7 +4504,7 @@ namespace game_framework {
 			remainEnemy.ShowBitmap();		//剩餘敵人數顯示
 			heroImg.ShowBitmap();			//主角小圖顯示
 			heroLife.ShowBitmap();			//主角血量顯示
-
+			gameScore.ShowBitmap();			//遊戲分數顯示
 #pragma endregion
 
 			if (remainEnemy.GetInteger() <= 0)			//指示顯示
