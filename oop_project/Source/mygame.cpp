@@ -1567,7 +1567,7 @@ namespace game_framework {
 		//handVAttack
 #pragma endregion
 
-			if (gunLife == 0 || handLife == 0 || handVLife == 0 || bossLife == 0) explode.OnMove();
+			if (gunLife == 0 || handLife == 0 || handVLife == 0 || bossLife <= 0) explode.OnMove();
 
 			bossHand.OnMove();
 			bossFoot.OnMove();
