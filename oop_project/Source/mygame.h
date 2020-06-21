@@ -53,12 +53,21 @@ enum AUDIO_ID {				// 定義各種音效的編號
 	Movie_enemyGone,
 	Movie_HeroBlink,
 	Movie_KidWavehand,
-	AUDIO_heroJump,					
+	AUDIO_heroJump,	
+	heroShoot,
 	AUDIO_enemyDead,				
 	AUDIO_normal_BGM,
 	bossBGM,
+	kidWalk,
+	startBossFight,
 	midBoss_Laser,
-	midBoss_Stand
+	midBoss_Stand,
+	finalBossGunShoot,
+	finalBossHandAttack,
+	enemyShoot,
+	enemyShoot2,
+	enemyShoot3,
+	enemyShoot4
 };
 
 namespace game_framework {
@@ -473,6 +482,7 @@ public:
 	void SetXY(int, int);			//方便Demo使用
 	void SetLock(bool);
 	void SetMapXY(int, int);
+	void SetCheat();
 	void AddLife(int);
 #pragma endregion
 
@@ -490,10 +500,10 @@ public:
 	int getDir_hor();				//get last horizontal dir
 	bool getDead();					//is hero Dead Now
 	bool isNowRising();				//get isRising?
-	bool isOverlapEnemy(CEnemy*);		//get is Hero and Enemy overlap
+	bool isOverlapEnemy(CEnemy*);	//get is Hero and Enemy overlap
 	bool getOverlap();
 	bool getShooting();
-	bool canDead;
+	bool canEndGame();				//死亡動作完成，可以結束遊戲
 #pragma endregion
 
 
@@ -511,6 +521,9 @@ private:
 #pragma endregion
 	
 #pragma region 變數宣告
+	bool canDead;
+	bool canEnd;
+	bool whosyourdaddy;				//作弊模式
 	bool isDead;
 	bool isRising;					//上升
 	bool isFalling;					//墜落
@@ -770,6 +783,8 @@ private:
 	CMovingBitmap caution2;
 #pragma endregion
 
+	bool explodeSound;
+	bool handSound;
 	bool isStart;						//show movie
 	bool isHandHitGround;				//true->取消碰撞
 	bool handOnground;					//處理hero子彈是否可以擊中目標
@@ -878,13 +893,18 @@ private:
 	CInteger heroLife;			//主角剩餘血量
 	CMovingBitmap goL;			//顯示往左
 	CMovingBitmap goR;			//顯示往右
+	CMovingBitmap gameDefeat;	//遊戲失敗
+	CMovingBitmap gameVictory;	//遊戲獲勝
 
+	bool isDefeat, isVictory;
 	bool isShowKid;					//開場小孩動畫
 	bool showMovie;					//是否顯示開場動畫
 	bool canAddEnemy;				//可否自動生成敵人
 	bool isFallBack;				//關卡切換時，讓敵人撤退
 	bool isNormalBGMShow;			//decide to show mp3 or not
 	bool isBossBGMShow;				//show boss bgm
+	bool iskidBGMShow;				//小孩開場動畫的BGM
+	bool isShowStartFightBGM;		//進入boss戰前的提示音效
 	unsigned maxEnemyNumber;		//最大敵人數
 	unsigned nowAliveEnemy;			//場上存活敵人數
 	unsigned nowShowEnemy;			//撤退時用
@@ -916,10 +936,18 @@ public:
 	CGameStateOver(CGame *g);
 	void OnBeginState();							// 設定每次重玩所需的變數
 	void OnInit();
+	void OnLButtonDown(UINT nFlags, CPoint point);  // 處理滑鼠的動作
+	void OnMouseMove(UINT nFlags, CPoint point);	// 滑鼠滑動
+
 protected:
 	void OnMove();									// 移動遊戲元素
 	void OnShow();									// 顯示這個狀態的遊戲畫面
 private:
+
+	CMovingBitmap gameOverInterface;
+	CMovingBitmap btnBack;
+	CMovingBitmap btnBackHover;
+	bool isHoverBack;
 	int counter;	// 倒數之計數器
 };
 

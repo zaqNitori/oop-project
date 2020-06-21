@@ -86,7 +86,7 @@ namespace game_framework {
 		deadDelay = constDeadDelay = 20;			//死後無敵時間
 		delayCount = constDelay = 9;
 		direction = dir_horizontal = 1;				//預設向左
-		isDead = isFalling = false;
+		canEnd = whosyourdaddy = isRising = isDead = isFalling = false;
 #pragma region heroStateReset
 		SetMovingDown(false);
 		SetMovingLeft(false);
@@ -362,9 +362,12 @@ namespace game_framework {
 				SetRising(false);
 				isFalling = true;
 				gameMap->ClearMapBullet();
+				if (heroLife <= 0) canEnd = true;
 			}
 			return;
 		}
+
+		if (canEnd) return;
 
 		#pragma region OnShowAction
 		
@@ -496,6 +499,8 @@ namespace game_framework {
 			mapY = my;
 		}
 
+		void CHero::SetCheat() { whosyourdaddy = !whosyourdaddy; }
+
 		void CHero::SetOverlap(bool flag)
 		{
 			isOverlap = flag;
@@ -513,6 +518,7 @@ namespace game_framework {
 
 		void CHero::AddLife(int n)
 		{
+			if (whosyourdaddy) return;
 			if (!isDead && canDead)
 			{
 				heroLife += n;
@@ -582,6 +588,8 @@ namespace game_framework {
 
 		bool CHero::getShooting() { return isShooting; }
 
+		bool CHero::canEndGame() { return canEnd; }
+
 	#pragma endregion
 
 	//CHero
@@ -646,7 +654,6 @@ namespace game_framework {
 
 		void CEnemy::OnMove()
 		{
-			//if (!isOnBlock) y += step;					//gravity
 			if (isAlive) enemyStand.OnMove(x, y);		//站立動作
 			else if (isDead)
 			{
@@ -1321,8 +1328,8 @@ namespace game_framework {
 			handX = handY = 800;
 			bulletX = bulletY = -100;
 			bulletStep = 20;
-			bossLife = 10;
-			gunLife = handVLife = handLife = 5;
+			bossLife = 50;
+			gunLife = handVLife = handLife = 50;
 			handDelay = const_handDelay = 150;
 			handVDelay = const_handVDelay = 30;
 			gunBullet.SetDelayCount(4);
@@ -1330,7 +1337,7 @@ namespace game_framework {
 			explode.SetDelayCount(5);
 			canHandAttack = canHandVAttack = handOnground = handVOnground = canCaution =
 				canCaution2 = showGunExplode = isHandHitGround = isHandVHitGround = false;
-			isStart = true;
+			explodeSound = handSound = isStart = false;
 		}
 
 		void CFinalBoss::LoadBitmap()
@@ -1398,6 +1405,7 @@ namespace game_framework {
 					gunBullet.OnMove();
 					if (bulletX <= -(2 * gunBullet.Width()))
 					{
+						CAudio::Instance()->Play(finalBossGunShoot, false);
 						bulletX = x + 800 - bossBody.Width() - gunBullet.Width();
 						bulletY = 600 - bossFoot.Height() - bossBody.Height() / 2 + 15 + gunBullet.Height();
 					}
@@ -1416,7 +1424,14 @@ namespace game_framework {
 					{
 						handDelay--;
 						if (handDelay <= 40)		//攻擊警告
+						{
 							canCaution = true;
+							if (!handSound)
+							{
+								CAudio::Instance()->Play(finalBossHandAttack, true);
+								handSound = true;
+							}
+						}
 					}
 					else
 					{
@@ -1435,6 +1450,8 @@ namespace game_framework {
 						handY += handStepY;
 						if (handY >= 600 - bossHand.Height())
 						{
+							CAudio::Instance()->Stop(finalBossHandAttack);
+							handSound = false;
 							isHandHitGround = true;
 							handOnground = true;
 						}
@@ -1447,8 +1464,15 @@ namespace game_framework {
 							handOnground = false;
 							handX += handStepX;
 							handY -= handStepY;
+							if (!handSound)
+							{
+								CAudio::Instance()->Play(finalBossHandAttack, true);
+								handSound = true;
+							}
 							if (handY <= 50)
 							{
+								CAudio::Instance()->Stop(finalBossHandAttack);
+								handSound = false;
 								handY = 50;
 								handDelay = const_handDelay;
 								isHandHitGround = false;
@@ -1579,6 +1603,11 @@ namespace game_framework {
 
 			if (gunLife == 0)
 			{
+				if (!explodeSound)
+				{
+					CAudio::Instance()->Play(Movie_ufoExplode, false);
+					explodeSound = true;
+				}
 				explode.SetTopLeft(x + 800 - bossBody.Width() + bossGun.Width() - explode.Width()
 					, 600 - bossFoot.Height() - bossBody.Height() / 2 + 30 + bossGun.Height() - explode.Height());
 				explode.OnShow();
@@ -1586,10 +1615,16 @@ namespace game_framework {
 				{
 					explode.Reset();
 					gunLife = -10;
+					explodeSound = false;
 				}
 			}
 			else if (handLife == 0)
 			{
+				if (!explodeSound)
+				{
+					CAudio::Instance()->Play(Movie_ufoExplode, false);
+					explodeSound = true;
+				}
 				explode.SetTopLeft(handX + bossHand.Width() - explode.Width()
 					, handY + bossHand.Height() - explode.Height());
 				explode.OnShow();
@@ -1597,10 +1632,16 @@ namespace game_framework {
 				{
 					explode.Reset();
 					handLife = -10;
+					explodeSound = false;
 				}
 			}
 			else if (handVLife == 0)
 			{
+				if (!explodeSound)
+				{
+					CAudio::Instance()->Play(Movie_ufoExplode, false);
+					explodeSound = true;
+				}
 				explode.SetTopLeft(handVX
 					, handVY + handBullet.Height() - explode.Height());
 				explode.OnShow();
@@ -1608,10 +1649,16 @@ namespace game_framework {
 				{
 					explode.Reset();
 					handVLife = -10;
+					explodeSound = false;
 				}
 			}
 			else if (bossLife == 0)
 			{
+				if (!explodeSound)
+				{
+					CAudio::Instance()->Play(Movie_ufoExplode, false);
+					explodeSound = true;
+				}
 				explode.SetTopLeft(x + 800 - explode.Width()
 					, 600 - bossFoot.Height() + 50 - explode.Height());
 				explode.OnShow();
@@ -1619,6 +1666,9 @@ namespace game_framework {
 				{
 					explode.Reset();
 					bossLife = -10;
+					explodeSound = false;
+					CAudio::Instance()->Stop(finalBossGunShoot);
+					CAudio::Instance()->Stop(finalBossHandAttack);
 					return true;
 				}
 			}
@@ -1840,18 +1890,22 @@ namespace game_framework {
 		switch (gunMode)
 		{
 		case 0:
+			CAudio::Instance()->Play(enemyShoot, false);
 			mistakeRate = 10;
 			maxSpeed = 15;
 			break;
 		case 1:
+			CAudio::Instance()->Play(enemyShoot2, false);
 			mistakeRate = 12;
 			maxSpeed = 20;
 			break;
 		case 2:
+			CAudio::Instance()->Play(enemyShoot3, false);
 			mistakeRate = 15;
 			maxSpeed = 23;
 			break;
 		case 3:
+			CAudio::Instance()->Play(enemyShoot4, false);
 			mistakeRate = 0;
 			maxSpeed = 30;
 			break;
@@ -3513,6 +3567,7 @@ namespace game_framework {
 		{
 			CAudio::Instance()->Stop(fire);
 			CAudio::Instance()->Stop(enemyScream);
+			isSoundShow = false;
 			GotoGameState(GAME_STATE_RUN);		// 切換至GAME_STATE_RUN
 		}
 		else if (ishoverAbout)
@@ -3696,6 +3751,7 @@ namespace game_framework {
 
 	void CGameStateOver::OnBeginState()
 	{
+		isHoverBack = false;
 		counter = 30 * 5; // 5 seconds
 	}
 
@@ -3714,21 +3770,41 @@ namespace game_framework {
 		// 最終進度為100%
 		//
 		ShowInitProgress(100);
+		gameOverInterface.LoadBitmap(".\\image\\interface\\gameEnd.bmp");
+		btnBack.LoadBitmap(".\\image\\interface\\btnBack.bmp", Black);
+		btnBackHover.LoadBitmap(".\\image\\interface\\btnBackHover.bmp", Black);
+	}
+
+	void CGameStateOver::OnMouseMove(UINT nFlags, CPoint point)
+	{
+		if (point.x >= 50 && point.x <= 50 + 140 && point.y >= 600 - 59 - 50 && point.y <= 600 - 59 )
+			isHoverBack = true;
+		else
+			isHoverBack = false;
+	}
+
+	void CGameStateOver::OnLButtonDown(UINT nFlags, CPoint point)
+	{
+		if (isHoverBack)
+			GotoGameState(GAME_STATE_INIT);
 	}
 
 	void CGameStateOver::OnShow()
 	{
-		CDC *pDC = CDDraw::GetBackCDC();			// 取得 Back Plain 的 CDC 
-		CFont f, *fp;
-		f.CreatePointFont(160, "Times New Roman");	// 產生 font f; 160表示16 point的字
-		fp = pDC->SelectObject(&f);					// 選用 font f
-		pDC->SetBkColor(RGB(0, 0, 0));
-		pDC->SetTextColor(RGB(255, 255, 0));
-		char str[80];								// Demo 數字對字串的轉換
-		sprintf(str, "Game Over ! (%d)", counter / 30);
-		pDC->TextOut(240, 210, str);
-		pDC->SelectObject(fp);						// 放掉 font f (千萬不要漏了放掉)
-		CDDraw::ReleaseBackCDC();					// 放掉 Back Plain 的 CDC
+		gameOverInterface.SetTopLeft(0, 0);
+		gameOverInterface.ShowBitmap();
+
+		if (!isHoverBack)
+		{
+			btnBackHover.SetTopLeft(50, 600 - btnBackHover.Height() - 50);
+			btnBackHover.ShowBitmap();
+		}
+		else
+		{
+			btnBack.SetTopLeft(50, 600 - btnBackHover.Height() - 50);
+			btnBack.ShowBitmap();
+		}
+
 	}
 	//CGameStateOver
 #pragma endregion
@@ -3785,8 +3861,10 @@ namespace game_framework {
 		delay = const_delay = 30;		//轉場延遲
 
 		kid.Initialize();				//kid 初始化
+		isShowStartFightBGM = iskidBGMShow = false;
 		isShowKid = true;				//開場顯示小孩
 		finalBoss.Initialize();
+		isDefeat = isVictory = false;
 
 	}
 
@@ -3800,11 +3878,26 @@ namespace game_framework {
 			return;
 		}
 
-		if (!isNormalBGMShow && !showMovie)
+#pragma region endGame
+		if (hero.canEndGame())
 		{
-			CAudio::Instance()->Play(AUDIO_normal_BGM, true);
-			isNormalBGMShow = true;
+			if (!isDefeat)
+			{
+				CAudio::Instance()->Stop(AUDIO_normal_BGM);
+				CAudio::Instance()->Stop(bossBGM);
+				isDefeat = true;
+				CAudio::Instance()->Play(startBossFight, false);
+				delay = 50;
+			}
+			else
+			{
+				if (delay > 0) delay--;
+				else GotoGameState(GAME_STATE_OVER);
+				return;
+			}
 		}
+
+#pragma endregion		
 
 		mapX = gameMap.getX();					//地圖偏移座標
 		mapY = gameMap.getY();
@@ -3815,8 +3908,19 @@ namespace game_framework {
 			return;
 		}
 
+		if (!isNormalBGMShow && !isShowKid)
+		{
+			CAudio::Instance()->Play(AUDIO_normal_BGM, true);
+			isNormalBGMShow = true;
+		}
+
 		if (isShowKid)
 		{
+			if (!iskidBGMShow)
+			{
+				CAudio::Instance()->Play(kidWalk, false);
+				iskidBGMShow = true;
+			}
 			hero.SetLock(true);
 			kid.OnMove();					//小孩移動
 			if (gameMap.isBulletHit(&kid))
@@ -3995,6 +4099,11 @@ namespace game_framework {
 							if (mapX <= -2035 && mapX >= -2050)		//鎖定小Bosss場地
 							{
 								hero.SetLock(true);
+								if (!isShowStartFightBGM)
+								{
+									CAudio::Instance()->Play(startBossFight, false);
+									isShowStartFightBGM = true;
+								}
 								if (nowShowEnemy == 0)
 								{
 									if (delay > 0) delay--;
@@ -4004,6 +4113,7 @@ namespace game_framework {
 										stage++;
 										remainEnemy.SetInteger(0);
 										midBoss.SetStart(true);
+										isShowStartFightBGM = false;
 									}
 								}
 							}
@@ -4018,6 +4128,11 @@ namespace game_framework {
 							if (mapX <= -4300 && mapX >= -4315)		//鎖定FinalBosss場地
 							{
 								hero.SetLock(true);
+								if (!isShowStartFightBGM)
+								{
+									CAudio::Instance()->Play(startBossFight, false);
+									isShowStartFightBGM = true;
+								}
 								if (nowShowEnemy == 0)
 								{
 									if (delay > 0) delay--;
@@ -4026,8 +4141,9 @@ namespace game_framework {
 										delay = const_delay;
 										stage++;
 										remainEnemy.SetInteger(0);
-										midBoss.Initialize();
-										midBoss.SetStart(true);
+										finalBoss.Initialize();
+										finalBoss.SetStart(true);
+										isShowStartFightBGM = false;
 									}
 								}
 							}
@@ -4042,8 +4158,20 @@ namespace game_framework {
 #pragma endregion
 
 			}		//stage 0、2
-
 			if (stage == 4)
+			{
+				if (!isVictory)
+				{
+					isVictory = true;
+					CAudio::Instance()->Play(startBossFight, false);
+					CAudio::Instance()->Stop(AUDIO_normal_BGM);
+					CAudio::Instance()->Stop(bossBGM);
+					delay = 50;
+				}
+				if (delay > 0) delay--;
+				else stage++;
+			}
+			else if (stage == 5)
 			{
 				CAudio::Instance()->Stop(AUDIO_normal_BGM);
 				CAudio::Instance()->Stop(bossBGM);
@@ -4053,15 +4181,6 @@ namespace game_framework {
 		gameMap.OnMoveBullet();			//雙方子彈移動
 		gameMap.killBullet();			//雙方子彈刪除(超出範圍)
 		hero.OnMove();					//主角移動
-
-#pragma region endGame
-		if (hero.getLife() <= 0)
-		{
-			CAudio::Instance()->Stop(AUDIO_normal_BGM);
-			GotoGameState(GAME_STATE_OVER);
-		}
-
-#pragma endregion
 
 	}	//OnMove
 
@@ -4108,10 +4227,12 @@ namespace game_framework {
 		gameMap.LoadBitmap();
 		goL.LoadBitmap(".\\image\\number\\goL.bmp", Blue);
 		goR.LoadBitmap(".\\image\\number\\goR.bmp", Blue);
+		gameDefeat.LoadBitmap(".\\image\\interface\\gameOver.bmp", Black);
+		gameVictory.LoadBitmap(".\\image\\interface\\victory.bmp", Black);
 
 #pragma region EnemyInitial
 
-		maxEnemyNumber = 5;				//最大敵人數
+		maxEnemyNumber = 30;				//最大敵人數
 		remainEnemy.SetInteger(maxEnemyNumber);
 		if (vecEnemy.size() == 0)
 		{
@@ -4149,21 +4270,29 @@ namespace game_framework {
 
 #pragma region LoadMP3
 
-		CAudio::Instance()->Load(Movie_enemyGone, "sounds\\movie\\enemyGone.mp3");
-		CAudio::Instance()->Load(Movie_enemyShow, "sounds\\movie\\enemyShow.mp3");
-		CAudio::Instance()->Load(Movie_FBItalk, "sounds\\movie\\FBItalk.mp3");
-		CAudio::Instance()->Load(Movie_HeroBlink, "sounds\\movie\\heroBlink.mp3");
-		CAudio::Instance()->Load(Movie_KidWavehand, "sounds\\movie\\KidWave.mp3");
-		CAudio::Instance()->Load(Movie_ufoCrash, "sounds\\movie\\ufoCrash.mp3");
-		CAudio::Instance()->Load(Movie_ufoExplode, "sounds\\movie\\ufoExplode.mp3");
-		CAudio::Instance()->Load(AUDIO_heroJump, "sounds\\heroJump.mp3");
-		CAudio::Instance()->Load(AUDIO_enemyDead, "sounds\\enemyDead.mp3");
-		CAudio::Instance()->Load(AUDIO_normal_BGM, "sounds\\BGM_normal.mp3");
-		CAudio::Instance()->Load(bossBGM, "sounds\\bossBGM.mp3");
-		CAudio::Instance()->Load(Movie_moon, "sounds\\movie\\moon.mp3");
-		CAudio::Instance()->Load(midBoss_Laser, "sounds\\midBossLaser.mp3");
-		CAudio::Instance()->Load(midBoss_Stand, "sounds\\midBossStand.mp3");
-
+		CAudio::Instance()->Load(Movie_enemyGone, ".\\sounds\\movie\\enemyGone.mp3");
+		CAudio::Instance()->Load(Movie_enemyShow, ".\\sounds\\movie\\enemyShow.mp3");
+		CAudio::Instance()->Load(Movie_FBItalk, ".\\sounds\\movie\\FBItalk.mp3");
+		CAudio::Instance()->Load(Movie_HeroBlink, ".\\sounds\\movie\\heroBlink.mp3");
+		CAudio::Instance()->Load(Movie_KidWavehand, ".\\sounds\\movie\\KidWave.mp3");
+		CAudio::Instance()->Load(Movie_ufoCrash, ".\\sounds\\movie\\ufoCrash.mp3");
+		CAudio::Instance()->Load(Movie_ufoExplode, ".\\sounds\\movie\\ufoExplode.mp3");
+		CAudio::Instance()->Load(AUDIO_heroJump, ".\\sounds\\heroJump.mp3");
+		CAudio::Instance()->Load(AUDIO_enemyDead, ".\\sounds\\enemyDead.mp3");
+		CAudio::Instance()->Load(AUDIO_normal_BGM, ".\\sounds\\BGM_normal.mp3");
+		CAudio::Instance()->Load(bossBGM, ".\\sounds\\bossBGM.mp3");
+		CAudio::Instance()->Load(Movie_moon, ".\\sounds\\movie\\moon.mp3");
+		CAudio::Instance()->Load(midBoss_Laser, ".\\sounds\\midBossLaser.mp3");
+		CAudio::Instance()->Load(midBoss_Stand, ".\\sounds\\midBossStand.mp3");
+		CAudio::Instance()->Load(kidWalk, ".\\sounds\\KidWalk.mp3");
+		CAudio::Instance()->Load(startBossFight, ".\\sounds\\startBossFight.mp3");
+		CAudio::Instance()->Load(heroShoot, ".\\sounds\\heroShoot.mp3");
+		CAudio::Instance()->Load(finalBossGunShoot, ".\\sounds\\finalBossGunShoot.mp3");
+		CAudio::Instance()->Load(finalBossHandAttack, ".\\sounds\\finalBossHandAttack.mp3");
+		CAudio::Instance()->Load(enemyShoot, ".\\sounds\\enemyShoot.mp3");
+		CAudio::Instance()->Load(enemyShoot2, ".\\sounds\\enemyShoot2.mp3");
+		CAudio::Instance()->Load(enemyShoot3, ".\\sounds\\enemyShoot3.mp3");
+		CAudio::Instance()->Load(enemyShoot4, ".\\sounds\\enemyShoot4.mp3");
 
 #pragma endregion
 
@@ -4182,9 +4311,14 @@ namespace game_framework {
 		const char KEY_S = 0x53;		// keyboard s
 		const char KEY_Q = 0x51;
 		const char KEY_R = 0x52;
+		const char KEY_M = 0x4d;
+		const char KEY_K = 0x4b;
 
-		if (hero.getDead()) return;
-		//左1 右2 上3 下4
+		if (nChar == KEY_Q)
+		{
+			if (showMovie) showMovie = false;
+		}
+		if (hero.getDead() || showMovie) return;
 		if (nChar == KEY_LEFT)
 		{
 			hero.SetMovingLeft(true);
@@ -4194,9 +4328,6 @@ namespace game_framework {
 		{
 			hero.SetMovingRight(true);
 			hero.SetDirection(2);
-		}
-		if (nChar == KEY_UP)
-		{
 		}
 		if (nChar == KEY_DOWN)
 		{
@@ -4209,17 +4340,16 @@ namespace game_framework {
 		if (nChar == KEY_A)
 		{
 			hero.SetShooting(true);
-			if(!hero.getOverlap() && !hero.getDead()) 
+			if (!hero.getOverlap() && !hero.getDead())
+			{
 				gameMap.addBullet(hero.getX1(), hero.getY1(), hero.getDir(), hero.getDir_hor());
+				CAudio::Instance()->Play(heroShoot, false);
+			}
 		}
 		if (nChar == KEY_S)
 		{
 			hero.SetFallDownFromBlock(true);
 			hero.SetRising(true);
-		}
-		if (nChar == KEY_Q)
-		{
-			if (showMovie) showMovie = false;
 		}
 		if (nChar == KEY_R)
 		{
@@ -4228,6 +4358,10 @@ namespace game_framework {
 			CAudio::Instance()->Play(enemyScream, true);
 			GotoGameState(GAME_STATE_INIT);
 		}
+		if (nChar == KEY_M)
+			hero.SetCheat();
+		if (nChar == KEY_K)
+			hero.AddLife(-10);
 	}
 
 	void CGameStateRun::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -4249,19 +4383,10 @@ namespace game_framework {
 			hero.SetMovingRight(false);
 			hero.ResumeDirection();
 		}
-		if (nChar == KEY_UP)
-		{
-			//hero.SetMovingUp(false);
-			//hero.ResumeDirection();
-		}
 		if (nChar == KEY_DOWN)
 		{
 			hero.SetMovingDown(false);
 			hero.ResumeDirection();
-		}
-		if (nChar == KEY_A)
-		{
-			//hero.SetShooting(false);
 		}
 		if (nChar == KEY_S)
 		{
@@ -4311,6 +4436,17 @@ namespace game_framework {
 		}
 
 		gameMap.OnShow();					//背景顯示
+
+		if (isDefeat)
+		{
+			gameDefeat.SetTopLeft(0, 0);
+			gameDefeat.ShowBitmap();
+		}
+		else if (isVictory)
+		{
+			gameVictory.SetTopLeft(0, 0);
+			gameVictory.ShowBitmap();
+		}
 
 		if (isShowKid)
 		{

@@ -40,7 +40,6 @@
 #define IDB_yee1                        158
 #define IDB_BITMAP4                     159
 #define IDB_testMap                     159
-#define IDB_GameMap                     160
 #define IDB_BITMAP5                     161
 #define IDB_BITMAP6                     162
 #define IDB_BITMAP7                     163

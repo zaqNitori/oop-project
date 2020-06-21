@@ -104,11 +104,7 @@ IDB_HELP                BITMAP                  "..\\res\\help.bmp"
 
 IDB_LOADING             BITMAP                  "..\\res\\loading.bmp"
 
-IDB_GameMap             BITMAP                  "..\\image\\263.bmp"
-
 IDB_BITMAP6             BITMAP                  "..\\res\\bitmap6.bmp"
-
-IDB_gameMapBlock        BITMAP                  "..\\image\\block_map.bmp"
 
 
 /////////////////////////////////////////////////////////////////////////////
