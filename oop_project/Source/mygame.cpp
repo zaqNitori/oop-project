@@ -3881,6 +3881,7 @@ namespace game_framework {
 		finalBoss.Initialize();
 		isDefeat = isVictory = false;
 		score = 0;
+		cheat = false;
 
 	}
 
