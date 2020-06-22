@@ -1584,18 +1584,21 @@ namespace game_framework {
 
 			if (showGunExplode)					//顯示子彈爆炸動畫
 			{
-				gunBulletExplode.SetTopLeft(bulletX, bulletY);
-				gunBulletExplode.OnShow();
-				if (gunBulletExplode.IsFinalBitmap())	//動畫結束
+				if (bossLife > 0)
 				{
-					gunBulletExplode.Reset();			//重製
-					showGunExplode = false;				//關閉鎖定
-					bulletX = -50;						//將子彈位置設置在地圖外繼續判斷
+					gunBulletExplode.SetTopLeft(bulletX, bulletY);
+					gunBulletExplode.OnShow();
+					if (gunBulletExplode.IsFinalBitmap())	//動畫結束
+					{
+						gunBulletExplode.Reset();			//重製
+						showGunExplode = false;				//關閉鎖定
+						bulletX = -50;						//將子彈位置設置在地圖外繼續判斷
+					}
 				}
 			}
 			else								//顯示子彈
 			{
-				if (gunLife > 0)
+				if (gunLife > 0 && bossLife > 0)
 				{
 					gunBullet.SetTopLeft(bulletX, bulletY);
 					gunBullet.OnShow();
